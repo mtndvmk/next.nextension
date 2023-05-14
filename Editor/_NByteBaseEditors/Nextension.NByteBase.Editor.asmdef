@@ -1,0 +1,20 @@
+{
+    "name": "Nextension.NByteBase.Editor",
+    "rootNamespace": "Nextension.NByteBase.Editor",
+    "references": [
+        "Nextension.NByteBase.Runtime",
+        "Next.Nextension.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_EDITOR",
+        "ENABLE_NBYTEBASE"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,16 @@
+{
+    "name": "Next.Nextension.Runtime",
+    "rootNamespace": "Nextension",
+    "references": [
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

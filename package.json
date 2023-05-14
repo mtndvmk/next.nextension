@@ -1,0 +1,12 @@
+{
+  "name": "next.nextension",
+  "author": "Next Team",
+  "displayName": "Nextension",
+  "description": "",
+  "unity": "2021.3",
+  "version": "0.1.0",
+  "keywords": [],
+  "dependencies": {
+    "com.unity.burst": "1.4.11"
+  }
+}
