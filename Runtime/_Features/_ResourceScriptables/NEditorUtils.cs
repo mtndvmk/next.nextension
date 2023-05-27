@@ -56,11 +56,11 @@ namespace Nextension
             {
                 if (s != null)
                 {
-                    UnityEditor.EditorUtility.SetDirty(s);
+                    EditorUtility.SetDirty(s);
                 }
             }
 
-            UnityEditor.AssetDatabase.SaveAssets();
+            AssetDatabase.SaveAssets();
             _needSaves.Clear();
             _isSaving = false;
         }
@@ -88,8 +88,7 @@ namespace Nextension
 
         public static async Task awaitImportWorkerProcess()
         {
-            var isWorker = AssetDatabase.IsAssetImportWorkerProcess();
-            await new NWaitUntil_Editor(() => !isWorker);
+            await new NWaitUntil_Editor(() => !AssetDatabase.IsAssetImportWorkerProcess() && !EditorApplication.isUpdating);
         }
         public static bool isFile(ScriptableObject scriptableObject)
         {
@@ -159,13 +158,13 @@ namespace Nextension
             T scriptable;
             if (System.IO.File.Exists(path))
             {
-                scriptable = Resources.Load<T>(fileName);
+                scriptable = AssetDatabase.LoadMainAssetAtPath(path) as T;
             }
             else
             {
                 scriptable = ScriptableObject.CreateInstance<T>();
                 AssetDatabase.CreateAsset(scriptable, path);
-                Debug.Log("Create asset at " + path);
+                Debug.Log("Created asset at " + path);
             }
             return scriptable;
         }

@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Nextension
 {
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder))]
-    public class NWaitable : CustomYieldInstruction, IWaitable
+    public class NWaitable : CustomYieldInstruction, IWaitable, ICancellable
     {
         private List<ICancellable> cancellables = new List<ICancellable>();
         private Action onCompleted;

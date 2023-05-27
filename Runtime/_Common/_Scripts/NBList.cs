@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Nextension
 {
+    public interface IBList
+    {
+        public void sort();
+        public int Count { get; }
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -29,17 +35,24 @@ namespace Nextension
         }
     }
 
-    public interface IBList
-    {
-        public void sort();
-        public int Count { get; }
-    }
     public abstract class AbsBaseBList<V, K> : IBList
     {
         protected abstract int compareKey(K k1, K k2);
-        private int compare(V a, V b)
+        private int exeCompareKey(K k1, K k2)
         {
-            return compareKey(getCompareKeyFromValue(a), getCompareKeyFromValue(b));
+            try
+            {
+                return compareKey(k1, k2);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return -1;
+            }
+        }
+        private int exeCompareValue(V a, V b)
+        {
+            return exeCompareKey(getCompareKeyFromValue(a), getCompareKeyFromValue(b));
         }
         [SerializeField] protected List<V> _list;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,7 +78,7 @@ namespace Nextension
                 var oldKey = getCompareKeyFromValue(_list[index]);
                 var newKey = getCompareKeyFromValue(value);
                 _list[index] = value;
-                if (compareKey(oldKey, newKey) != 0)
+                if (exeCompareKey(oldKey, newKey) != 0)
                 {
                     sort();
                 }
@@ -74,7 +87,7 @@ namespace Nextension
 
         public void sort()
         {
-            _list.Sort(compare);
+            _list.Sort(exeCompareValue);
         }
         public V bFind(K searchKey)
         {
@@ -101,7 +114,7 @@ namespace Nextension
             while (start < end)
             {
                 mid = (start + end) / 2;
-                compareValue = compareKey(searchKey, getCompareKeyFromValue(_list[mid]));
+                compareValue = exeCompareKey(searchKey, getCompareKeyFromValue(_list[mid]));
                 if (compareValue == 0)
                 {
                     return mid;
@@ -116,7 +129,7 @@ namespace Nextension
                 }
             }
 
-            compareValue = compareKey(searchKey, getCompareKeyFromValue(_list[start]));
+            compareValue = exeCompareKey(searchKey, getCompareKeyFromValue(_list[start]));
             if (compareValue == 0)
             {
                 return start;
@@ -125,6 +138,37 @@ namespace Nextension
             {
                 return -1;
             }
+        }
+        public int[] bFindIndexs(K searchKey)
+        {
+            List<int> indexs = new List<int>();
+            var fIndex = bFindIndex(searchKey);
+            for (int i = fIndex; i >= 0; i--)
+            {
+                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
+                {
+                    indexs.Add(i);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            indexs.Reverse();
+
+            for (int i = fIndex + 1; i < _list.Count; i++)
+            {
+                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
+                {
+                    indexs.Add(i);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            return indexs.ToArray();
         }
         public int findIndex(Predicate<V> predicate)
         {
@@ -142,6 +186,18 @@ namespace Nextension
                 val = default;
             }
             return index;
+        }
+        public int bContains(V item)
+        {
+            var indexs = bFindIndexs(getCompareKeyFromValue(item));
+            foreach (int i in indexs)
+            {
+                if (item.Equals(_list[i]))
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -174,7 +230,7 @@ namespace Nextension
                     _list.Insert(0, item);
                     return 0;
                 case 1:
-                    if (compareKey(searchKey, getCompareKeyFromValue(_list[0])) >= 0)
+                    if (exeCompareKey(searchKey, getCompareKeyFromValue(_list[0])) >= 0)
                     {
                         _list.Add(item);
                         return listCount;
@@ -186,12 +242,12 @@ namespace Nextension
                     }
             }
 
-            if (compareKey(searchKey, getCompareKeyFromValue(_list[0])) < 0)
+            if (exeCompareKey(searchKey, getCompareKeyFromValue(_list[0])) < 0)
             {
                 _list.Insert(0, item);
                 return 0;
             }
-            if (compareKey(searchKey, getCompareKeyFromValue(_list[listCount - 1])) >= 0)
+            if (exeCompareKey(searchKey, getCompareKeyFromValue(_list[listCount - 1])) >= 0)
             {
                 _list.Add(item);
                 return listCount;
@@ -208,14 +264,14 @@ namespace Nextension
             {
                 mid = (start + end) >> 1;
                 midplus1 = mid + 1;
-                compareValue = compareKey(searchKey, getCompareKeyFromValue(_list[mid]));
+                compareValue = exeCompareKey(searchKey, getCompareKeyFromValue(_list[mid]));
                 switch (compareValue)
                 {
                     case 0:
                         _list.Insert(midplus1, item);
                         return midplus1;
                     case 1:
-                        compareValue1 = compareKey(searchKey, getCompareKeyFromValue(_list[midplus1]));
+                        compareValue1 = exeCompareKey(searchKey, getCompareKeyFromValue(_list[midplus1]));
                         switch (compareValue1)
                         {
                             case 0:
@@ -266,13 +322,25 @@ namespace Nextension
             }
             return false;
         }
+        public int removeAll(K key)
+        {
+            var indexs = bFindIndexs(key);
+            for (int i = indexs.Length - 1; i >= 0; i--)
+            {
+                _list.RemoveAt(i);
+            }
+            return indexs.Length;
+        }
         public bool remove(V item)
         {
-            var index = bFindIndex(getCompareKeyFromValue(item));
-            if (index >= 0)
+            var indexs = bFindIndexs(getCompareKeyFromValue(item));
+            for (int i = indexs.Length - 1; i >= 0; i--)
             {
-                _list.RemoveAt(index);
-                return true;
+                if (item.Equals(_list[i]))
+                {
+                    _list.RemoveAt(i);
+                    return true;
+                }
             }
             return false;
         }

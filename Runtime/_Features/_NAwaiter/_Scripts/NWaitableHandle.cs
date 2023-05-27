@@ -10,15 +10,6 @@ namespace Nextension
     {
         internal static NWaitableHandle NonWaitHandle = new NWaitableHandle() { Status = RunState.Completed };
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        internal static void preventEditorHandle()
-        {
-            if (!Application.isPlaying)
-            {
-                throw new Exception("Please use [IWaitable_Editor] in editmode");
-            }
-        }
-
 #if UNITY_EDITOR
         internal readonly bool isEditorWaitable;
         internal NWaitableHandle(IWaitable_Editor waitable)
@@ -51,7 +42,7 @@ namespace Nextension
 
         internal NWaitableHandle(Func<bool> predicateFunc)
         {
-            preventEditorHandle();
+            InternalUtils.checkEditorMode();
             if (predicateFunc == null)
             {
                 throw new ArgumentNullException(nameof(predicateFunc));
@@ -67,7 +58,7 @@ namespace Nextension
         }
         internal NWaitableHandle(Func<CompleteState> predicateFunc)
         {
-            preventEditorHandle();
+            InternalUtils.checkEditorMode();
             if (predicateFunc == null)
             {
                 throw new ArgumentNullException(nameof(predicateFunc));
@@ -76,7 +67,7 @@ namespace Nextension
         }
         internal NWaitableHandle(IWaitable waitable)
         {
-            preventEditorHandle();
+            InternalUtils.checkEditorMode();
             var predicateFunc = waitable.buildCompleteFunc();
             if (predicateFunc == null)
             {
@@ -86,7 +77,7 @@ namespace Nextension
         }
         internal NWaitableHandle(IWaitableFromCancellable waitable)
         {
-            preventEditorHandle();
+            InternalUtils.checkEditorMode();
             var (predicateFunc, cancelable) = waitable.buildCompleteFunc();
             if (predicateFunc == null)
             {
@@ -145,6 +136,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFinished() => Status.isFinished();
         public RunState Status { get; internal set; }
+        public WaiterLoopType loopType = WaiterLoopType.Update;
         public event Action onCompleteEvent;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void cancel()

@@ -212,7 +212,7 @@ namespace Nextension
         }
         public static void stopCoroutine(Data data)
         {
-            data.cancel();
+            data?.cancel();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]

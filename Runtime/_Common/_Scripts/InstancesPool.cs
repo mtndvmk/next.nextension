@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
 namespace Nextension
@@ -50,22 +49,45 @@ namespace Nextension
         }
     }
     [Serializable]
-    public class InstancesPool<T> where T : Object
+    public class InstancesPool<T> : ISerializationCallbackReceiver where T : Object
     {
+        public void OnBeforeSerialize()
+        {
+
+        }
+        public void OnAfterDeserialize()
+        {
+            _instances = new Queue<T>();
+        }
         private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"Not support InstancesPool for {type}");
-        private Queue<T> instances = new Queue<T>();
+        private Queue<T> _instances = new Queue<T>();
         [SerializeField] private T prefab;
         [SerializeField] internal bool notUseSharedPool;
 
         [NonSerialized] private InstancesPool<GameObject> _sharedPool;
         private OriginInstance _origin;
+
+        private T _copiedPrefabOnEditor;
+        private T getPrefab()
+        {
+#if UNITY_EDITOR
+            if (!_copiedPrefabOnEditor)
+            {
+                _copiedPrefabOnEditor = Object.Instantiate(prefab);
+            }
+            return _copiedPrefabOnEditor;
+#else
+            return prefab;
+#endif
+        }
+
         private InstancesPool<GameObject> SharedPool
         {
             get
             {
                 if (_sharedPool == null)
                 {
-                    _sharedPool = SharedInstancesPool.getOrCreatePool(getGameObject(prefab));
+                    _sharedPool = SharedInstancesPool.getOrCreatePool(getGameObject(getPrefab()));
                 }
                 return _sharedPool;
             }
@@ -75,11 +97,11 @@ namespace Nextension
         {
             if (_origin == null)
             {
-                var go = getGameObject(prefab);
+                var go = getGameObject(getPrefab());
                 _origin = go.getOrAddComponent<OriginInstance>();
                 _origin.Id = go.GetInstanceID();
             }
-            var ins = GameObject.Instantiate(prefab, InstancesPoolContainer.Container, true);
+            var ins = GameObject.Instantiate(getPrefab(), InstancesPoolContainer.Container, true);
             return ins;
         }
         private static GameObject getGameObject(T prefab)
@@ -113,21 +135,19 @@ namespace Nextension
 
         public InstancesPool(T prefab)
         {
+            InternalUtils.checkEditorMode();
             this.prefab = prefab;
         }
 
         public T getOneInstance(Transform parent = null, bool worldPositionStays = true)
         {
+            InternalUtils.checkEditorMode();
             if (notUseSharedPool)
             {
                 T ins;
-                if (instances == null)
+                if (_instances.Count > 0)
                 {
-                    instances = new Queue<T>();
-                }
-                if (instances.Count > 0)
-                {
-                    ins = instances.Dequeue();
+                    ins = _instances.Dequeue();
                 }
                 else
                 {
@@ -153,6 +173,7 @@ namespace Nextension
         }
         public void sendToPool(T instance)
         {
+            InternalUtils.checkEditorMode();
             if (instance == null)
             {
                 return;
@@ -167,6 +188,7 @@ namespace Nextension
                 var origin = go.GetComponent<OriginInstance>();
                 if (origin == null)
                 {
+                    Debug.LogWarning($"Missing OriginInstance on object: {instance.name}", instance);
                     return;
                 }
                 if (origin.Id != _origin.Id)
@@ -174,12 +196,8 @@ namespace Nextension
                     SharedInstancesPool.getPool(origin.Id)?.sendToPool(go);
                     return;
                 }
-                if (instances == null)
-                {
-                    instances = new Queue<T>();
-                }
                 go.transform.setParent(InstancesPoolContainer.Container);
-                instances.Enqueue(instance);
+                _instances.Enqueue(instance);
                 foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
                 {
                     poolable.onDespawned();
@@ -190,23 +208,20 @@ namespace Nextension
         }
         public void cleanPool(bool isCleanSharedPool = false)
         {
+            InternalUtils.checkEditorMode();
             if (isCleanSharedPool && !notUseSharedPool)
             {
                 SharedPool.cleanPool();
                 return;
             }
-            if (instances == null)
+            while (_instances.Count > 0)
             {
-                return;
-            }
-            while (instances.Count > 0)
-            {
-                NUtils.destroyObject(instances.Dequeue());
+                NUtils.destroyObject(_instances.Dequeue());
             }
         }
     }
 
-    internal class OriginInstance : MonoBehaviour
+    public class OriginInstance : MonoBehaviour
     {
         [field: SerializeField] public int Id { get; internal set; }
     }

@@ -20,7 +20,23 @@ namespace Nextension
         /// </summary>
         public static long TimeSinceLastUpdate => _stopwatch.ElapsedMilliseconds;
         public static long LastFrameTime { get; private set; }
-        public static uint UpdateCount { get; private set; }
+        public static uint UpdateCount
+        {
+            get
+            {
+                if (isUpdatedInNewFrame)
+                {
+                    return updateCount;
+                }
+                else
+                {
+                    return updateCount + 1;
+                }
+            }
+        }
+        
+        private static bool isUpdatedInNewFrame;
+        private static uint updateCount;
 
         public static void removeAllListeners()
         {
@@ -43,11 +59,13 @@ namespace Nextension
                     yield return new WaitForEndOfFrame();
                     invokeEvent(onEndOfFrameEvent);
                     invokeAndClear(onEndOfFrameOnceTimeEvent);
+                    isUpdatedInNewFrame = false;
                 }
             }
             private void Update()
             {
-                UpdateCount++;
+                updateCount++;
+                isUpdatedInNewFrame = true;
                 LastFrameTime = _stopwatch.ElapsedMilliseconds;
                 _stopwatch.Restart();
                 invokeEvent(onUpdateEvent);

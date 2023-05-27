@@ -43,7 +43,7 @@ namespace Nextension
         [InitializeOnLoadMethod]
         private static void fetchAllResourceScriptable()
         {
-            if (Application.isPlaying || !Table)
+            if (Application.isPlaying || !Table || EditorApplication.isCompiling)
             {
                 return;
             }
@@ -79,9 +79,13 @@ namespace Nextension
         internal static async void removeNullItem()
         {
             await new NWaitUntil_Editor(() => Table);
-            Table.preloadScriptables.RemoveAll(i => i == null);
-            Table.scriptableReferences.RemoveAll(i => i == null || i.ResourceScriptable == null);
-            NEditorUtils.saveAsset(Table);
+            int count = 0;
+            count += Table.preloadScriptables.RemoveAll(i => i == null);
+            count += Table.scriptableReferences.RemoveAll(i => i == null || i.ResourceScriptable == null);
+            if (count > 0)
+            {
+                saveTable();
+            }
         }
 
         private static void checkTable()
@@ -94,6 +98,15 @@ namespace Nextension
                 }
             }
         }
+        private static void saveTable()
+        {
+            if (_table)
+            {
+                NEditorUtils.saveAsset(_table);
+                Debug.Log($"Saved {nameof(ResourceScriptableTable)}");
+            }
+        }
+
         private bool innerContain(ResourceScriptable resourceScriptable)
         {
             if (preloadScriptables.Contains(resourceScriptable))
@@ -143,15 +156,18 @@ namespace Nextension
         private void updateTable()
         {
             List<ResourceScriptable> temp = new List<ResourceScriptable>();
+            bool hasChange = false;
             for (int i = preloadScriptables.Count - 1; i >=0; i--)
             {
                 var rs = preloadScriptables[i];
                 if (!rs)
                 {
+                    hasChange = true;
                     preloadScriptables.RemoveAt(i); continue;
                 }
                 if (!isPreload(rs))
                 {
+                    hasChange = true;
                     preloadScriptables.RemoveAt(i);
                     temp.Add(rs);
                 }
@@ -162,25 +178,31 @@ namespace Nextension
                 var rref = scriptableReferences[i];
                 if (rref == null || !rref.ResourceScriptable)
                 {
+                    hasChange = true;
                     scriptableReferences.RemoveAt(i); continue;
                 }
                 if (isPreload(rref.ResourceScriptable))
                 {
+                    hasChange = true;
                     scriptableReferences.RemoveAt(i);
                     temp.Add(rref.ResourceScriptable);
                 }
                 else
                 {
-                    rref.updateRef();
+                    hasChange |= rref.updateRef();
                 }
             }
 
             foreach (var r in temp)
             {
                 innerAdd(r);
+                hasChange = true;
             }
 
-            NEditorUtils.saveAsset(Table);
+            if (hasChange)
+            {
+                saveTable();
+            }
         }
 
         private void findAllResourceScriptable()
@@ -270,14 +292,7 @@ namespace Nextension
                         createTable();
 #endif
                     }
-                    else
-                    {
-                        _table.loadedScriptables = new Dictionary<Type, ResourceScriptable>();
-                        foreach (var item in _table.preloadScriptables)
-                        {
-                            _table.loadedScriptables.Add(item.GetType(), item);
-                        }
-                    }
+                    preload();
                 }
                 return _table;
             }
@@ -333,6 +348,20 @@ namespace Nextension
             throw new Exception($"Create or add {type} to table");
         }
 
+        private static void preload()
+        {
+#if UNITY_EDITOR
+            removeNullItem();
+#endif
+            _table.loadedScriptables = new Dictionary<Type, ResourceScriptable>();
+            foreach (var item in _table.preloadScriptables)
+            {
+                if (item)
+                {
+                    _table.loadedScriptables.Add(item.GetType(), item);
+                }
+            }
+        }
         private static bool checkValid(Type resourceScriptableType)
         {
             var baseType = resourceScriptableType.BaseType;

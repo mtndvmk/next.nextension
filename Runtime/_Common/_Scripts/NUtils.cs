@@ -508,6 +508,12 @@ namespace Nextension
             return camera.projectionMatrix * camera.worldToCameraMatrix;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Matrix4x4 getViewportToWorldMatrix(Camera camera)
+        {
+            return Matrix4x4.Inverse(getWorldToViewportMatrix(camera));
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 viewportToScreenPoint(Vector2 viewportPoint)
         {
             return new Vector2(viewportPoint.x * Screen.width, viewportPoint.y * Screen.height);
@@ -517,6 +523,7 @@ namespace Nextension
         {
             return new Vector2(screenPoint.x / Screen.width, screenPoint.y / Screen.height);
         }
+        
         public static Vector2 worldToViewportPoint(Matrix4x4 world2ViewportMatrix, Vector3 worldPoint)
         {
             var clipPoint = world2ViewportMatrix.MultiplyPoint3x4(worldPoint);
@@ -535,16 +542,16 @@ namespace Nextension
             var viewportPoint = worldToViewportPoint(world2ViewportMatrix, worldPoint);
             return new Vector2(viewportPoint.x * Screen.width, viewportPoint.y * Screen.height);
         }
-        public static Vector3 viewportToWorldPoint(Matrix4x4 world2ViewportMatrix, Vector2 viewportPoint)
+        
+        public static Vector3 viewportToWorldPoint(Matrix4x4 viewport2WorldMatrix, Vector2 viewportPoint)
         {
-            var viewport2World = Matrix4x4.Inverse(world2ViewportMatrix);
             var clipPoint = viewportPoint * 2f - Vector2.one;
-            return viewport2World.MultiplyPoint(clipPoint);
+            return viewport2WorldMatrix.MultiplyPoint(clipPoint);
         }
-        public static Vector3 screenToWorldPoint(Matrix4x4 world2ViewportMatrix, Vector2 screenPoint)
+        public static Vector3 screenToWorldPoint(Matrix4x4 viewport2WorldMatrix, Vector2 screenPoint)
         {
             var viewportPoint = screenToViewportPoint(screenPoint);
-            return viewportToWorldPoint(world2ViewportMatrix, viewportPoint);
+            return viewportToWorldPoint(viewport2WorldMatrix, viewportPoint);
         }
 
         #endregion

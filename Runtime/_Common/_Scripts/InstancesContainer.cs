@@ -6,8 +6,13 @@ using Object = UnityEngine.Object;
 
 namespace Nextension
 {
+    /// <summary>
+    /// Create container of _instances from prefab.
+    /// Call [beginGetInstance] to restart and begin getting _instances like pool, then call [getNext] to get one actived instance, finally call [endGetInstance] to stop get instance and reset get counter, others instance in container will be deactived
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     [Serializable]
-    public class InstancesContainer<T> where T : Object
+    public class InstancesContainer<T> : ISerializationCallbackReceiver where T : Object
     {
         private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"Not support InstancesContainer for {type}");
         public InstancesContainer(T prefab, Transform container = null, int startInstanceCount = 0)
@@ -28,6 +33,8 @@ namespace Nextension
         [SerializeField] private Transform _container;
         private List<T> _instances = new List<T>();
         private int _index;
+
+        public Transform Container => _container;
 
         public void beginGetInstance()
         {
@@ -92,6 +99,14 @@ namespace Nextension
                 NUtils.destroyObject(ins);
             }
             _instances.Clear();
+        }
+        public void OnBeforeSerialize()
+        {
+            
+        }
+        public void OnAfterDeserialize()
+        {
+            _instances = new List<T>();
         }
     }
 }

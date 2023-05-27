@@ -2,7 +2,7 @@
     "name": "Next.Nextension.Editor",
     "rootNamespace": "Nextension.NEditor",
     "references": [
-        "GUID:6c8cb6e2e7dafd04ab2a88d7c88b3306"
+        "Next.Nextension.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

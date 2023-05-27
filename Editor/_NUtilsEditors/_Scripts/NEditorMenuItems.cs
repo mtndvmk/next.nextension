@@ -7,18 +7,21 @@ namespace Nextension.NEditor
 {
     public class NEditorMenuItems
     {
-        [MenuItem("Nextension/Project/Force save project")]
-        public static void forceSaveProject()
+        [MenuItem("Nextension/Project/Force save project - *.asset")]
+        public static void forceSaveProject_Asset()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
             foreach (var p in paths)
             {
                 try
                 {
-                    if (p.StartsWith("Assets"))
+                    if (p.StartsWith("Assets") && p.EndsWith(".asset"))
                     {
                         var @object = AssetDatabase.LoadMainAssetAtPath(p);
-                        NEditorUtils.setDirty(@object);
+                        if (@object != null)
+                        {
+                            NEditorUtils.setDirty(@object);
+                        }
                     }
                 }
                 catch (Exception e)
@@ -28,7 +31,55 @@ namespace Nextension.NEditor
             }
             NEditorUtils.saveAssets();
         }
-        
+        [MenuItem("Nextension/Project/Force save project - *.prefab")]
+        public static void forceSaveProject_Prefab()
+        {
+            var paths = AssetDatabase.GetAllAssetPaths();
+            foreach (var p in paths)
+            {
+                try
+                {
+                    if (p.StartsWith("Assets") && p.EndsWith(".prefab"))
+                    {
+                        var @object = AssetDatabase.LoadMainAssetAtPath(p);
+                        if (@object != null)
+                        {
+                            NEditorUtils.setDirty(@object);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+            NEditorUtils.saveAssets();
+        }
+        [MenuItem("Nextension/Project/Force save project - all")]
+        public static void forceSaveProject_All()
+        {
+            var paths = AssetDatabase.GetAllAssetPaths();
+            foreach (var p in paths)
+            {
+                try
+                {
+                    if (p.StartsWith("Assets"))
+                    {
+                        var @object = AssetDatabase.LoadMainAssetAtPath(p);
+                        if (@object != null)
+                        {
+                            NEditorUtils.setDirty(@object);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+            NEditorUtils.saveAssets();
+        }
+
         [MenuItem("Nextension/Collider/Generate BoxCollider (Renderer)")]
         public static void addBoxCollider()
         {

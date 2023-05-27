@@ -24,10 +24,12 @@ namespace Nextension
 
     public struct NWaitUntil : IWaitable
     {
+        public WaiterLoopType loopType;
         internal readonly Func<bool> predicate;
-        public NWaitUntil(Func<bool> predicate)
+        public NWaitUntil(Func<bool> predicate, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.predicate = predicate;
+            this.loopType = loopType;
         }
 
         bool IWaitable.IsWaitable => predicate != null;
@@ -48,10 +50,12 @@ namespace Nextension
     }
     public struct NWaitFrame : IWaitable
     {
+        public WaiterLoopType loopType;
         internal readonly uint waitFrame;
-        public NWaitFrame(uint waitFrame)
+        public NWaitFrame(uint waitFrame, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.waitFrame = waitFrame;
+            this.loopType = loopType;
         }
 
         bool IWaitable.IsWaitable => waitFrame > 0;
@@ -72,10 +76,12 @@ namespace Nextension
     }
     public struct NWaitSecond : IWaitable
     {
+        public WaiterLoopType loopType;
         internal readonly float waitSecond;
-        public NWaitSecond(float waitSecond)
+        public NWaitSecond(float waitSecond, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.waitSecond = waitSecond;
+            this.loopType = loopType;
         }
 
         bool IWaitable.IsWaitable => waitSecond > 0;
@@ -96,10 +102,12 @@ namespace Nextension
     }
     public struct NWaitRealtimeSecond : IWaitable
     {
+        public WaiterLoopType loopType;
         internal readonly float waitSecond;
-        public NWaitRealtimeSecond(float waitSecond)
+        public NWaitRealtimeSecond(float waitSecond, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.waitSecond = waitSecond;
+            this.loopType = loopType;
         }
 
         bool IWaitable.IsWaitable => waitSecond > 0;
@@ -120,10 +128,12 @@ namespace Nextension
     }
     public struct NWaitJobHandle : IWaitable
     {
+        public WaiterLoopType loopType;
         internal readonly JobHandle jobHandle;
-        public NWaitJobHandle(JobHandle jobHandle)
+        public NWaitJobHandle(JobHandle jobHandle, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.jobHandle = jobHandle;
+            this.loopType = loopType;
         }
 
         bool IWaitable.IsWaitable => !jobHandle.Equals(default);
@@ -145,10 +155,12 @@ namespace Nextension
     }
     public struct NWaitRoutine : IWaitableFromCancellable
     {
+        public WaiterLoopType loopType;
         internal readonly IEnumerator routine;
-        public NWaitRoutine(IEnumerator routine)
+        public NWaitRoutine(IEnumerator routine, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.routine = routine;
+            this.loopType = loopType;
         }
         bool IWaitableFromCancellable.IsWaitable => !routine.Equals(default);
 

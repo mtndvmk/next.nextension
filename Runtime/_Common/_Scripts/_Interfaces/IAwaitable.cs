@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace Nextension
 {
@@ -9,6 +6,10 @@ namespace Nextension
     {
         internal bool IsWaitable { get; }
         internal Func<CompleteState> buildCompleteFunc();
+    }
+    public interface IRetartable
+    {
+        public void restart();
     }
     public interface IWaitableFromCancellable
     {
