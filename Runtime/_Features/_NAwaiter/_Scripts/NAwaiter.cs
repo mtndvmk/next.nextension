@@ -26,24 +26,25 @@ namespace Nextension
     {
         public WaiterLoopType loopType;
         internal readonly Func<bool> predicate;
+
+        WaiterLoopType IWaitable.LoopType => loopType;
+
         public NWaitUntil(Func<bool> predicate, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.predicate = predicate;
             this.loopType = loopType;
         }
 
-        bool IWaitable.IsWaitable => predicate != null;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var predicate = this.predicate;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (predicate())
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -52,24 +53,25 @@ namespace Nextension
     {
         public WaiterLoopType loopType;
         internal readonly uint waitFrame;
+
+        WaiterLoopType IWaitable.LoopType => loopType;
+
         public NWaitFrame(uint waitFrame, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.waitFrame = waitFrame;
             this.loopType = loopType;
         }
 
-        bool IWaitable.IsWaitable => waitFrame > 0;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var targetFrame = NUpdater.UpdateCount + waitFrame;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (NUpdater.UpdateCount >= targetFrame)
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -78,24 +80,25 @@ namespace Nextension
     {
         public WaiterLoopType loopType;
         internal readonly float waitSecond;
+
+        WaiterLoopType IWaitable.LoopType => loopType;
+
         public NWaitSecond(float waitSecond, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.waitSecond = waitSecond;
             this.loopType = loopType;
         }
 
-        bool IWaitable.IsWaitable => waitSecond > 0;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var targetSecond = Time.time + waitSecond;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (Time.time >= targetSecond)
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -104,24 +107,25 @@ namespace Nextension
     {
         public WaiterLoopType loopType;
         internal readonly float waitSecond;
+
+        WaiterLoopType IWaitable.LoopType => loopType;
+
         public NWaitRealtimeSecond(float waitSecond, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.waitSecond = waitSecond;
             this.loopType = loopType;
         }
 
-        bool IWaitable.IsWaitable => waitSecond > 0;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var targetSecond = Time.realtimeSinceStartup + waitSecond;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (Time.realtimeSinceStartup >= targetSecond)
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -130,25 +134,26 @@ namespace Nextension
     {
         public WaiterLoopType loopType;
         internal readonly JobHandle jobHandle;
+
+        WaiterLoopType IWaitable.LoopType => loopType;
+
         public NWaitJobHandle(JobHandle jobHandle, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.jobHandle = jobHandle;
             this.loopType = loopType;
         }
 
-        bool IWaitable.IsWaitable => !jobHandle.Equals(default);
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var jobHandle = this.jobHandle;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (jobHandle.IsCompleted)
                 {
                     jobHandle.Complete();
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -157,26 +162,68 @@ namespace Nextension
     {
         public WaiterLoopType loopType;
         internal readonly IEnumerator routine;
+
+        WaiterLoopType IWaitableFromCancellable.LoopType => loopType;
+
         public NWaitRoutine(IEnumerator routine, WaiterLoopType loopType = WaiterLoopType.Update)
         {
             this.routine = routine;
             this.loopType = loopType;
         }
-        bool IWaitableFromCancellable.IsWaitable => !routine.Equals(default);
 
-        (Func<CompleteState>, ICancellable) IWaitableFromCancellable.buildCompleteFunc()
+        (Func<NWaitableResult>, ICancellable) IWaitableFromCancellable.buildCompleteFunc()
         {
             var data = NCoroutine.startCoroutine(routine);
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 switch (data.Status)
                 {
-                    case RunState.Completed: return CompleteState.Completed;
-                    case RunState.Cancelled: return CompleteState.Cancelled;
-                    default: return CompleteState.None;
+                    case RunState.Completed: return NWaitableResult.Completed;
+                    case RunState.Cancelled: return NWaitableResult.Cancelled;
+                    default: return NWaitableResult.None;
                 }
             };
             return (func, data);
+        }
+    }
+    public struct CombineNWaitable : IWaitable
+    {
+        public readonly NWaitable[] waitables;
+
+        public CombineNWaitable(params NWaitable[] waitables)
+        {
+            if (waitables == null || waitables.Length == 0)
+            {
+                throw new Exception("waitables is null or empty");
+            }
+            this.waitables = waitables;
+        }
+
+        WaiterLoopType IWaitable.LoopType => WaiterLoopType.Update;
+
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        {
+            var waitables = this.waitables;
+            Func<NWaitableResult> func = () =>
+            {
+                foreach (var waitable in waitables)
+                {
+                    switch (waitable.Status)
+                    {
+                        case RunState.Cancelled:
+                            return NWaitableResult.Cancelled;
+                        case RunState.Exception:
+                            return NWaitableResult.Exception(waitable.Exception);
+                        case RunState.Completed:
+                            continue;
+                        case RunState.Running:
+                        case RunState.None:
+                        default: return NWaitableResult.None;
+                    }
+                }
+                return NWaitableResult.Completed;
+            };
+            return func;
         }
     }
 }

@@ -1,13 +1,12 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+#if ENABLE_RESOURCE_SCRIPTABLE_REF
 namespace Nextension
 {
     [Serializable]
-    internal class ResourceScriptableReference
+    internal class ResourceScriptableReference : IComparable
     {
         [field: SerializeField, HideInInspector] public string Path { get; private set; }
         [field: SerializeField, HideInInspector] public string FullNameType { get; private set; }
@@ -38,14 +37,24 @@ namespace Nextension
             }
             return hasChanged;
         }
+
         public ResourceScriptableReference(ResourceScriptable resourceScriptable)
         {
             ResourceScriptable = resourceScriptable;
+            updateRef();
         }
 #endif
+        public int CompareTo(object obj)
+        {
+            if (obj == null || obj is not ResourceScriptableReference) return -1;
+            var other = obj as ResourceScriptableReference;
+
+            return Path.CompareTo(other.Path);
+        }
         private ResourceScriptableReference()
         {
 
         }
     }
 }
+#endif

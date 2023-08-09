@@ -39,12 +39,12 @@ namespace Nextension.TextureProcess
                             {
                                 loadTexture(rawDataBuffer, outWidth, outHeight);
                                 rawTextureData.Dispose();
-                                Operation.innerSetComplete();
+                                Operation.innerFinalize();
                             }
                             catch (Exception e)
                             {
                                 rawTextureData.Dispose();
-                                Operation.innerSetComplete(e.Message);
+                                Operation.innerFinalize(e);
                             }
                         });
 
@@ -52,19 +52,19 @@ namespace Nextension.TextureProcess
                     else
                     {
                         rawTextureData.Dispose();
-                        Operation.innerSetComplete(errorMsg);
+                        Operation.innerFinalize(new TextureProcessException(errorMsg));
                     }
                 }
                 catch (Exception e)
                 {
                     rawTextureData.Dispose();
-                    Operation.innerSetComplete(e.Message);
+                    Operation.innerFinalize(e);
                 }
             }
 
             internal void setError(string errorMsg)
             {
-                Operation.innerSetComplete(errorMsg);
+                Operation.innerFinalize(new TextureProcessException(errorMsg));
             }
 
             private void loadTexture(sbyte[] rawDataBuffer, int w, int h)
@@ -79,6 +79,8 @@ namespace Nextension.TextureProcess
 
                 tex.LoadRawTextureData(ptr, rawDataBuffer.Length);
                 tex.Apply(false, !_setting.isReadable);
+
+                _setting.compress(tex);
 
                 Operation.Texture = tex;
             }

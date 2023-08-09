@@ -1,8 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.PackageManager.UI;
 using UnityEngine;
 
 namespace Nextension.NEditor
@@ -12,7 +9,7 @@ namespace Nextension.NEditor
         [MenuItem("Nextension/ResourceScriptableTable/AutoCreateOnResource Creator")]
         private static void open()
         {
-            ResourceScriptableCreatorWindow window = (ResourceScriptableCreatorWindow)EditorWindow.GetWindow(typeof(ResourceScriptableCreatorWindow));
+            ResourceScriptableCreatorWindow window = GetWindow<ResourceScriptableCreatorWindow>();
             window.titleContent = new GUIContent("AutoCreateOnResource Creator"); 
             window.Show();
         }
@@ -22,11 +19,15 @@ namespace Nextension.NEditor
             var types = NUtils.getCustomTypes();
             foreach (var type in types)
             {
-                var autoCreateAttr = type.GetCustomAttribute(typeof(AutoCreateOnResourceAttribute)) as AutoCreateOnResourceAttribute;
+                var autoCreateAttr = type.GetCustomAttribute<AutoCreateOnResourceAttribute>();
                 if (autoCreateAttr != null)
                 {
+                    if (!AutoCreateOnResourceAttribute.checkValid(type))
+                    {
+                        continue;
+                    }
                     var fileName = autoCreateAttr.getFileName(type);
-                    var scriptable = NEditorUtils.getScriptableOnResource(fileName);
+                    var scriptable = NUnityResourcesUtils.getObjectOnMainResource<ScriptableObject>(fileName);
                     if (scriptable)
                     {
                         if (GUILayout.Button("Ping " + type.Name))

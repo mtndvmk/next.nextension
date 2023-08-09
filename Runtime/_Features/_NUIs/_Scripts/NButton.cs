@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -7,10 +9,9 @@ namespace Nextension.UI
     [DisallowMultipleComponent]
     public class NButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
-        [SerializeField] protected float _betweenClickIntervalTime = 0.2f;
-        [SerializeField] private bool _isInvokeEventOnEndOfEffect = true;
+        [SerializeField] private float _betweenClickIntervalTime = 0.2f;
+        [SerializeField] private float _delayInvokeTime = 0.2f;
         [SerializeField] private bool _isInteractable = true;
-        [SerializeField, HideInInspector] private AbsNButtonEffect _buttonEffect;
 
         public UnityEvent onButtonDownEvent = new UnityEvent();
         public UnityEvent onButtonUpEvent = new UnityEvent();
@@ -18,7 +19,9 @@ namespace Nextension.UI
         public UnityEvent onButtonEnterEvent = new UnityEvent();
         public UnityEvent onButtonExitEvent = new UnityEvent();
 
+        private List<INButtonListener> _listeners;
         protected float _lastClickTime;
+        protected bool _isAwaked;
 
         public bool IsInteractable
         {
@@ -32,82 +35,126 @@ namespace Nextension.UI
             }
         }
 
-        private void OnValidate()
-        {
-            if (!_buttonEffect)
-            {
-                _buttonEffect = GetComponent<AbsNButtonEffect>();
-            }
-        }
         private void Awake()
         {
-            if (!_buttonEffect)
+            if (!_isAwaked)
             {
-                _buttonEffect = GetComponent<AbsNButtonEffect>();
+                if (_listeners == null)
+                {
+                    _listeners = new List<INButtonListener>();
+                }
+                _listeners.AddRange(GetComponents<INButtonListener>());
+                _isAwaked = true;
             }
         }
+
         private async void invokeEvent(UnityEvent unityEvent)
         {
-            if (_buttonEffect && _isInvokeEventOnEndOfEffect)
+            if (_delayInvokeTime > 0)
             {
-                await new NWaitSecond(_buttonEffect.AnimationTime);
+                await new NWaitSecond(_delayInvokeTime);
             }
-            unityEvent?.Invoke();
+            try
+            {
+                unityEvent?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
         }
+
+        public void addListener(INButtonListener listeners)
+        {
+            if (_listeners == null)
+            {
+                _listeners = new List<INButtonListener>();
+            }
+            _listeners.add(listeners);
+        }      
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (!_isInteractable)
+            if (!_isInteractable || !_isAwaked)
             {
                 return;
             }
-            if (_buttonEffect)
+
+            foreach (var listener in _listeners)
             {
-                _buttonEffect.onButtonDown();
+                try
+                {
+                    listener?.onButtonDown();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             invokeEvent(onButtonDownEvent);
         }
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (!_isInteractable)
+            if (!_isInteractable || !_isAwaked)
             {
                 return;
             }
-            if (_buttonEffect)
+
+            foreach (var listener in _listeners)
             {
-                _buttonEffect.onButtonUp();
+                try
+                {
+                    listener?.onButtonUp();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             invokeEvent(onButtonUpEvent);
         }
-
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (!_isInteractable)
+            if (!_isInteractable || !_isAwaked)
             {
                 return;
             }
-            if (_buttonEffect)
+
+            foreach (var listener in _listeners)
             {
-                _buttonEffect.onButtonEnter();
+                try
+                {
+                    listener?.onButtonEnter();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             invokeEvent(onButtonEnterEvent);
         }
-
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (!_isInteractable)
+            if (!_isInteractable || !_isAwaked)
             {
                 return;
             }
-            if (_buttonEffect)
+
+            foreach (var listener in _listeners)
             {
-                _buttonEffect.onButtonExit();
+                try
+                {
+                    listener?.onButtonExit();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             invokeEvent(onButtonExitEvent);
         }
-
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!_isInteractable)
+            if (!_isInteractable || !_isAwaked)
             {
                 return;
             }
@@ -116,9 +163,17 @@ namespace Nextension.UI
                 return;
             }
             _lastClickTime = Time.time;
-            if (_buttonEffect)
+
+            foreach (var listener in _listeners)
             {
-                _buttonEffect.onButtonClick();
+                try
+                {
+                    listener?.onButtonClick();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             invokeEvent(onButtonClickEvent);
         }

@@ -176,7 +176,7 @@ namespace Nextension.TextureProcess
                 var srcIndex = srcW + (int)(h * ratio) * srcWidth;
                 index *= sizePerPixel;
                 srcIndex *= sizePerPixel;
-                for (int i = 0; i < sizePerPixel; i++)
+                for (int i = 0; i < sizePerPixel; ++i)
                 {
                     dst[index + i] = src[srcIndex + i];
                 }

@@ -6,10 +6,10 @@ namespace Nextension.TextureProcess
 {
     public static class NTextureProcess
     {
-        internal static Func<byte[], TextureSetting, Task<Texture>> _ProcessFallback;
+        internal static Func<byte[], TextureSetting, Task<Texture2D>> _ProcessFallback;
         private static INativeRequest _nativeRequest = NativeRequestFactory.get();
 
-        public static void setImageProcessFallback(Func<byte[], TextureSetting, Task<Texture>> fallbackFunc)
+        public static void setImageProcessFallback(Func<byte[], TextureSetting, Task<Texture2D>> fallbackFunc)
         {
             _ProcessFallback = fallbackFunc;
         }

@@ -1,72 +1,128 @@
+using UnityEngine;
+
 namespace Nextension
 {
-    public class NWaitableAwaiter : AbsAwaiter, ICancellable
+    public abstract class AbsNWaitableAwaiter : AbsAwaiter, ICancellable
     {
         internal NWaitableHandle handle;
-        public NWaitableAwaiter(IWaitable waitable)
+        protected AbsNWaitableAwaiter() { }
+        protected void setupFrom(AbsNWaitable waitable)
         {
-            var handle = new NWaitableHandle(waitable);
-            setup(handle);
-        }
-        public NWaitableAwaiter(IWaitableFromCancellable waitable)
-        {
-            var handle = new NWaitableHandle(waitable);
-            setup(handle);
-        }
-        public NWaitableAwaiter(IWaitable_Editor waitable)
-        {
-            var handle = new NWaitableHandle(waitable);
-            setup(handle);
-        }
-        internal NWaitableAwaiter(NWaitableHandle handle)
-        {
-            setup(handle);
-        }
-        public NWaitableAwaiter(NWaitable waitable)
-        {
-            if (waitable.Status == RunState.Completed)
+            NWaitableHandle handle;
+            switch (waitable.Status)
             {
-                invokeComplete();
-            }
-            else if (waitable.Status == RunState.None)
-            {
-                var handle = new NWaitableHandle((waitable as IWaitable).buildCompleteFunc());
-                setup(handle);
+                case RunState.Exception:
+                    invokeException(waitable.Exception);
+                    return;
+                case RunState.Completed:
+                    invokeComplete();
+                    return;
+                case RunState.Cancelled:
+                    return;
+                case RunState.Running:
+                    handle = NWaitableHandle.Factory.create(this, new NWaitUntil(() => waitable.Status.isFinished()));
+                    setup(handle);
+                    return;
+                case RunState.None:
+                    handle = NWaitableHandle.Factory.create(this, waitable);
+                    setup(handle);
+                    return;
+                default:
+                    Debug.LogWarning("Not implement staus: " + waitable.Status);
+                    return;
             }
         }
         internal void setup(NWaitableHandle handle)
         {
             this.handle = handle;
-            if (handle.Status == RunState.Completed)
-            {
-                invokeComplete();
-            }
-            else if (handle.Status == RunState.None)
-            {
-                handle.Status = RunState.Running;
-                handle.setContinuationFunc(invokeComplete);
+            handle.Status = RunState.Running;
 #if UNITY_EDITOR
-                if (handle.isEditorWaitable)
-                {
-                    NAwaiter_EdtitorLoop.addAwaitable(handle);
-                    return;
-                }
-#endif
-                NAwaiterLoop.addAwaitable(handle);
+            if (handle.isEditorWaitable)
+            {
+                NAwaiter_EdtitorLoop.addAwaitable(handle);
+                return;
             }
+#endif
+            NAwaiterLoop.addAwaitable(handle);
         }
-
-        public void cancel()
+        public virtual void cancel()
         {
-            handle.cancel();
+            handle?.cancel();
         }
     }
-    public class NWaitableAwaiter<T> : NWaitableAwaiter
+    public sealed class NWaitableAwaiter : AbsNWaitableAwaiter, IPoolable
+    {
+        [StartupMethod]
+        private static void init()
+        {
+            _pool = new NPool<NWaitableAwaiter>();
+        }
+        private static NPool<NWaitableAwaiter> _pool;
+
+        public static NWaitableAwaiter create(IWaitable waitable)
+        {
+            var awaiter = _pool.get();
+            var handle = NWaitableHandle.Factory.create(awaiter, waitable);
+            awaiter.setup(handle);
+            return awaiter;
+        }
+        public static NWaitableAwaiter create(IWaitableFromCancellable waitable)
+        {
+            var awaiter = _pool.get();
+            var handle = NWaitableHandle.Factory.create(awaiter, waitable);
+            awaiter.setup(handle);
+            return awaiter;
+        }
+#if UNITY_EDITOR
+        public static NWaitableAwaiter create(IWaitable_Editor waitable)
+        {
+            var awaiter = new NWaitableAwaiter();
+            var handle = NWaitableHandle.Factory.create(awaiter, waitable);
+            awaiter.setup(handle);
+            return awaiter;
+        }
+#endif
+        public static NWaitableAwaiter create(NWaitable waitable)
+        {
+            var awaiter = _pool.get();
+            awaiter.setupFrom(waitable);
+            return awaiter;
+        }
+
+
+        public override void cancel()
+        {
+            base.cancel();
+            releaseToPool();
+        }
+        protected override void onInnerCompleted()
+        {
+            releaseToPool();
+        }
+        void IPoolable.onDespawned()
+        {
+            reset();
+        }
+        private void releaseToPool()
+        {
+#if UNITY_EDITOR
+            if (handle.isEditorWaitable)
+            {
+                handle = null;
+                return;
+            }
+#endif
+            handle = null;
+            _pool.release(this);
+        }
+    }
+    public sealed class NWaitableAwaiter<T> : AbsNWaitableAwaiter
     {
         private NWaitable<T> waitable;
-        public NWaitableAwaiter(NWaitable<T> waitable) : base(waitable)
+        public NWaitableAwaiter(NWaitable<T> waitable)
         {
             this.waitable = waitable;
+            setupFrom(waitable);
         }
         public new T GetResult() => waitable.Result;
     }

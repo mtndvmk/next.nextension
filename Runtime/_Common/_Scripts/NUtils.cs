@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using Unity.Burst;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +14,7 @@ namespace Nextension
     {
         #region Number Utils
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static bool isPOT(float n)
         {
             int int_n = (int)n;
@@ -21,6 +25,7 @@ namespace Nextension
             return isPOT(int_n);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static bool isPOT(int n)
         {
             return (n & (n - 1)) == 0 && n > 0;
@@ -29,6 +34,7 @@ namespace Nextension
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static bool checkBitMask<T>(T mask, int bitIndex) where T : Enum
         {
             return checkBitMask((int)(object)mask, bitIndex);
@@ -37,6 +43,7 @@ namespace Nextension
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static bool checkBitMask(int mask, int bitIndex)
         {
             return (mask & (1 << bitIndex)) != 0;
@@ -45,10 +52,12 @@ namespace Nextension
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static bool checkBitMask(long longMask, int bitIndex)
         {
             return (longMask & (1L << bitIndex)) != 0;
         }
+        [BurstCompile]
         public static bool checkBitMask(byte[] byteMask, int bitIndex)
         {
             int byteIndex = bitIndex / 8;
@@ -56,8 +65,56 @@ namespace Nextension
             byte mask = byteMask[byteIndex];
             return (mask & 1 << maskIndex) != 0;
         }
-        public static sbyte get0BitIndex(int mask)
+        [BurstCompile]
+        public static bool checkBitMask(NBitMask128 mask128, int bitIndex)
         {
+            if (bitIndex < 64)
+            {
+                return checkBitMask(mask128.mask0, bitIndex);
+            }
+            else
+            {
+                return checkBitMask(mask128.mask1, bitIndex % 64);
+            }
+        }
+        [BurstCompile]
+        public static bool checkBitMask(NBitMask256 mask256, int bitIndex)
+        {
+            if (bitIndex < 128)
+            {
+                if (bitIndex < 64)
+                {
+                    return checkBitMask(mask256.mask0, bitIndex);
+                }
+                else
+                {
+                    return checkBitMask(mask256.mask1, bitIndex % 64);
+                }
+            }
+            else
+            {
+                if (bitIndex < 192)
+                {
+                    return checkBitMask(mask256.mask2, bitIndex % 64);
+                }
+                else
+                {
+                    return checkBitMask(mask256.mask3, bitIndex % 64);
+                }
+            }
+        }
+        [BurstCompile]
+        public static bool checkBitMask(NBitMask512 mask, int bitIndex)
+        {
+            return mask.checkBitMask(bitIndex);
+        }
+
+        public static sbyte getBit1Index(int mask)
+        {
+            if (mask == 0)
+            {
+                return -1;
+            }
             sbyte startIndex = -1;
             if ((mask & 0x0000ffff) != 0)
             {
@@ -96,8 +153,12 @@ namespace Nextension
 
             return -1;
         }
-        public static sbyte get0BitIndex(long longMask)
+        public static sbyte getBit1Index(long longMask)
         {
+            if (longMask == 0)
+            {
+                return -1;
+            }
             sbyte startIndex = -1;
             if ((longMask & 0x00000000ffffffff) != 0)
             {
@@ -164,10 +225,10 @@ namespace Nextension
 
             return -1;
         }
-        public static int get0BitIndex(byte[] byteMask)
+        public static int getBit1Index(byte[] byteMask)
         {
             int byteIndex = -1;
-            for (int i = 0; i < byteMask.Length; i++)
+            for (int i = 0; i < byteMask.Length;++i)
             {
                 if (byteMask[i] != 0)
                 {
@@ -179,7 +240,7 @@ namespace Nextension
             if (byteIndex >= 0)
             {
                 var mask = byteMask[byteIndex];
-                for (byte i = 0; i < 8; i++)
+                for (byte i = 0; i < 8;++i)
                 {
                     if ((mask & 1 << i) != 0)
                     {
@@ -188,6 +249,313 @@ namespace Nextension
                 }
             }
             return -1;
+        }
+        public static sbyte getBit1Index(NBitMask128 mask128)
+        {
+            sbyte bitIndex = getBit1Index(mask128.mask0);
+            if (bitIndex >= 0)
+            {
+                return bitIndex;
+            }
+            bitIndex = getBit1Index(mask128.mask1);
+            if (bitIndex >= 0)
+            {
+                return (sbyte)(bitIndex + 64);
+            }
+            return -1;
+        }
+        public static int getBit1Index(NBitMask256 mask256)
+        {
+            int bitIndex = getBit1Index(mask256.mask0);
+            if (bitIndex >= 0)
+            {
+                return bitIndex;
+            }
+            bitIndex = getBit1Index(mask256.mask1);
+            if (bitIndex >= 0)
+            {
+                return bitIndex + 64;
+            }
+            bitIndex = getBit1Index(mask256.mask2);
+            if (bitIndex >= 0)
+            {
+                return bitIndex + 128;
+            }
+            bitIndex = getBit1Index(mask256.mask3);
+            if (bitIndex >= 0)
+            {
+                return bitIndex + 192;
+            }
+            return -1;
+        }
+        public static int getBit1Index(NBitMask512 mask)
+        {
+            return mask.getBit1Index();
+        }
+
+        public static sbyte getBit0Index(int mask)
+        {
+            if (mask == -1)
+            {
+                return -1;
+            }
+            sbyte startIndex = -1;
+            if ((mask & 0x0000ffff) != 0x0000ffff)
+            {
+                if ((mask & 0x000000ff) != 0x000000ff)
+                {
+                    startIndex = 0;
+                }
+                else
+                {
+                    startIndex = 8;
+                }
+            }
+            else if ((mask & 0xffff0000) != 0xffff0000)
+            {
+                if ((mask & 0x00ff0000) != 0x00ff0000)
+                {
+                    startIndex = 16;
+                }
+                else
+                {
+                    startIndex = 24;
+                }
+            }
+
+            if (startIndex >= 0)
+            {
+                var endIndex = startIndex + 8;
+                for (; startIndex < endIndex; startIndex++)
+                {
+                    if ((mask & 1 << startIndex) == 0)
+                    {
+                        return startIndex;
+                    }
+                }
+            }
+
+            return -1;
+        }
+        public static sbyte getBit0Index(long longMask)
+        {
+            if (longMask == -1)
+            {
+                return -1;
+            }
+            sbyte startIndex = -1;
+            if ((longMask & 0x00000000ffffffff) != 0x00000000ffffffff)
+            {
+                if ((longMask & 0x0000ffff) != 0x0000ffff)
+                {
+                    if ((longMask & 0x000000ff) != 0x000000ff)
+                    {
+                        startIndex = 0;
+                    }
+                    else
+                    {
+                        startIndex = 8;
+                    }
+                }
+                else
+                {
+                    if ((longMask & 0x00ff0000) != 0x00ff0000)
+                    {
+                        startIndex = 16;
+                    }
+                    else
+                    {
+                        startIndex = 24;
+                    }
+                }
+            }
+            else if ((longMask & -4294967296) != -4294967296)
+            {
+                if ((longMask & 0x0000ffff00000000) != 0x0000ffff00000000)
+                {
+                    if ((longMask & 0x000000ff00000000) != 0x000000ff00000000)
+                    {
+                        startIndex = 32;
+                    }
+                    else
+                    {
+                        startIndex = 40;
+                    }
+                }
+                else
+                {
+                    if ((longMask & 0x00ff000000000000) != 0x00ff000000000000)
+                    {
+                        startIndex = 48;
+                    }
+                    else
+                    {
+                        startIndex = 56;
+                    }
+                }
+            }
+
+            if (startIndex >= 0)
+            {
+                var endIndex = startIndex + 8;
+                for (; startIndex < endIndex; startIndex++)
+                {
+                    if ((longMask & 1L << startIndex) == 0)
+                    {
+                        return startIndex;
+                    }
+                }
+            }
+
+            return -1;
+        }
+        public static int getBit0Index(byte[] byteMask)
+        {
+            int byteIndex = -1;
+            for (int i = 0; i < byteMask.Length;++i)
+            {
+                if (byteMask[i] == 0)
+                {
+                    byteIndex = i;
+                    break;
+                }
+            }
+
+            if (byteIndex >= 0)
+            {
+                var mask = byteMask[byteIndex];
+                for (byte i = 0; i < 8;++i)
+                {
+                    if ((mask & 1 << i) == 0)
+                    {
+                        return byteIndex * 8 + i;
+                    }
+                }
+            }
+            return -1;
+        }
+        public static sbyte getBit0Index(NBitMask128 mask128)
+        {
+            sbyte bitIndex = getBit0Index(mask128.mask0);
+            if (bitIndex >= 0)
+            {
+                return bitIndex;
+            }
+            bitIndex = getBit0Index(mask128.mask1);
+            if (bitIndex >= 0)
+            {
+                return (sbyte)(bitIndex + 64);
+            }
+            return -1;
+        }
+        public static int getBit0Index(NBitMask256 mask256)
+        {
+            int bitIndex = getBit0Index(mask256.mask0);
+            if (bitIndex >= 0)
+            {
+                return bitIndex;
+            }
+            bitIndex = getBit0Index(mask256.mask1);
+            if (bitIndex >= 0)
+            {
+                return bitIndex + 64;
+            }
+            bitIndex = getBit0Index(mask256.mask2);
+            if (bitIndex >= 0)
+            {
+                return bitIndex + 128;
+            }
+            bitIndex = getBit0Index(mask256.mask3);
+            if (bitIndex >= 0)
+            {
+                return bitIndex + 192;
+            }
+            return -1;
+        }
+        public static int getBit0Index(NBitMask512 mask)
+        {
+            return mask.getBit0Index();
+        }
+
+        public static int setBit0(int mask, int bitIndex)
+        {
+            return mask &= ~(1 << bitIndex);
+        }
+        public static long setBit0(long mask, int bitIndex)
+        {
+            return mask &= ~(1L << bitIndex);
+        }
+        public static NBitMask128 setBit0(NBitMask128 mask, int bitIndex)
+        {
+            mask.setBit0(bitIndex);
+            return mask;
+        }
+        public static NBitMask256 setBit0(NBitMask256 mask, int bitIndex)
+        {
+            mask.setBit0(bitIndex);
+            return mask;
+        }
+        public static void setBit0(byte[] bytes, int bitIndex)
+        {
+            var byteIndex = bitIndex / 8;
+            bitIndex %= 8;
+            bytes[byteIndex] &= (byte)~(1 << bitIndex);
+        }
+        public static void setBit0(NBitMask512 mask, int bitIndex)
+        {
+            mask.setBit0(bitIndex);
+        }
+        
+        public static int setBit1(int mask,int bitIndex)
+        {
+            return mask |= 1 << bitIndex;
+        }
+        public static long setBit1(long mask, int bitIndex)
+        {
+            return mask |= 1L << bitIndex;
+        }
+        public static NBitMask128 setBit1(NBitMask128 mask, int bitIndex)
+        {
+            mask.setBit1(bitIndex);
+            return mask;
+        }
+        public static NBitMask256 setBit1(this NBitMask256 mask, int bitIndex)
+        {
+            mask.setBit1(bitIndex);
+            return mask;
+        }
+        public static void setBit1(byte[] bytes, int bitIndex)
+        {
+            var byteIndex = bitIndex / 8;
+            bitIndex %= 8;
+            bytes[byteIndex] |= (byte)(1 << bitIndex);
+        }
+        public static void setBit1(NBitMask512 mask, int bitIndex)
+        {
+            mask.setBit1(bitIndex);
+        }
+
+        public static bool isOnly1(this byte[] bytes)
+        {
+            for (int i = 0; i < bytes.Length;++i)
+            {
+                if (bytes[i] != 1)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public static bool isOnly0(this byte[] bytes)
+        {
+            for (int i = 0; i < bytes.Length;++i)
+            {
+                if (bytes[i] != 0)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         #endregion
 
@@ -259,96 +627,105 @@ namespace Nextension
         {
             return vector3.x == 0 || vector3.y == 0 || vector3.z == 0;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 setX(this Vector3 vector3, float x)
         {
             vector3.x = x;
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 setY(this Vector3 vector3, float y)
         {
             vector3.y = y;
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 setZ(this Vector3 vector3, float z)
         {
             vector3.z = z;
             return vector3;
         }
-        public static Vector3 set(this Vector3 vector3, float? x = null, float? y = null, float? z = null)
+        public static Vector3 setXYZ(this Vector3 vector3, float x = float.NaN, float y = float.NaN, float z = float.NaN)
         {
-            if (x.HasValue)
+            if (!x.Equals(float.NaN))
             {
-                vector3.x = x.Value;
+                vector3.x = x;
             }
-            if (y.HasValue)
+            if (!y.Equals(float.NaN))
             {
-                vector3.y = y.Value;
+                vector3.y = y;
             }
-            if (z.HasValue)
+            if (!z.Equals(float.NaN))
             {
-                vector3.z = z.Value;
+                vector3.z = z;
             }
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 plusX(this Vector3 vector3, float x)
         {
             vector3.x += x;
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 plusY(this Vector3 vector3, float y)
         {
             vector3.y += y;
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 plusZ(this Vector3 vector3, float z)
         {
             vector3.z += z;
             return vector3;
         }
-        public static Vector3 plus(this Vector3 vector3, float? x = null, float? y = null, float? z = null)
+        public static Vector3 plusXYZ(this Vector3 vector3, float x = float.NaN, float y = float.NaN, float z = float.NaN)
         {
-            if (x.HasValue)
+            if (!x.Equals(float.NaN))
             {
-                vector3.x += x.Value;
+                vector3.x += x;
             }
-            if (y.HasValue)
+            if (!y.Equals(float.NaN))
             {
-                vector3.y += y.Value;
+                vector3.y += y;
             }
-            if (z.HasValue)
+            if (!z.Equals(float.NaN))
             {
-                vector3.z += z.Value;
+                vector3.z += z;
             }
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 mulX(this Vector3 vector3, float x)
         {
             vector3.x *= x;
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 mulY(this Vector3 vector3, float y)
         {
             vector3.y *= y;
             return vector3;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector3 mulZ(this Vector3 vector3, float z)
         {
             vector3.z *= z;
             return vector3;
         }
-        public static Vector3 mul(this Vector3 vector3, float? x = null, float? y = null, float? z = null)
+        public static Vector3 mulXYZ(this Vector3 vector3, float x = float.NaN, float y = float.NaN, float z = float.NaN)
         {
-            if (x.HasValue)
+            if (!x.Equals(float.NaN))
             {
-                vector3.x *= x.Value;
+                vector3.x *= x;
             }
-            if (y.HasValue)
+            if (!y.Equals(float.NaN))
             {
-                vector3.y *= y.Value;
+                vector3.y *= y;
             }
-            if (z.HasValue)
+            if (!z.Equals(float.NaN))
             {
-                vector3.z *= z.Value;
+                vector3.z *= z;
             }
             return vector3;
         }
@@ -391,17 +768,116 @@ namespace Nextension
         #endregion
 
         #region Vector4
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static Vector4 toVector4(this Quaternion quaternion)
         {
             return new Vector4(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static Quaternion toQuaternion(this Vector4 vector4)
         {
             return new Quaternion(vector4.x, vector4.y, vector4.z, vector4.w);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static float4 toFloat4(this Quaternion quaternion)
+        {
+            return new float4(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static Quaternion toQuaternion(this float4 f4)
+        {
+            return new Quaternion(f4.x, f4.y, f4.z, f4.w);
+        }
         #endregion
 
         #region Transform & Rect Transform
+        public static void setPositionX(this Transform self, float x, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.setX(x);
+            }
+            else
+            {
+                self.position = self.position.setX(x);
+            }
+        }
+        public static void setPositionY(this Transform self, float y, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.setY(y);
+            }
+            else
+            {
+                self.position = self.position.setY(y);
+            }
+        }
+        public static void setPositionZ(this Transform self, float z, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.setZ(z);
+            }
+            else
+            {
+                self.position = self.position.setZ(z);
+            }
+        }
+        public static void setEulerAnglesX(this Transform self, float x, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localEulerAngles = self.localEulerAngles.setX(x);
+            }
+            else
+            {
+                self.eulerAngles = self.eulerAngles.setX(x);
+            }
+        }
+        public static void setEulerAnglesY(this Transform self, float y, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localEulerAngles = self.localEulerAngles.setY(y);
+            }
+            else
+            {
+                self.eulerAngles = self.eulerAngles.setY(y);
+            }
+        }
+        public static void setEulerAnglesZ(this Transform self, float z, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localEulerAngles = self.localEulerAngles.setZ(z);
+            }
+            else
+            {
+                self.eulerAngles = self.eulerAngles.setZ(z);
+            }
+        }
+        public static void setScaleX(this Transform self, float x)
+        {
+            self.localScale = self.localScale.setX(x);
+        }
+        public static void setScaleY(this Transform self, float y)
+        {
+            self.localScale = self.localScale.setY(y);
+        }
+        public static void setScaleZ(this Transform self, float z)
+        {
+            self.localScale = self.localScale.setZ(z);
+        }
+        public static void setScale(this Transform self, float uniformScale)
+        {
+            self.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
+        }
+
         public static void resetTransform(this Transform self, bool isLocal = true)
         {
             if (!isLocal)
@@ -577,23 +1053,23 @@ namespace Nextension
             color.a = a;
             return color;
         }
-        public static Color setRGBA(this Color color, float? r = null, float? g = null, float? b = null, float? a = null)
+        public static Color setRGBA(this Color color, float r = float.NaN, float g = float.NaN, float b = float.NaN, float a = float.NaN)
         {
-            if (r.HasValue)
+            if (!r.Equals(float.NaN))
             {
-                color.r = r.Value;
+                color.r = r;
             }
-            if (g.HasValue)
+            if (!g.Equals(float.NaN))
             {
-                color.g = g.Value;
+                color.g = g;
             }
-            if (b.HasValue)
+            if (!b.Equals(float.NaN))
             {
-                color.b = b.Value;
+                color.b = b;
             }
-            if (a.HasValue)
+            if (!a.Equals(float.NaN))
             {
-                color.a = a.Value;
+                color.a = a;
             }
             return color;
         }
@@ -640,11 +1116,27 @@ namespace Nextension
         }
         public static int toInt32(this Color color)
         {
-            return NConverter.toInt32(color.to4Bytes(), 0);
+            byte r = (byte)(color.r * 255);
+            byte g = (byte)(color.g * 255);
+            byte b = (byte)(color.b * 255);
+            byte a = (byte)(color.a * 255);
+            return r | g << 8 | b << 16 | a << 24;
         }
         public static Color fromInt32(int from)
         {
-            return bytesToColor(NConverter.getBytes(from));
+            float a = (from >> 24 & 0xFF) / 255f;
+            float b = (from >> 16 & 0xFF) / 255f;
+            float g = (from >> 8 & 0xFF) / 255f;
+            float r = (from & 0xFF) / 255f;
+            return new Color(r, g, b, a);
+        }
+        public static float4 toFloat4(this Color from)
+        {
+            return new float4(from.r, from.g, from.b, from.a);
+        }
+        public static Color toColor(this float4 from)
+        {
+            return new Color(from.x, from.y, from.z, from.w);
         }
         #endregion
 
@@ -655,22 +1147,11 @@ namespace Nextension
                 throw new ArgumentException("Input is null or empty");
             return input.First().ToString().ToUpper() + input.Substring(1).ToLower();
         }
-        public static string numberToMMSS(int totalSeconds)
+        public static string formatToMMSS(int totalSeconds)
         {
             var m = totalSeconds / 60;
             var s = totalSeconds % 60;
-            return $"{m.ToString("0#")}:{s.ToString("0#")}";
-        }
-        public static uint stringToAdler32(string str)
-        {
-            const int mod = 65521;
-            uint a = 1, b = 0;
-            foreach (char c in str)
-            {
-                a = (a + c) % mod;
-                b = (b + a) % mod;
-            }
-            return (b << 16) | a;
+            return $"{m:0#}:{s:0#}";
         }
         #endregion
 
@@ -732,7 +1213,7 @@ namespace Nextension
         /// remove items in list
         /// </summary>
         /// <typeparam name="T">is a built-in type, struct or class</typeparam>
-        /// <param name="self">is list bContains item which you want remove</param>
+        /// <param name="self">is list contains item which you want remove</param>
         /// <param name="indexList">index of items which you want remove</param>
         public static void removeAt<T>(this IList<T> self, params int[] indexs)
         {
@@ -740,6 +1221,23 @@ namespace Nextension
             {
                 self.RemoveAt(indexs[i]);
             }
+        }
+        /// <summary>
+        /// swap item to back and remove it
+        /// </summary>
+        public static void removeAtSwapBack<T>(this IList<T> self, int index)
+        {
+            var lastIndex = self.Count - 1;
+            if (lastIndex <= 0)
+            {
+                self.RemoveAt(index);
+                return;
+            }
+            if (lastIndex != index)
+            {
+                self[index] = self[lastIndex];
+            }
+            self.RemoveAt(lastIndex);
         }
         public static bool isSameItem<T>(this ICollection<T> a, ICollection<T> b)
         {
@@ -754,6 +1252,18 @@ namespace Nextension
             return Enumerable.SequenceEqual(a, b);
         }
 
+        public static T takeAndRemoveAt<T>(this IList<T> self, int index)
+        {
+            var item = self[index];
+            self.RemoveAt(index);
+            return item;
+        }
+        public static T takeAndRemoveAt<T>(this IBList<T> self, int index)
+        {
+            var item = self[index];
+            self.removeAt(index);
+            return item;
+        }
         #endregion
 
         #region Random Utils
@@ -799,6 +1309,21 @@ namespace Nextension
         {
             return list.randItem(out _);
         }
+
+        public static void shuffle<T>(this IList<T> list)
+        {
+            var rnd = new System.Random();
+            int n = list.Count;
+            while (n > 1)
+            {
+                int k = rnd.Next(n);
+                n--;
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+        }
+
         /// <summary>
         /// get a random item in contain list, return default if self is empty
         /// </summary>
@@ -823,13 +1348,13 @@ namespace Nextension
         public static byte[] merge(params byte[][] arrays)
         {
             int totalLength = 0;
-            for (int i = 0; i < arrays.Length; i++)
+            for (int i = 0; i < arrays.Length;++i)
             {
                 totalLength += arrays[i].Length;
             }
             var data = new byte[totalLength];
             int pointer = 0;
-            for (int i = 0; i < arrays.Length; i++)
+            for (int i = 0; i < arrays.Length;++i)
             {
                 Buffer.BlockCopy(arrays[i], 0, data, pointer, arrays[i].Length);
                 pointer += arrays[i].Length;
@@ -849,9 +1374,17 @@ namespace Nextension
             Buffer.BlockCopy(src, startIndex, b, 0, count);
             return b;
         }
+        public static Span<T> getBlockAsSpan<T>(T[] src, int startIndex, int count)
+        {
+            return new Span<T>(src, startIndex, count);
+        }
         public static T[] getBlockToEnd<T>(T[] src, int startIndex)
         {
             return getBlock(src, startIndex, src.Length - startIndex);
+        }
+        public static Span<T> getBlockToEndAsSpan<T>(T[] src, int startIndex)
+        {
+            return new Span<T>(src, startIndex, src.Length - startIndex);
         }
         #endregion
 
@@ -1047,7 +1580,7 @@ namespace Nextension
             {
                 return null;
             }
-            for (int i = 0; i < p.childCount; i++)
+            for (int i = 0; i < p.childCount;++i)
             {
                 var child = p.GetChild(i);
                 if (child.name == name)
@@ -1070,7 +1603,7 @@ namespace Nextension
         public static Transform getChild(this Transform g, string name, string parentName)
         {
             var p = g.transform;
-            for (int i = 0; i < p.childCount; i++)
+            for (int i = 0; i < p.childCount;++i)
             {
                 var child = p.GetChild(i);
                 if (child.name == name && child.parent.name == parentName)
@@ -1130,7 +1663,7 @@ namespace Nextension
             return getChildWithChainNames(g, ps);
         }
         /// <summary>
-        /// not include root name in path
+        /// exclusive root name in path
         /// </summary>
         /// <param name="g"></param>
         /// <param name="root"></param>
@@ -1295,11 +1828,9 @@ namespace Nextension
             NUtils.destroyObject(cloneFrom, true);
             return boxCollider;
         }
-        public static KeepScale safeSetParent(this Transform transform, Transform parent)
+        public static KeepScale setParentAndKeepScale(this Transform transform, Transform parent)
         {
-            //var f = new GameObject("SafeParent").AddComponent<FollowTransform>();
-            //f.setup(transform, parent);
-            var kScale = transform.gameObject.AddComponent<KeepScale>().setup();
+            var kScale = transform.gameObject.getOrAddComponent<KeepScale>().setup();
             transform.SetParent(parent);
             return kScale;
         }
@@ -1328,7 +1859,11 @@ namespace Nextension
         }
         public static T createInstance<T>(this Type type)
         {
-            return (T)type.createInstance();
+            return (T)createInstance(type);
+        }
+        public static T createInstance<T>()
+        {
+            return (T)createInstance(typeof(T));
         }
 
         private static Type[] _typeCached;
@@ -1390,12 +1925,26 @@ namespace Nextension
             }
             return false;
         }
+        public static FieldInfo getField(this Type type, string name, BindingFlags bindingFlags, bool recursiveInBaseType = true)
+        {
+            FieldInfo fieldInfo = type.GetField(name, bindingFlags);
+            if (fieldInfo == null && recursiveInBaseType)
+            {
+                type = type.BaseType;
+                while (fieldInfo == null && type != null)
+                {
+                    fieldInfo = type.GetField(name, bindingFlags);
+                    type = type.BaseType;
+                }
+            }
+            return fieldInfo;
+        }
         #endregion
 
         #region Others
         public static void dispose(params IDisposable[] disposeables)
         {
-            for (int i = 0; i < disposeables.Length; i++)
+            for (int i = 0; i < disposeables.Length;++i)
             {
                 disposeables[i].Dispose();
             }

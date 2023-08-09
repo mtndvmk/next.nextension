@@ -10,13 +10,7 @@ namespace Nextension
         {
             data = nValue;
         }
-        public NData(string nStr)
-        {
-            data = Encoding.UTF8.GetBytes(nStr);
-        }
-
-        public int nextOffset;
-        public byte[] data;
+        public readonly byte[] data;
         public byte[] toBytes()
         {
             return NUtils.merge(BitConverter.GetBytes(data.Length), data);
@@ -24,33 +18,22 @@ namespace Nextension
         public int Length => data.Length;
     }
 
-    public interface IToNData
-    {
-        public NData toNData();
-        public void fromNData(NData inNData);
-    }
-
     public static class NDataUtils
     {
         public static NData readNext(this byte[] inData, ref int startIndex)
         {
-            int offset = startIndex;
-            var length = BitConverter.ToInt32(inData, offset); offset += 4;
-            var data = NUtils.getBlock(inData, offset, length); offset += length;
-            var nextOffset = offset;
+            var length = NConverter.fromBytes<int>(inData, ref startIndex);
+            var data = NUtils.getBlock(inData, startIndex, length); startIndex += length;
 
             NData nData = new NData(data);
-            nData.nextOffset = nextOffset;
-            startIndex = offset;
             return nData;
         }
         public static bool tryReadNext(this byte[] inData, int startIndex, out NData outNData, out int nextIndex)
         {
             try
             {
-                int offset = startIndex;
-                outNData = readNext(inData, ref offset);
-                nextIndex = offset;
+                outNData = readNext(inData, ref startIndex);
+                nextIndex = startIndex;
                 return true;
             }
             catch
@@ -63,7 +46,7 @@ namespace Nextension
 
         public static NData toNData(this string value)
         {
-            return new NData(value);
+            return new NData(NConverter.getBytes(value));
         }
         public static NData toNData(this byte[] value)
         {
@@ -72,10 +55,18 @@ namespace Nextension
         }
         public static byte[] merge(params NData[] nData)
         {
-            var data = new byte[0];
-            foreach (var n in nData)
+            int totalLength = 0;
+            for (int i = 0; i < nData.Length; ++i)
             {
-                data = data.mergeTo(n.toBytes());
+                totalLength += nData[i].Length;
+            }
+            var data = new byte[totalLength];
+            int pointer = 0;
+            for (int i = 0; i < nData.Length; ++i)
+            {
+                var bytes = nData[i].toBytes();
+                Buffer.BlockCopy(bytes, 0, data, pointer, bytes.Length);
+                pointer += bytes.Length;
             }
             return data;
         }
@@ -97,7 +88,7 @@ namespace Nextension
         }
         public static string getString(this NData nData)
         {
-            return Encoding.UTF8.GetString(nData.data);
+            return NConverter.getUTF8String(nData.data);
         }
     }
 }

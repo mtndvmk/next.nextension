@@ -5,18 +5,19 @@ using UnityEngine;
 
 namespace Nextension
 {
-    [AsyncMethodBuilder(typeof(AsyncWaitableBuilder))]
-    public class NWaitable : CustomYieldInstruction, IWaitable, ICancellable
+    public abstract class AbsNWaitable : CustomYieldInstruction, IWaitable, ICancellable
     {
         private List<ICancellable> cancellables = new List<ICancellable>();
         private Action onCompleted;
         private Action onCancelled;
-
-        public bool isThrowException = true;
+        private Action onFinalized;
+        private bool isFinalized;
+        
         public RunState Status { get; protected internal set; }
         public Exception Exception { get; protected internal set; }
-        public override bool keepWaiting => !isFinished();
-        bool IWaitable.IsWaitable => !isFinished();
+        public override bool keepWaiting => !isFinalized;
+
+        WaiterLoopType IWaitable.LoopType => WaiterLoopType.Update;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFinished() => Status.isFinished();
@@ -34,12 +35,12 @@ namespace Nextension
             try
             {
                 onCancelled?.Invoke();
-                onCancelled = null;
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
             }
+            invokeFinalizedEvent();
         }
         public void addCompletedEvent(Action onCompleted)
         {
@@ -85,6 +86,48 @@ namespace Nextension
         {
             this.onCancelled -= onCancelled;
         }
+        public void addFinalizedEvent(Action onFinalized)
+        {
+            if (isFinalized)
+            {
+                try
+                {
+                    onFinalized?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+            else
+            {
+                this.onFinalized += onFinalized;
+            }
+        }
+        public void removeFinalizedEvent(Action onFinalized)
+        {
+            this.onFinalized -= onFinalized;
+        }
+
+        private void invokeFinalizedEvent()
+        {
+            if (!isFinalized)
+            {
+                isFinalized = true;
+                try
+                {
+                    onFinalized?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+                finally
+                {
+                    clearEvent();
+                }
+            }
+        }
 
         internal void addCancelleable(ICancellable cancellable)
         {
@@ -106,13 +149,13 @@ namespace Nextension
                 try
                 {
                     onCompleted?.Invoke();
-                    onCompleted = null;
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
                 }
             }
+            invokeFinalizedEvent();
         }
         internal void setException(Exception e)
         {
@@ -122,29 +165,42 @@ namespace Nextension
             }
             setState(RunState.Exception);
             Exception = e;
-            if (isThrowException)
-            {
-                throw e;
-            }
+        }
+        internal void clearEvent()
+        {
+            onCancelled = null;
+            onCompleted = null;
         }
 
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 switch (Status)
                 {
-                    case RunState.Completed: return CompleteState.Completed;
-                    case RunState.Cancelled: return CompleteState.Cancelled;
-                    case RunState.Exception: return CompleteState.Exception;
-                    default: return CompleteState.None;
+                    case RunState.Completed: return NWaitableResult.Completed;
+                    case RunState.Cancelled: return NWaitableResult.Cancelled;
+                    case RunState.Exception: return NWaitableResult.Exception(Exception);
+                    default: return NWaitableResult.None;
                 }
             };
             return func;
         }
+        public async NWaitable waitCompleteOrException()
+        {
+            await new NWaitUntil(() => Status == RunState.Completed || Status == RunState.Exception);
+        }
+        public async NWaitable waitFinish()
+        {
+            await new NWaitUntil(() => Status.isFinished());
+        }
+    }
+    [AsyncMethodBuilder(typeof(AsyncWaitableBuilder))]
+    public class NWaitable : AbsNWaitable
+    {
     }
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder<>))]
-    public class NWaitable<T> : NWaitable
+    public class NWaitable<T> : AbsNWaitable
     {
         public T Result { get; protected set; }
         internal void setResultAndComplete(T result)

@@ -72,7 +72,7 @@ namespace Nextension.NByteBase
         }
         public void setBytes(byte[] inData, ref int startIndex)
         {
-            _id = NConverter.toInt16(inData, ref startIndex);
+            _id = NConverter.fromBytes<short>(inData, ref startIndex);
             onDeserialize(inData, ref startIndex);
         }
         public abstract object getValue();
@@ -134,7 +134,7 @@ namespace Nextension.NByteBase
             byte count = inData[startIndex++];
             while (Value.Count < count)
             {
-                var itemLength = NConverter.toUInt16(inData, ref startIndex);
+                var itemLength = NConverter.fromBytes<ushort>(inData, ref startIndex);
                 var itemBytes = NUtils.getBlock(inData, startIndex, itemLength); startIndex += itemLength;
                 var item = onDeserializeItem(itemBytes);
                 Value.Add(item);
@@ -224,7 +224,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toInt16(inData, ref startIndex);
+            Value = NConverter.fromBytes<short>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -242,7 +242,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toUInt16(inData, ref startIndex);
+            Value = NConverter.fromBytes<ushort>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -260,7 +260,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toInt32(inData, ref startIndex);
+            Value = NConverter.fromBytes<int>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -278,7 +278,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toUInt32(inData, ref startIndex);
+            Value = NConverter.fromBytes<uint>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -296,7 +296,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toFloat(inData, ref startIndex);
+            Value = NConverter.fromBytes<float>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -314,7 +314,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toInt64(inData, ref startIndex);
+            Value = NConverter.fromBytes<long>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -332,7 +332,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toUInt64(inData, ref startIndex);
+            Value = NConverter.fromBytes<ulong>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -353,7 +353,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            var length = NConverter.toUInt16(inData, ref startIndex);
+            var length = NConverter.fromBytes<ushort>(inData, ref startIndex);
             Value = NConverter.getUTF8String(inData, ref startIndex, length);
         }
 
@@ -372,7 +372,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            var length = NConverter.toUInt16(inData, ref startIndex);
+            var length = NConverter.fromBytes<ushort>(inData, ref startIndex);
             Value = NUtils.getBlock(inData, startIndex, length);
             startIndex += length;
         }
@@ -420,7 +420,7 @@ namespace Nextension.NByteBase
         {
             byte[] bytes = new byte[0];
             byte count = 0;
-            for (int i = 0; i < Value.Count; i++)
+            for (int i = 0; i < Value.Count; ++i)
             {
                 if (Value[i] != null)
                 {
@@ -470,8 +470,8 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            var x = NConverter.toFloat(inData, ref startIndex);
-            var y = NConverter.toFloat(inData, ref startIndex);
+            var x = NConverter.fromBytes<float>(inData, ref startIndex);
+            var y = NConverter.fromBytes<float>(inData, ref startIndex);
             Value = new Vector2(x, y);
         }
 
@@ -490,7 +490,7 @@ namespace Nextension.NByteBase
 
         protected override void onDeserialize(byte[] inData, ref int startIndex)
         {
-            Value = NConverter.toVector3(inData, ref startIndex);
+            Value = NConverter.fromBytes<Vector3>(inData, ref startIndex);
         }
 
         protected override byte[] onSerialize()
@@ -597,7 +597,7 @@ namespace Nextension.NByteBase
                 //byte tCount = 0;
                 //byte[] tBytes = new byte[0];
                 //AbsNByteBase tKey = null;
-                //for (int i = 0; i < tempList.Count; i++)
+                //for (int i = 0; i < tempList.Count; ++i)
                 //{
                 //    if (tId != tempList[i].Id)
                 //    {
@@ -619,7 +619,7 @@ namespace Nextension.NByteBase
             else
             {
                 byte count = 0;
-                for (int i = 0; i < Value.Count; i++)
+                for (int i = 0; i < Value.Count; ++i)
                 {
                     if (Value[i] != null && !Value[i].isKeyOrValueIsNull())
                     {
@@ -938,11 +938,11 @@ namespace Nextension.NByteBase
             }
             else if (absLength == 2)
             {
-                Value = NConverter.toUInt16(inData, ref startIndex);
+                Value = NConverter.fromBytes<ushort>(inData, ref startIndex);
             }
             else
             {
-                Value = NConverter.toInt32(inData, ref startIndex);
+                Value = NConverter.fromBytes<int>(inData, ref startIndex);
             }
             if (isSigned)
             {

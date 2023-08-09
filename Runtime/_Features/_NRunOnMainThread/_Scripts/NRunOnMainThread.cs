@@ -9,7 +9,7 @@ namespace Nextension
     public static class NRunOnMainThread
     {
         private static Queue<ActionData> m_ActionQueue = new Queue<ActionData>();
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        [StartupMethod]
         private static void initialize()
         {
             NUpdater.onEndOfFrameEvent.add(executeAction);
@@ -57,7 +57,7 @@ namespace Nextension
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        [StartupMethod]
         private static void clearDataOnLoadScene()
         {
             var clearCount = clearActionOnLoadScene();

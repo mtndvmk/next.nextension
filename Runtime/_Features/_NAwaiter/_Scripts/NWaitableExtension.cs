@@ -4,49 +4,37 @@ namespace Nextension
 {
     public static class NWaitableExtension
     {
-        internal static NWaitableHandle createWaitableHandle(this IWaitable waitable)
-        {
-            NWaitableHandle nwaitable;
-            if (waitable.IsWaitable)
-            {
-                nwaitable = new NWaitableHandle(waitable);
-            }
-            else
-            {
-                nwaitable = NWaitableHandle.NonWaitHandle;
-            }
-            return nwaitable;
-        }
-        internal static NWaitableHandle createWaitableHandle(this IWaitableFromCancellable waitable)
-        {
-            NWaitableHandle nwaitable;
-            if (waitable.IsWaitable)
-            {
-                nwaitable = new NWaitableHandle(waitable);
-            }
-            else
-            {
-                nwaitable = NWaitableHandle.NonWaitHandle;
-            }
-            return nwaitable;
-        }
-
         public static NWaitable startWaitable(this IWaitable waitable)
         {
-            return startWaitable(waitable.createWaitableHandle());
+            return asyncStartWaitable(waitable);
         }
         public static NWaitable startWaitable(this IWaitableFromCancellable waitable)
         {
-            return startWaitable(waitable.createWaitableHandle());
+            return asyncStartWaitableFromCancellable(waitable);
         }
 
         public static NWaitable startWaitable(this IEnumerator routine)
         {
-            return startWaitable(new NWaitRoutine(routine).createWaitableHandle());
+            return startWaitable(new NWaitRoutine(routine));
         }
-        internal static async NWaitable startWaitable(this NWaitableHandle handle)
+        internal static async NWaitable asyncStartWaitable(this IWaitable waitable)
         {
-            await handle;
+            await waitable;
         }
+        internal static async NWaitable asyncStartWaitableFromCancellable(this IWaitableFromCancellable waitable)
+        {
+            await waitable;
+        }
+
+#if UNITY_EDITOR
+        public static NWaitable startWaitable(this IWaitable_Editor waitable)
+        {
+            return asyncStartWaitable(waitable);
+        }
+        internal static async NWaitable asyncStartWaitable(this IWaitable_Editor waitable)
+        {
+            await waitable;
+        }
+#endif
     }
 }

@@ -74,7 +74,7 @@ namespace Nextension.InspectorEditor
 
                             var typeArr = allTypes.ToArray();
                             allOptions = new string[typeArr.Length];
-                            for (int i = 0; i < typeArr.Length; i++)
+                            for (int i = 0; i < typeArr.Length; ++i)
                             {
                                 allOptions[i] = typeArr[i].FullName;
                             }

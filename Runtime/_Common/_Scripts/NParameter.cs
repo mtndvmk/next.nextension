@@ -10,14 +10,12 @@ namespace Nextension
         public enum ParameterType
         {
             Bool,
-            Integer,
-            Float,
+            Number,
             String,
             Component
         }
         [SerializeField] private ParameterType type;
-        [SerializeField] private int intValue;
-        [SerializeField] private float floatValue;
+        [SerializeField] private float numberValue;
         [SerializeField] private bool boolValue;
         [SerializeField] private string stringValue;
         [SerializeField] private Object componentValue;
@@ -31,10 +29,8 @@ namespace Nextension
                 {
                     case ParameterType.Bool:
                         return boolValue;
-                    case ParameterType.Float:
-                        return floatValue;
-                    case ParameterType.Integer:
-                        return intValue;
+                    case ParameterType.Number:
+                        return numberValue;
                     case ParameterType.String:
                         return stringValue;
                     case ParameterType.Component:
@@ -42,17 +38,6 @@ namespace Nextension
                     default:
                         return null;
                 }
-            }
-        }
-        public int IntValue
-        {
-            get
-            {
-                if (type != ParameterType.Integer)
-                {
-                    throw new ArgumentException("RoveParameterType is not Integer");
-                }
-                return intValue;
             }
         }
         public bool BoolValue
@@ -66,15 +51,15 @@ namespace Nextension
                 return boolValue;
             }
         }
-        public float FloatValue
+        public float NumberValue
         {
             get
             {
-                if (type != ParameterType.Float)
+                if (type != ParameterType.Number)
                 {
                     throw new ArgumentException("RoveParameterType is not Float");
                 }
-                return floatValue;
+                return numberValue;
             }
         }
         public string StringValue

@@ -1,14 +1,12 @@
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && NET_4_6
 using System;
-using System.Runtime.InteropServices;
-using UnityEngine;
 using System.Drawing;
-using System.IO;
 using System.Drawing.Imaging;
-using Color = UnityEngine.Color;
-using Unity.Collections;
-using System.Threading.Tasks;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Nextension.TextureProcess
 {
@@ -45,7 +43,6 @@ namespace Nextension.TextureProcess
                 await Task.Run(() =>
                 {
                     Bitmap originBitmap = new Bitmap(stream);
-                    stream.Dispose();
                     float inSample = 0;
                     int maxDimension;
                     int originWidth = originBitmap.Width;
@@ -82,6 +79,8 @@ namespace Nextension.TextureProcess
                     BitmapData bitmapData;
                     if (_setting.forceNotAlpha)
                     {
+                        // because in unity color pixel is bottom to top but in bitmap is top to bottom
+                        // and color in binary is rgb but bitmap is a bgr thus flip x and reverse array
                         resizedBitmap.RotateFlip(RotateFlipType.RotateNoneFlipX);
                         bitmapData = resizedBitmap.LockBits(new Rectangle(0, 0, resizeWidth, resizeHeight), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
                         outData = new byte[resizeWidth * resizedBitmap.Height * 3];
@@ -90,6 +89,7 @@ namespace Nextension.TextureProcess
                     }
                     else
                     {
+                        // because in unity color pixel is bottom to top but in bitmap is top to bottom thus flip y
                         resizedBitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
                         bitmapData = resizedBitmap.LockBits(new Rectangle(0, 0, resizeWidth, resizeHeight), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                         outData = new byte[resizeWidth * resizedBitmap.Height * 4];
@@ -97,6 +97,7 @@ namespace Nextension.TextureProcess
                     }
                     resizedBitmap.UnlockBits(bitmapData);
                     resizedBitmap.Dispose();
+                    stream.Dispose();
                 });
 
                 if (outData != null)
@@ -105,7 +106,7 @@ namespace Nextension.TextureProcess
                 }
                 else
                 {
-                    Operation.innerSetComplete("OutData is null");
+                    Operation.innerFinalize(new TextureProcessException("Output data is null"));
                 }
             }
 
@@ -122,10 +123,13 @@ namespace Nextension.TextureProcess
                 }
                 tex.LoadRawTextureData(inData);
                 tex.Apply();
+
+                _setting.compress(tex);
+
                 Operation.Texture = tex;
                 Operation.OriginHeight = tex.height;
                 Operation.OriginWidth = tex.width;
-                Operation.innerSetComplete();
+                Operation.innerFinalize();
             }
         }
     }

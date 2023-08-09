@@ -29,7 +29,7 @@ namespace Nextension.NByteBase
 
         public static AbsNByteBase getNext(byte[] inData, ref int startIndex)
         {
-            var id = NConverter.toInt16(inData, startIndex);
+            var id = NConverter.fromBytes<short>(inData, startIndex);
             var nByteBase = NByteBaseCreator.createNByteBase(id);
 
             nByteBase.setBytes(inData, ref startIndex);
@@ -258,7 +258,7 @@ namespace Nextension.NByteBase
             var instance = objectType.createInstance();
             try
             {
-                for (byte i = 0; i < nList.Count; i++)
+                for (byte i = 0; i < nList.Count; ++i)
                 {
                     var nByteBaseType = nList[i].GetType();
                     if (nByteBaseType == typeof(NIdValuePair))
@@ -347,7 +347,7 @@ namespace Nextension.NByteBase
                 var elementType = fieldType.GetElementType();
                 var arr = Array.CreateInstance(elementType, tempNList.Count);
 
-                for (byte i = 0; i < tempNList.Count; i++)
+                for (byte i = 0; i < tempNList.Count; ++i)
                 {
                     var item = tempNList[i].getValue();
                     arr.SetValue(item, i);
@@ -363,7 +363,7 @@ namespace Nextension.NByteBase
                 var tempNList = value as NList;
                 var arr = fieldType.createInstance() as IList;
 
-                for (byte i = 0; i < tempNList.Count; i++)
+                for (byte i = 0; i < tempNList.Count; ++i)
                 {
                     var item = tempNList[i].getValue();
                     arr.Add(item);

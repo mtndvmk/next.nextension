@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using UnityEngine;
 
 namespace Nextension.NByteBase
 {
@@ -9,7 +8,7 @@ namespace Nextension.NByteBase
     {
         internal static Dictionary<short, NByteBaseInfo> AllNByteBase { get; private set; } = new Dictionary<short, NByteBaseInfo>();
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        [StartupMethod]
         public static void init()
         {
             AllNByteBase.Clear();

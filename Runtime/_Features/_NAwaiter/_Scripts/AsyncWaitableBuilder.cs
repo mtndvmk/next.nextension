@@ -15,7 +15,6 @@ namespace Nextension
         }
         public void Start<TStateMachine>(ref TStateMachine stateMachine) where TStateMachine : IAsyncStateMachine
         {
-            waitable.setState(RunState.Running);
             stateMachine.MoveNext();
         }
         public void SetStateMachine(IAsyncStateMachine stateMachine)
@@ -67,7 +66,6 @@ namespace Nextension
         }
         public void Start<TStateMachine>(ref TStateMachine stateMachine) where TStateMachine : IAsyncStateMachine
         {
-            waitable.setState(RunState.Running);
             stateMachine.MoveNext();
         }
         public void SetStateMachine(IAsyncStateMachine stateMachine)

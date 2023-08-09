@@ -31,19 +31,21 @@ namespace Nextension.TextureProcess
                         tex2D.LoadRawTextureData(completeData.DataPtr, completeData.length);
                         tex2D.Apply(false, !_setting.isReadable);
 
+                        _setting.compress(tex2D);
+
                         Operation.Texture = tex2D;
                         Operation.OriginWidth = completeData.originWidth;
                         Operation.OriginHeight = completeData.originHeight;
-                        Operation.innerSetComplete();
+                        Operation.innerFinalize();
                     }
                     else
                     {
-                        Operation.innerSetComplete(completeData.error);
+                        Operation.innerFinalize(new TextureProcessException(completeData.error));
                     }
                 }
                 catch (Exception e)
                 {
-                    Operation.innerSetComplete(e.Message);
+                    Operation.innerFinalize(e);
                 }
             }
             internal void exeCompleteLoadIntoTexture(WebGLLoadIntoTextureCompleteData completeData)
@@ -54,28 +56,34 @@ namespace Nextension.TextureProcess
                     {
                         var texPtr = new IntPtr(completeData.texPtr);
                         var tex = Texture2D.CreateExternalTexture(completeData.originWidth, completeData.originHeight, TextureFormat.RGBA32, false, true, texPtr);
+
+                        _setting.compress(tex);
+
                         Operation.Texture = tex;
                         Operation.OriginWidth = completeData.originWidth;
                         Operation.OriginHeight = completeData.originHeight;
-                        Operation.innerSetComplete();
+                        Operation.innerFinalize();
                     }
                     else
                     {
-                        Operation.innerSetComplete(completeData.error);
+                        Operation.innerFinalize(new TextureProcessException(completeData.error));
                     }
                 }
                 catch (Exception e)
                 {
-                    Operation.innerSetComplete(e.Message);
+                    Operation.innerFinalize(e);
                 }
             }
             internal void exeCompleteLoadIntoTexture(Texture2D tex, int originWidth, int originHeight)
             {
                 tex.Apply(false, !_setting.isReadable);
+
+                _setting.compress(tex);
+
                 Operation.Texture = tex;
                 Operation.OriginWidth = originWidth;
                 Operation.OriginHeight = originHeight;
-                Operation.innerSetComplete();
+                Operation.innerFinalize();
             }
         }
     }

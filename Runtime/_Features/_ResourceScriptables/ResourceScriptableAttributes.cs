@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace Nextension
 {
@@ -9,13 +6,24 @@ namespace Nextension
     public sealed class AutoCreateOnResourceAttribute : Attribute
     {
         private readonly string postName;
+        internal readonly bool onlyCreateIfAccess;
         public AutoCreateOnResourceAttribute()
         {
             postName = string.Empty;
         }
+        public AutoCreateOnResourceAttribute(bool onlyCreateIfAccess)
+        {
+            postName = string.Empty;
+            this.onlyCreateIfAccess = onlyCreateIfAccess;
+        }
         public AutoCreateOnResourceAttribute(string postName)
         {
             this.postName = postName.Trim();
+        }
+        public AutoCreateOnResourceAttribute(string postName, bool onlyCreateIfAccess)
+        {
+            this.postName = postName.Trim();
+            this.onlyCreateIfAccess = onlyCreateIfAccess;
         }
 
         public string getFileName(Type type)
@@ -26,6 +34,19 @@ namespace Nextension
                 fileName += "_" + postName;
             }
             return fileName;
+        }
+
+        public static bool checkValid(Type type)
+        {
+            if (type.IsAbstract)
+            {
+                return false;
+            }
+            if (type.ContainsGenericParameters)
+            {
+                return false;
+            }
+            return true;
         }
     }
 

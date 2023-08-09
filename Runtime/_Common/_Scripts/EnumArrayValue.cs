@@ -35,7 +35,7 @@ namespace Nextension
         {
             var list = new List<T>();
             var enumArr = Enum.GetValues(typeof(T));
-            for (int i = 0; i < enumArr.Length; i++)
+            for (int i = 0; i < enumArr.Length; ++i)
             {
                 var enumType = (T)enumArr.GetValue(i);
                 list.Add(enumType);
@@ -43,7 +43,7 @@ namespace Nextension
             list.Sort();
             _indexToEnumTable = list.ToArray();
             _enumToIndexTable = new Dictionary<T, int>();
-            for (int i = 0; i < list.Count; i++)
+            for (int i = 0; i < list.Count; ++i)
             {
                 _enumToIndexTable[list[i]] = i;
             }
@@ -110,7 +110,7 @@ namespace Nextension
             }
 
             Dictionary<T1, T2> dict = new Dictionary<T1, T2>();
-            for (int i = 0; i < enumArrayCache.Length; i++)
+            for (int i = 0; i < enumArrayCache.Length; ++i)
             {
                 var k = enumArrayCache[i];
                 if (!EnumIndex<T1>.isValid(k) || i >= enumValues.Length) continue;
@@ -145,7 +145,7 @@ namespace Nextension
         }
         public EnumArrayValue(params (T1, T2)[] enumValues)
         {
-            for (int i = 0; i < enumValues.Length; i++)
+            for (int i = 0; i < enumValues.Length; ++i)
             {
                 this[enumValues[i].Item1] = enumValues[i].Item2;
             }
@@ -168,14 +168,14 @@ namespace Nextension
         }
         public IEnumerable<T2> enumerateValues()
         {
-            for (int i = 0; i < Length; i++)
+            for (int i = 0; i < Length; ++i)
             {
                 yield return enumValues[i];
             }
         }
         public IEnumerable<(T1 enumType, T2 value)> enumerateTupleValues()
         {
-            for (int i = 0; i < Length; i++)
+            for (int i = 0; i < Length; ++i)
             {
                 yield return (EnumIndex<T1>.getEnum(i), enumValues[i]);
             }

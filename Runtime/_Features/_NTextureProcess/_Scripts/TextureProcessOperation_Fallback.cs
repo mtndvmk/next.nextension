@@ -24,14 +24,14 @@ namespace Nextension.TextureProcess
                 }
                 catch (Exception e)
                 {
-                    Operation.innerSetComplete(e.Message);
+                    Operation.innerFinalize(e);
                 }
             }
             private async void loadTexture(byte[] imgData)
             {
                 try
                 {
-                    Texture tex;
+                    Texture2D tex;
 
                     if (NTextureProcess._ProcessFallback != null)
                     {
@@ -85,17 +85,18 @@ namespace Nextension.TextureProcess
                         {
                             tex = tex1;
                         }
-
-
                     }
+
+                    _setting.compress(tex);
+
                     Operation.Texture = tex;
                     Operation.OriginHeight = tex.height;
                     Operation.OriginWidth = tex.width;
-                    Operation.innerSetComplete();
+                    Operation.innerFinalize();
                 }
                 catch (Exception e)
                 {
-                    Operation.innerSetComplete(e.Message);
+                    Operation.innerFinalize(e);
                 }
             }
         }

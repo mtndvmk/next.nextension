@@ -9,38 +9,33 @@ namespace Nextension
     {
         public static NWaitableAwaiter GetAwaiter(this NWaitable waitable)
         {
-            return new NWaitableAwaiter(waitable);
+            return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter<T> GetAwaiter<T>(this NWaitable<T> waitable)
         {
             return new NWaitableAwaiter<T>(waitable);
         }
-        internal static NWaitableAwaiter GetAwaiter(this NWaitableHandle waitable)
-        {
-            return new NWaitableAwaiter(waitable);
-        }
-
         public static NWaitableAwaiter GetAwaiter(this IWaitable waitable)
         {
-            return new NWaitableAwaiter(waitable);
+            return NWaitableAwaiter.create(waitable);
         }
-        public static NWaitableAwaiter GetAwaiter(this IWaitable_Editor waitable)
+        public static NWaitableAwaiter GetAwaiter(this IWaitableFromCancellable waitable)
         {
-            return new NWaitableAwaiter(waitable);
+            return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this AsyncOperation operation)
         {
-            Func<bool> func = () => operation.isDone;
-            return new NWaitableAwaiter(new NWaitableHandle(func));
+            var waitable = new NWaitUntil(() => operation.isDone);
+            return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this CustomYieldInstruction operation)
         {
-            Func<bool> func = () => !operation.keepWaiting;
-            return new NWaitableAwaiter(new NWaitableHandle(func));
+            var waitable = new NWaitUntil(() => !operation.keepWaiting);
+            return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this JobHandle jobHandle)
         {
-            return new NWaitableAwaiter(new NWaitJobHandle(jobHandle));
+            return NWaitableAwaiter.create(new NWaitJobHandle(jobHandle));
         }
         public static NWaitableAwaiter GetAwaiter(this IEnumerator routine)
         {
@@ -48,7 +43,13 @@ namespace Nextension
         }
         public static NWaitableAwaiter GetAwaiter(this NWaitRoutine routine)
         {
-            return new NWaitableAwaiter(routine);
+            return NWaitableAwaiter.create(routine);
         }
+#if UNITY_EDITOR
+        public static NWaitableAwaiter GetAwaiter(this IWaitable_Editor waitable)
+        {
+            return NWaitableAwaiter.create(waitable);
+        }
+#endif
     }
 }

@@ -99,7 +99,7 @@ namespace Nextension
         }
         public IEnumerable<T2> enumerateValues()
         {
-            for (int i = 0; i < Count; i++)
+            for (int i = 0; i < Count; ++i)
             {
                 yield return enumValueList[i].value;
             }

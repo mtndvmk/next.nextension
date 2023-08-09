@@ -88,7 +88,7 @@ namespace Nextension
         {
             if (s_Instance == this)
             {
-                if (!IsQuitApp)
+                if (IsPlaying)
                 {
                     if (!m_IsDestroyFromInternal)
                     {
@@ -113,7 +113,7 @@ namespace Nextension
             {
                 Destroy(gameObject);
             }
-            else if (!IsQuitApp)
+            else if (IsPlaying)
             {
                 if (!m_IsLocalInitialized)
                 {
@@ -150,7 +150,7 @@ namespace Nextension
                 {
                     try
                     {
-                        if (IsQuitApp)
+                        if (!IsPlaying)
                         {
                             throw new Exception("Application is quitting");
                         }
@@ -175,12 +175,12 @@ namespace Nextension
                 return s_Instance;
             }
         }
-        public static bool IsQuitApp => NStartRunner.IsQuitApp;
+        public static bool IsPlaying => NStartRunner.IsPlaying;
         public static bool IsDestroyAndUnuse { get; protected set; }
         public static bool IsInitialized => s_Instance != null;
         public static void initialize()
         {
-            if (!IsQuitApp && !IsDestroyAndUnuse)
+            if (IsPlaying && !IsDestroyAndUnuse)
             {
                 if (s_Instance == null)
                 {

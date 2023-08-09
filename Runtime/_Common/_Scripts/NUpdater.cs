@@ -54,7 +54,7 @@ namespace Nextension
         {
             private IEnumerator Start()
             {
-                while (!NStartRunner.IsQuitApp)
+                while (NStartRunner.IsPlaying)
                 {
                     yield return new WaitForEndOfFrame();
                     invokeEvent(onEndOfFrameEvent);
@@ -90,11 +90,24 @@ namespace Nextension
             }
         }
 
-        internal static void initialize()
+        [StartupMethod(10)]
+        static void initialize_0()
         {
+            onEndOfFrameEvent.clear();
+            onEndOfFrameOnceTimeEvent.clear();
+            onUpdateEvent.clear();
+            onUpdateOnceTimeEvent.clear();
+            onLateUpdateEvent.clear();
+            onLateUpdateOnceTimeEvent.clear();
+        }
+
+        [StartupMethod]
+        static void initialize()
+        {
+            InternalCheck.checkEditorMode();
             var go = new GameObject("[NUpdater]");
             go.AddComponent<InternalObject>();
-            GameObject.DontDestroyOnLoad(go);
+            Object.DontDestroyOnLoad(go);
             go.hideFlags = HideFlags.HideAndDontSave | HideFlags.HideInInspector;
         }
     }

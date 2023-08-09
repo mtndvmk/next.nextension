@@ -70,7 +70,7 @@ namespace Nextension.NEditor
                 contentPosition.y += EditorGUIUtility.singleLineHeight;
 
                 var length = arrValue.Length;
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i < length; ++i)
                 {
                     var enumType = arrValue.getEnumAtIndex(i);
                     var enumName = getEnumDisplayName(enumType);
@@ -103,7 +103,7 @@ namespace Nextension.NEditor
 
             var height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
             var length = arrValue.Length;
-            for (int i = 0; i < length; i++)
+            for (int i = 0; i < length; ++i)
             {
                 height += EditorGUI.GetPropertyHeight(values.GetArrayElementAtIndex(i));
             }

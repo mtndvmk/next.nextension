@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 using UnityEngine;
-using Debug = UnityEngine.Debug;
 
 namespace Nextension
 {
@@ -43,10 +41,9 @@ namespace Nextension
             }
         }
 
-        internal const string SCRIPTABLE_OBJECT_EXTENSION = ".asset";
-        internal const string MAIN_RESOURCE_PATH = "Assets/Resources";
 
-        private static List<ScriptableObject> _needSaves = new List<ScriptableObject>();
+
+        private static List<Object> _needSaves = new List<Object>();
         private static bool _isDomainReload = false;
         private static bool _isSaving = false;
         private async static void saveInNext()
@@ -69,14 +66,14 @@ namespace Nextension
         {
             EditorUtility.SetDirty(@object);
         }
-        public static void saveAsset(ScriptableObject scriptableObject)
+        public static void saveAsset(Object @object)
         {
-            if (!scriptableObject)
+            if (!@object)
             {
                 return;
             }
-            NEditorUtils.setDirty(scriptableObject);
-            _needSaves.add(scriptableObject);
+            NEditorUtils.setDirty(@object);
+            _needSaves.add(@object);
             saveAssets();
         }
 
@@ -86,7 +83,7 @@ namespace Nextension
             AssetDatabase.SaveAssets();
         }
 
-        public static async Task awaitImportWorkerProcess()
+        private static async Task awaitImportWorkerProcess()
         {
             await new NWaitUntil_Editor(() => !AssetDatabase.IsAssetImportWorkerProcess() && !EditorApplication.isUpdating);
         }
@@ -100,16 +97,20 @@ namespace Nextension
             {
                 fileName = type.Name;
             }
-            var dir = MAIN_RESOURCE_PATH;
+            if (!fileName.Contains('.'))
+            {
+                fileName += NUnityResourcesUtils.SCRIPTABLE_OBJECT_EXTENSION;
+            }
+            var dir = NUnityResourcesUtils.MAIN_RESOURCE_PATH;
             if (!System.IO.Directory.Exists(dir))
             {
                 System.IO.Directory.CreateDirectory(dir);
             }
-            var path = System.IO.Path.Combine(dir, fileName + NEditorUtils.SCRIPTABLE_OBJECT_EXTENSION);
+            var path = System.IO.Path.Combine(dir, fileName);
             ScriptableObject scriptable;
             if (System.IO.File.Exists(path))
             {
-                scriptable = Resources.Load<ScriptableObject>(fileName);
+                scriptable = NUnityResourcesUtils.getObjectOnMainResource<ScriptableObject>(fileName);
             }
             else
             {
@@ -119,70 +120,21 @@ namespace Nextension
             }
             return scriptable;
         }
-        public static bool hasScriptableOnResource(string fileName)
-        {
-            return getScriptableOnResource(fileName) != null;
-        }
-        public static ScriptableObject getScriptableOnResource(string fileName)
-        {
-            var dir = MAIN_RESOURCE_PATH;
-            if (!System.IO.Directory.Exists(dir))
-            {
-                return null;
-            }
-            var path = System.IO.Path.Combine(dir, fileName + NEditorUtils.SCRIPTABLE_OBJECT_EXTENSION);
-            if (!System.IO.File.Exists(path))
-            {
-                return null;
-            }
-            var scriptable = Resources.Load<ScriptableObject>(fileName);
-            if (scriptable == null)
-            {
-                return null;
-            }
-
-            return scriptable;
-        }
-        public static T createScriptableOnResource<T>(string fileName = null) where T : ScriptableObject
-        {
-            if (string.IsNullOrEmpty(fileName))
-            {
-                fileName = typeof(T).Name;
-            }
-            var dir = MAIN_RESOURCE_PATH;
-            if (!System.IO.Directory.Exists(dir))
-            {
-                System.IO.Directory.CreateDirectory(dir);
-            }
-            var path = System.IO.Path.Combine(dir, fileName + NEditorUtils.SCRIPTABLE_OBJECT_EXTENSION);
-            T scriptable;
-            if (System.IO.File.Exists(path))
-            {
-                scriptable = AssetDatabase.LoadMainAssetAtPath(path) as T;
-            }
-            else
-            {
-                scriptable = ScriptableObject.CreateInstance<T>();
-                AssetDatabase.CreateAsset(scriptable, path);
-                Debug.Log("Created asset at " + path);
-            }
-            return scriptable;
-        }
     }
 #else
     public static class NEditorUtils
     {
-        [Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void saveAsset(ScriptableObject scriptableObject)
         {
             
         }
-        [Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static async void saveAssets()
         {
             
         }
-        [Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public static void setDirty(Object @object)
         {
             

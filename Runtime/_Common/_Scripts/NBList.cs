@@ -10,32 +10,18 @@ namespace Nextension
     {
         public void sort();
         public int Count { get; }
+        public void removeAt(int index);
     }
-
+    public interface IBList<V> : IBList
+    {
+        public V this[int index] { get; set; }
+    }
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="V">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public sealed class NBList<V, K> : AbsBList<V, K> where K : IComparable<K>
-    {
-        private Func<V, K> _getCompareKeyFromValueFunc;
-        protected override K getCompareKeyFromValue(V item)
-        {
-            return _getCompareKeyFromValueFunc(item);
-        }
-
-        public NBList(Func<V, K> getCompareKeyFromValueFunc) : base()
-        {
-            _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
-        }
-        public NBList(IEnumerable<V> collection, Func<V, K> getCompareKeyFromValueFunc) : base(collection)
-        {
-            _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
-        }
-    }
-
-    public abstract class AbsBaseBList<V, K> : IBList
+    public abstract class AbsBList<V, K> : IBList<V>
     {
         protected abstract int compareKey(K k1, K k2);
         private int exeCompareKey(K k1, K k2)
@@ -58,11 +44,11 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected abstract K getCompareKeyFromValue(V item);
 
-        public AbsBaseBList()
+        public AbsBList()
         {
             _list = new List<V>();
         }
-        public AbsBaseBList(IEnumerable<V> collection)
+        public AbsBList(IEnumerable<V> collection)
         {
             _list = new List<V>(collection);
             sort();
@@ -157,7 +143,7 @@ namespace Nextension
 
             indexs.Reverse();
 
-            for (int i = fIndex + 1; i < _list.Count; i++)
+            for (int i = fIndex + 1; i < _list.Count; ++i)
             {
                 if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
                 {
@@ -174,20 +160,20 @@ namespace Nextension
         {
             return _list.FindIndex(predicate);
         }
-        public int bTryGetValue(K searchKey, out V val)
+        public int bTryGetValue(K searchKey, out V item)
         {
             var index = bFindIndex(searchKey);
             if (index >= 0)
             {
-                val = _list[index];
+                item = _list[index];
             }
             else
             {
-                val = default;
+                item = default;
             }
             return index;
         }
-        public int bContains(V item)
+        public int bIndexOf(V item)
         {
             var indexs = bFindIndexs(getCompareKeyFromValue(item));
             foreach (int i in indexs)
@@ -198,6 +184,10 @@ namespace Nextension
                 }
             }
             return -1;
+        }
+        public bool bContains(V item)
+        {
+            return bIndexOf(item) >= 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -213,12 +203,12 @@ namespace Nextension
         /// <returns></returns>
         public bool addAndSortIfNotExist(V item)
         {
-            if (bFindIndex(getCompareKeyFromValue(item)) < 0)
+            if (bContains(item))
             {
-                addAndSort(item);
-                return true;
+                return false;
             }
-            return false;
+            addAndSort(item);
+            return true;
         }
         public int addAndSort(V item)
         {
@@ -331,6 +321,10 @@ namespace Nextension
             }
             return indexs.Length;
         }
+        public void removeRange(int index, int count)
+        {
+            _list.RemoveRange(index, count);
+        }
         public bool remove(V item)
         {
             var indexs = bFindIndexs(getCompareKeyFromValue(item));
@@ -370,22 +364,22 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="V">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBList<V, K> : AbsBaseBList<V, K> where K : IComparable<K>
+    public abstract class AbsBListCompareableK<V, K> : AbsBList<V, K> where K : IComparable<K>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected sealed override int compareKey(K k1, K k2)
         {
             return k1.CompareTo(k2);
         }
-        public AbsBList() : base() { }
-        public AbsBList(IEnumerable<V> collection) : base(collection) { }
+        public AbsBListCompareableK() : base() { }
+        public AbsBListCompareableK(IEnumerable<V> collection) : base(collection) { }
     }
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="V">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBListCompareable<V, K> : AbsBaseBList<V, K> where K : IComparable
+    public abstract class AbsBListCompareable<V, K> : AbsBList<V, K> where K : IComparable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected sealed override int compareKey(K k1, K k2)
@@ -394,5 +388,36 @@ namespace Nextension
         }
         public AbsBListCompareable() : base() { }
         public AbsBListCompareable(IEnumerable<V> collection) : base(collection) { }
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <typeparam name="V">Value Type of List</typeparam>
+    /// <typeparam name="K">Key Type to compare Value in List</typeparam>
+    public sealed class NBList<V, K> : AbsBListCompareableK<V, K> where K : IComparable<K>
+    {
+        private Func<V, K> _getCompareKeyFromValueFunc;
+        protected override K getCompareKeyFromValue(V item)
+        {
+            return _getCompareKeyFromValueFunc(item);
+        }
+
+        public NBList(Func<V, K> getCompareKeyFromValueFunc) : base()
+        {
+            _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
+        }
+        public NBList(IEnumerable<V> collection, Func<V, K> getCompareKeyFromValueFunc) : base(collection)
+        {
+            _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
+        }
+    }
+
+    [Serializable]
+    public sealed class NBListUseHashCode<V> : AbsBListCompareableK<V, int>
+    {
+        protected override int getCompareKeyFromValue(V item)
+        {
+            return item.GetHashCode();
+        }
     }
 }

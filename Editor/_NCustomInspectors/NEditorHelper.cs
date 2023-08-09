@@ -8,19 +8,9 @@ namespace Nextension.NEditor
 {
     public static class NEditorHelper
     {
-        private static BindingFlags _allBindingFlags;
         public static BindingFlags getAllBindingFlags()
         {
             return (BindingFlags)(-1);
-            //if (_allBindingFlags == default)
-            //{
-            //    var arr = Enum.GetValues(typeof(BindingFlags));
-            //    foreach (var i in arr)
-            //    {
-            //        _allBindingFlags |= (BindingFlags)i;
-            //    }
-            //}
-            //return _allBindingFlags;
         }
 
         public static object getValue(SerializedProperty property)
@@ -52,7 +42,7 @@ namespace Nextension.NEditor
 
             try
             {
-                for (int i = 0; i < elements.Length; i++)
+                for (int i = 0; i < elements.Length; ++i)
                 {
                     var element = elements[i];
                     if (element.Contains("["))
@@ -61,12 +51,12 @@ namespace Nextension.NEditor
                         var index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
 
                         var qType = qObject.GetType();
-                        fieldInfo = qType.GetField(elementName, getAllBindingFlags());
+                        fieldInfo = qType.getField(elementName, getAllBindingFlags());
                         qObject = (fieldInfo.GetValue(qObject) as IList)[index];
                     }
                     else
                     {
-                        fieldInfo = qObject.GetType().GetField(element, getAllBindingFlags());
+                        fieldInfo = qObject.GetType().getField(element, getAllBindingFlags());
                         qObject = fieldInfo.GetValue(qObject);
                     }
                 }

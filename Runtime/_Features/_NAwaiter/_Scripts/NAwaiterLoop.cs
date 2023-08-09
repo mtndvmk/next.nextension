@@ -26,7 +26,8 @@ namespace Nextension
             }
         }
 
-        static NAwaiterLoop()
+        [StartupMethod]
+        private static void init()
         {
             NUpdater.onUpdateEvent.add(onUpdate);
             NUpdater.onLateUpdateEvent.add(onLateUpdate);
@@ -38,6 +39,8 @@ namespace Nextension
             {
                 if (waitables == null)
                 {
+                    Debug.LogWarning("waitables list is null?");
+                    allWaitables.Remove(loopType);
                     return;
                 }
                 for (int i = waitables.Count - 1; i >= 0; i--)
@@ -47,13 +50,15 @@ namespace Nextension
                         var isFinished = waitables[i].checkComplete().isFinished();
                         if (isFinished)
                         {
-                            waitables.RemoveAt(i);
+                            NWaitableHandle.Factory.release(waitables[i]);
+                            waitables.removeAtSwapBack(i);
                         }
                     }
                     catch (Exception e)
                     {
                         Debug.LogException(e);
-                        waitables.RemoveAt(i);
+                        NWaitableHandle.Factory.release(waitables[i]);
+                        waitables.removeAtSwapBack(i);
                     }
                 }
             }
@@ -72,41 +77,4 @@ namespace Nextension
             update(WaiterLoopType.EndOfFrameUpdate);
         }
     }
-#if UNITY_EDITOR
-    internal class NAwaiter_EdtitorLoop
-    {
-        private static List<NWaitableHandle> waitables = new List<NWaitableHandle>();
-        public static ulong UpdateCount { get; private set; }
-        public static double CurrentTime => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() / 1000d;
-        public static void addAwaitable(NWaitableHandle waitable)
-        {
-            waitables.Add(waitable);
-        }
-        static NAwaiter_EdtitorLoop()
-        {
-            UnityEditor.EditorApplication.update -= update;
-            UnityEditor.EditorApplication.update += update;
-        }
-        private static void update()
-                {
-            UpdateCount++;
-                for (int i = waitables.Count - 1; i >= 0; i--)
-                {
-                    try
-                    {
-                        var isFinished = waitables[i].checkComplete().isFinished();
-                        if (isFinished)
-                        {
-                            waitables.RemoveAt(i);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                        waitables.RemoveAt(i);
-                    }
-                }
-            }
-        }
-#endif
 }

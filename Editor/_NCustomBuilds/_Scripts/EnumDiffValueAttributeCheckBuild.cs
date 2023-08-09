@@ -18,7 +18,7 @@ namespace Nextension.NEditor
                 {
                     var enumArr = Enum.GetValues(type);
                     var list = new List<int>();
-                    for (int i = 0; i < enumArr.Length; i++)
+                    for (int i = 0; i < enumArr.Length; ++i)
                     {
                         var enumInt = (int)Convert.ChangeType(enumArr.GetValue(i), TypeCode.Int32);
                         if (list.Contains(enumInt))

@@ -43,11 +43,8 @@ namespace Nextension.NEditor
                 case NParameter.ParameterType.Bool:
                     serializedProperty = property.FindPropertyRelative("boolValue");
                     break;
-                case NParameter.ParameterType.Integer:
-                    serializedProperty = property.FindPropertyRelative("intValue");
-                    break;
-                case NParameter.ParameterType.Float:
-                    serializedProperty = property.FindPropertyRelative("floatValue");
+                case NParameter.ParameterType.Number:
+                    serializedProperty = property.FindPropertyRelative("numberValue");
                     break;
                 case NParameter.ParameterType.String:
                     serializedProperty = property.FindPropertyRelative("stringValue");

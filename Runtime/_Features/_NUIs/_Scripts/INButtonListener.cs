@@ -1,0 +1,11 @@
+namespace Nextension.UI
+{
+    public interface INButtonListener
+    {
+        void onButtonDown() { }
+        void onButtonUp() { }
+        void onButtonClick() { }
+        void onButtonEnter() { }
+        void onButtonExit() { }
+    }
+}

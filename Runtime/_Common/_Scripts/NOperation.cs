@@ -6,99 +6,90 @@ namespace Nextension
 {
     public abstract class NOperation : CustomYieldInstruction
     {
-        public override bool keepWaiting => !IsCompleted;
-        public bool IsCompleted { get; private set; }
+        public override bool keepWaiting => !IsFinalized;
+        public bool IsFinalized { get; private set; }
         public string Error => ErrorException.Message;
-        public bool IsError { get; private set; }
+        public bool IsError => ErrorException != null;
         public Exception ErrorException { get; private set; }
 
-        protected event Action onCompleteEvent;
+        protected event Action onFinalizedEvent;
         protected List<NOperation> dependedOperations = new List<NOperation>();
 
-        public void addCompleteListener(Action callback)
+        public void addFinalizedEvent(Action onFinalized)
         {
-            if (IsCompleted)
+            if (IsFinalized)
             {
                 try
                 {
-                    callback?.Invoke();
+                    onFinalized?.Invoke();
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
                 }
-                return;
-            }
-            onCompleteEvent += callback;
-        }
-        public void removeCompleteListener(Action callback)
-        {
-            onCompleteEvent -= callback;
-        }
-        public void removeAllCompleteListener()
-        {
-            onCompleteEvent = null;
-        }
-        protected void innerSetComplete()
-        {
-            innerSetComplete(exception: null);
-
-        }
-        protected void innerSetComplete(string error)
-        {
-            if (IsCompleted)
-            {
-                Debug.LogWarning("Operation has completed");
-                return;
-            }
-            if (string.IsNullOrEmpty(error))
-            {
-                innerSetComplete(exception: null);
             }
             else
             {
-                var exception = new Exception(error);
-                innerSetComplete(exception);
+                onFinalizedEvent += onFinalized;
             }
         }
-        protected void innerSetComplete(Exception exception)
+        public void removeFinalizedEvent(Action onFinalized)
         {
-            if (IsCompleted)
+            onFinalizedEvent -= onFinalized;
+        }
+        public void removeFinalizedEvents()
+        {
+            onFinalizedEvent = null;
+        }
+        protected void innerFinalize()
+        {
+            innerFinalize(exception: null);
+
+        }
+        protected void innerFinalize(Exception exception)
+        {
+            if (IsFinalized)
             {
                 Debug.LogWarning("Operation has completed");
-                return;
             }
-
-            ErrorException = exception;
-            onInnerComplete();
-            IsCompleted = true;
-            IsError = exception != null;
-
-            if (IsError)
+            else
             {
-                Debug.LogWarning("NOperation error: " + Error);
+                if (exception != null)
+                {
+                    if (exception is KeepStackTraceException)
+                    {
+                        ErrorException = exception;
+                    }
+                    else
+                    {
+                        ErrorException = new KeepStackTraceException(exception);
+                    }
+                }
+                runFinalizedEvent();
             }
-
-            invokeCompleteListener();
-            invokeCompleteEventOnDependedOperations();
         }
-        private void invokeCompleteListener()
+        private void runFinalizedEvent()
         {
-            if (!IsCompleted)
+            if (!IsFinalized)
             {
-                return;
+                innerBeforeRunFinalizeEvent();
+                IsFinalized = true;
+                try
+                {
+                    onFinalizedEvent?.Invoke();
+                    innerAfterRunFinalizeEvent();
+                    finalizeOnDependedOperations();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+                onFinalizedEvent = null;
             }
-            try
-            {
-                onCompleteEvent?.Invoke();
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-            onCompleteEvent = null;
         }
-        protected virtual void onInnerComplete() { }
+
+        protected virtual void innerBeforeRunFinalizeEvent() { }
+        protected virtual void innerAfterRunFinalizeEvent() { }
 
         public void dependBy(NOperation otherOperation)
         {
@@ -109,11 +100,11 @@ namespace Nextension
             otherOperation.dependedOperations.add(otherOperation);
         }
 
-        private void invokeCompleteEventOnDependedOperations()
+        private void finalizeOnDependedOperations()
         {
             foreach (var dependedOperation in dependedOperations)
             {
-                dependedOperation.innerSetComplete(ErrorException);
+                dependedOperation.innerFinalize(ErrorException);
             }
         }
     }
@@ -135,27 +126,28 @@ namespace Nextension
                 {
                     Debug.LogException(e);
                 }
-                invokeProgressEventOnDependedOperations();
+                setProgressOnDependedOperations();
             }
         }
-        protected override void onInnerComplete()
+        protected override void innerBeforeRunFinalizeEvent()
         {
             innerSetProgress(1);
         }
-        public void addProgressListener(Action<float> callback)
+        
+        public void addProgressEvent(Action<float> callback)
         {
             onProgressEvent += callback;
         }
-        public void removeProgressListener(Action<float> callback)
+        public void removeProgressEvent(Action<float> callback)
         {
             onProgressEvent -= callback;
         }
-        public void removeAllProgressListener()
+        public void removeProgressEvents()
         {
             onProgressEvent = null;
         }
 
-        private void invokeProgressEventOnDependedOperations()
+        private void setProgressOnDependedOperations()
         {
             foreach (var dependedOperation in dependedOperations)
             {

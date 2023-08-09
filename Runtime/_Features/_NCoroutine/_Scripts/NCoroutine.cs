@@ -4,28 +4,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nextension
 {
-    public class NCoroutine : NSingleton<NCoroutine>
+    public sealed class NCoroutine
     {
+        private class Runner : MonoBehaviour { }
         public class Data : ICancellable
         {
             public readonly int groupId;
             internal readonly string name;
             public readonly Coroutine coroutine;
             private Action onCancelled;
+            internal Scene? inScene;
+
             public RunState Status { get; private set; }
-            public bool IsClearOnLoadScene { get; set; }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool isFinished() => Status >= RunState.Cancelled;
 
-            public Data(IEnumerator func, int groupId, bool isClearOnLoadScene)
+            public Data(IEnumerator func, int groupId)
             {
                 this.groupId = groupId;
                 this.name = func.ToString();
-                this.IsClearOnLoadScene = isClearOnLoadScene;
                 IEnumerator innerRoutine()
                 {
                     Status = RunState.Running;
@@ -33,7 +35,7 @@ namespace Nextension
                     Status = RunState.Completed;
                     runningCoroutines[groupId].Remove(this);
                 }
-                this.coroutine = Instance.StartCoroutine(innerRoutine());
+                this.coroutine = _runner.StartCoroutine(innerRoutine());
                 HashSet<Data> hashset;
                 if (runningCoroutines.ContainsKey(groupId))
                 {
@@ -50,7 +52,7 @@ namespace Nextension
             {
                 if (Status <= RunState.Running)
                 {
-                    Instance.StopCoroutine(this.coroutine);
+                    _runner.StopCoroutine(this.coroutine);
                     runningCoroutines[groupId].Remove(this);
                     Status = RunState.Cancelled;
                     this.onCancelled?.Invoke();
@@ -79,54 +81,60 @@ namespace Nextension
             {
                 this.onCancelled -= onCancelled;
             }
+
+            /// <summary>
+            /// if InScene is unloaded, this coroutine will be stopped
+            /// </summary>
+            /// <param name="scene"></param>
+            public void setInScene(Scene? scene = null)
+            {
+                inScene = scene;
+            }
         }
         public enum StopType
         {
             None = 0,
-            SAME_GROUP,
-            ALL_GROUP,
+            SameGroup,
+            AllGroup,
         }
 
-        protected override void onDestroy()
-        {
-            Instance.StopAllCoroutines();
-        }
-
-        protected override void onInitialized()
-        {
-            base.onInitialized();
-            m_DontDestroyOnLoad = true;
-            gameObject.hideFlags = HideFlags.HideAndDontSave;
-        }
-
+        private static Runner _runner;
         private static Dictionary<int, HashSet<Data>> runningCoroutines = new Dictionary<int, HashSet<Data>>();
         private const int DEFAULT_GROUP_ID = 0;
         
-        public static Data startCoroutine(IEnumerator func, StopType stopType = StopType.None, bool isClearOnLoadScene = true)
+        public static Data startCoroutine(IEnumerator func, StopType stopType = StopType.None)
         {
-            return startCoroutine(func, DEFAULT_GROUP_ID, stopType, isClearOnLoadScene);
+            InternalCheck.checkEditorMode();
+            return startCoroutine(func, DEFAULT_GROUP_ID, stopType);
         }
-        public static Data startCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.None, bool isClearOnLoadScene = true)
+        public static Data startCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.None)
         {
+            InternalCheck.checkEditorMode();
             stopCoroutine(func, groupId, stopType);
-            var data = new Data(func, groupId, isClearOnLoadScene);
+            var data = new Data(func, groupId);
             return data;
         }
         
-        public static void stopCoroutine(IEnumerator func, StopType stopType = StopType.SAME_GROUP)
+        public static void stopCoroutine(IEnumerator func, StopType stopType = StopType.SameGroup)
         {
             stopCoroutine(func, DEFAULT_GROUP_ID, stopType);
         }
-        public static void stopCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.SAME_GROUP)
+        public static void stopCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.SameGroup)
         {
-            if (IsQuitApp || stopType == StopType.None)
+#if UNITY_EDITOR
+            if (!NStartRunner.IsPlaying)
+            {
+                return;
+            }
+#endif
+            if (stopType == StopType.None)
             {
                 return;
             }
             var funcName = func.ToString();
             switch (stopType)
             {
-                case StopType.SAME_GROUP:
+                case StopType.SameGroup:
                     if (runningCoroutines.ContainsKey(groupId))
                     {
                         var arr = runningCoroutines[groupId].ToArray();
@@ -139,7 +147,7 @@ namespace Nextension
                         }
                     }
                     break;
-                case StopType.ALL_GROUP:
+                case StopType.AllGroup:
                     foreach (var v in runningCoroutines.Values)
                     {
                         var arr = v.ToArray();
@@ -157,10 +165,12 @@ namespace Nextension
 
         public static void stopCoroutinesInGroup(int groupId)
         {
-            if (IsQuitApp)
+#if UNITY_EDITOR
+            if (!NStartRunner.IsPlaying)
             {
                 return;
             }
+#endif
             if (runningCoroutines.TryGetValue(groupId, out var hs))
             {
                 var arr = hs.ToArray();
@@ -183,17 +193,19 @@ namespace Nextension
             runningCoroutines.Clear();
         }
 
-        public static Data runDelay(float time, Action delayCallback)
+        public static Data runDelay(float time, Action delayCallback, int groupId = 0)
         {
+            InternalCheck.checkEditorMode();
             IEnumerator delayRoutine_Time()
             {
                 yield return new WaitForSeconds(time);
                 delayCallback?.Invoke();
             }
-            return startCoroutine(delayRoutine_Time());
+            return startCoroutine(delayRoutine_Time(), groupId);
         }
         public static Data runDelay(YieldInstruction yieldInstruction, Action delayCallback)
         {
+            InternalCheck.checkEditorMode();
             IEnumerator delayRoutine_YI()
             {
                 yield return yieldInstruction;
@@ -203,6 +215,7 @@ namespace Nextension
         }
         public static Data runDelay(CustomYieldInstruction yieldInstruction, Action delayCallback)
         {
+            InternalCheck.checkEditorMode();
             IEnumerator delayRoutine_CYI()
             {
                 yield return yieldInstruction;
@@ -215,16 +228,32 @@ namespace Nextension
             data?.cancel();
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void clearDataOnLoadScene()
+        [StartupMethod]
+        static void reset()
         {
+            NUtils.destroyObject(_runner);
+            runningCoroutines.Clear();
+            SceneManager.sceneUnloaded -= onSceneUnloaded;
+            SceneManager.sceneUnloaded += onSceneUnloaded;
+            _runner = new GameObject("NCoroutineRunner").AddComponent<Runner>();
+            _runner.gameObject.hideFlags = HideFlags.DontSave | HideFlags.NotEditable | HideFlags.HideInInspector;
+            UnityEngine.Object.DontDestroyOnLoad(_runner.gameObject);
+        }
+        private static void onSceneUnloaded(Scene scene)
+        {
+#if UNITY_EDITOR
+            if (!NStartRunner.IsPlaying)
+            {
+                return;
+            }
+#endif
             int clearCount = 0;
             foreach (var v in runningCoroutines.Values)
             {
                 var arr = v.ToArray();
                 foreach (var d in arr)
                 {
-                    if (d.IsClearOnLoadScene)
+                    if (d.inScene.HasValue && d.inScene.Value == scene)
                     {
                         d.cancel();
                         clearCount++;

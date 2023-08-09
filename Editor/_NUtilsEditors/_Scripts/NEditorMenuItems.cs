@@ -7,10 +7,22 @@ namespace Nextension.NEditor
 {
     public class NEditorMenuItems
     {
+        [MenuItem("Nextension/Project/Force save selected items")]
+        public static void forceSaveProject_SelectedItems()
+        {
+            var objs = Selection.objects;
+            foreach (var o in objs)
+            {
+                NEditorUtils.setDirty(o);
+            }
+            NEditorUtils.saveAssets();
+            Debug.Log($"Saved {objs.Length} objects");
+        }
         [MenuItem("Nextension/Project/Force save project - *.asset")]
         public static void forceSaveProject_Asset()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
+            int count = 0;
             foreach (var p in paths)
             {
                 try
@@ -21,6 +33,7 @@ namespace Nextension.NEditor
                         if (@object != null)
                         {
                             NEditorUtils.setDirty(@object);
+                            count++;
                         }
                     }
                 }
@@ -30,11 +43,13 @@ namespace Nextension.NEditor
                 }
             }
             NEditorUtils.saveAssets();
+            Debug.Log($"Saved {count} objects");
         }
         [MenuItem("Nextension/Project/Force save project - *.prefab")]
         public static void forceSaveProject_Prefab()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
+            int count = 0;
             foreach (var p in paths)
             {
                 try
@@ -45,6 +60,7 @@ namespace Nextension.NEditor
                         if (@object != null)
                         {
                             NEditorUtils.setDirty(@object);
+                            count++;
                         }
                     }
                 }
@@ -54,11 +70,13 @@ namespace Nextension.NEditor
                 }
             }
             NEditorUtils.saveAssets();
+            Debug.Log($"Saved {count} objects");
         }
         [MenuItem("Nextension/Project/Force save project - all")]
         public static void forceSaveProject_All()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
+            int count = 0;
             foreach (var p in paths)
             {
                 try
@@ -69,6 +87,7 @@ namespace Nextension.NEditor
                         if (@object != null)
                         {
                             NEditorUtils.setDirty(@object);
+                            count++;
                         }
                     }
                 }
@@ -78,6 +97,7 @@ namespace Nextension.NEditor
                 }
             }
             NEditorUtils.saveAssets();
+            Debug.Log($"Saved {count} objects");
         }
 
         [MenuItem("Nextension/Collider/Generate BoxCollider (Renderer)")]
@@ -139,7 +159,7 @@ namespace Nextension.NEditor
             int len = value.Length;
             bool needEncode = false;
             char c;
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < len; ++i)
             {
                 c = value[i];
 
@@ -157,7 +177,7 @@ namespace Nextension.NEditor
             if (addDoubleQuotes)
                 sb.Append('"');
 
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < len; ++i)
             {
                 c = value[i];
                 if (c >= 0 && c <= 7 || c == 11 || c >= 14 && c <= 31 || c == 39 || c == 60 || c == 62)

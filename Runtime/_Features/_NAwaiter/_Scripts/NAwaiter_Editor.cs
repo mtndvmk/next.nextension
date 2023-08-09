@@ -12,18 +12,16 @@ namespace Nextension
             this.predicate = predicate;
         }
 
-        bool IWaitable.IsWaitable => predicate != null;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable_Editor.buildCompleteFunc()
         {
             var predicate = this.predicate;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (predicate())
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -36,18 +34,16 @@ namespace Nextension
             this.waitFrame = waitFrame;
         }
 
-        bool IWaitable.IsWaitable => waitFrame > 0;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable_Editor.buildCompleteFunc()
         {
             var targetFrame = NAwaiter_EdtitorLoop.UpdateCount + waitFrame;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (NAwaiter_EdtitorLoop.UpdateCount >= targetFrame)
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -60,18 +56,16 @@ namespace Nextension
             this.waitSecond = waitSecond;
         }
 
-        bool IWaitable.IsWaitable => waitSecond > 0;
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable_Editor.buildCompleteFunc()
         {
             var targetSecond = NAwaiter_EdtitorLoop.CurrentTime + waitSecond;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (NAwaiter_EdtitorLoop.CurrentTime >= targetSecond)
                 {
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }
@@ -84,19 +78,17 @@ namespace Nextension
             this.jobHandle = jobHandle;
         }
 
-        bool IWaitable.IsWaitable => !jobHandle.Equals(default);
-
-        Func<CompleteState> IWaitable.buildCompleteFunc()
+        Func<NWaitableResult> IWaitable_Editor.buildCompleteFunc()
         {
             var jobHandle = this.jobHandle;
-            Func<CompleteState> func = () =>
+            Func<NWaitableResult> func = () =>
             {
                 if (jobHandle.IsCompleted)
                 {
                     jobHandle.Complete();
-                    return CompleteState.Completed;
+                    return NWaitableResult.Completed;
                 }
-                return CompleteState.None;
+                return NWaitableResult.None;
             };
             return func;
         }

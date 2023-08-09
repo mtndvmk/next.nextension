@@ -7,125 +7,139 @@ namespace Nextension
 {
     public static class NConverter
     {
-        public static byte[] getBytesOf(object inData)
+        public static unsafe byte[] getBytes<T>(T t1) where T : unmanaged
         {
-            var valueType = inData.GetType();
-            if (valueType == typeof(short))
+            var sizeOfT = Marshal.SizeOf<T>();
+            byte[] array = new byte[sizeOfT];
+            fixed (byte* ptr = array)
             {
-                return getBytes((short)inData);
+                *(T*)ptr = t1;
             }
-            if (valueType == typeof(ushort))
-            {
-                return getBytes((ushort)inData);
-            }
-            if (valueType == typeof(int))
-            {
-                return getBytes((int)inData);
-            }
-            if (valueType == typeof(uint))
-            {
-                return getBytes((uint)inData);
-            }
-            if (valueType == typeof(float))
-            {
-                return getBytes((float)inData);
-            }
-            if (valueType == typeof(long))
-            {
-                return getBytes((long)inData);
-            }
-            if (valueType == typeof(ulong))
-            {
-                return getBytes((ulong)inData);
-            }
-            if (valueType == typeof(string))
-            {
-                return getBytes((string)inData);
-            }
-            if (valueType == typeof(Vector3))
-            {
-                return getBytes((Vector3)inData);
-            }
-
-            Debug.LogWarning($"Now not support getBytes [{valueType}]");
-            return null;
+            return array;
         }
-        public static T fromBytes<T>(byte[] inData, ref int startIndex)
+        public static unsafe byte[] getBytes<T>(T t1, T t2) where T : unmanaged
         {
-            var valueType = typeof(T);
-            if (valueType == typeof(short))
+            var sizeOfT = Marshal.SizeOf<T>();
+            byte[] array = new byte[2 * sizeOfT];
+            fixed (byte* ptr = array)
             {
-                return (T)(object)toInt16(inData, ref startIndex);
+                T* ptrOfT = (T*)ptr;
+                *ptrOfT++ = t1;
+                *ptrOfT = t2;
             }
-            if (valueType == typeof(ushort))
-            {
-                return (T)(object)toUInt16(inData, ref startIndex);
-            }
-            if (valueType == typeof(int))
-            {
-                return (T)(object)toInt32(inData, ref startIndex);
-            }
-            if (valueType == typeof(uint))
-            {
-                return (T)(object)toUInt32(inData, ref startIndex);
-            }
-            if (valueType == typeof(float))
-            {
-                return (T)(object)toFloat(inData, ref startIndex);
-            }
-            if (valueType == typeof(long))
-            {
-                return (T)(object)toInt64(inData, ref startIndex);
-            }
-            if (valueType == typeof(ulong))
-            {
-                return (T)(object)toUInt64(inData, ref startIndex);
-            }
-            if (valueType == typeof(string))
-            {
-                var outValue = (T)(object)getUTF8StringToEnd(inData, startIndex);
-                startIndex = inData.Length;
-                return outValue;
-            }
-
-            Debug.LogWarning($"Now not support fromBytes [{valueType}]");
-            return default;
+            return array;
         }
-        public static T fromBytes<T>(byte[] inData, int startIndex)
+        public static unsafe byte[] getBytes<T>(T t1, T t2, T t3) where T : unmanaged
         {
-            var tempIndex = startIndex;
-            return fromBytes<T>(inData, ref tempIndex);
+            var sizeOfT = Marshal.SizeOf<T>();
+            byte[] array = new byte[3 * sizeOfT];
+            fixed (byte* ptr = array)
+            {
+                T* ptrOfT = (T*)ptr;
+                *ptrOfT++ = t1;
+                *ptrOfT++ = t2;
+                *ptrOfT = t3;
+            }
+            return array;
+        }
+        public static unsafe byte[] getBytes<T>(T t1, T t2, T t3, T t4) where T : unmanaged
+        {
+            var sizeOfT = Marshal.SizeOf<T>();
+            byte[] array = new byte[4 * sizeOfT];
+            fixed (byte* ptr = array)
+            {
+                T* ptrOfT = (T*)ptr;
+                *ptrOfT++ = t1;
+                *ptrOfT++ = t2;
+                *ptrOfT++ = t3;
+                *ptrOfT = t4;
+            }
+            return array;
+        }
+        public static unsafe byte[] getBytes<T>(params T[] inData) where T : unmanaged
+        {
+            var sizeOfT = Marshal.SizeOf<T>();
+            byte[] array = new byte[inData.Length * sizeOfT];
+            fixed (byte* ptr = array)
+            {
+                T* ptrOfT = (T*)ptr;
+                for (int i = 0; i < inData.Length; ++i)
+                {
+                    *ptrOfT++ = inData[i];
+                }
+            }
+            return array;
         }
 
+        public static unsafe void writeBytes<T>(byte[] inData, T t1, int startIndex) where T : unmanaged
+        {
+            var sizeOfT = Marshal.SizeOf<T>();
+            InternalCheck.checkValidArray(inData, startIndex, sizeOfT);
 
-        public static byte[] getBytes(short inData)
-        {
-            return BitConverter.GetBytes(inData);
+            fixed (byte* ptr = &inData[startIndex])
+            {
+                *(T*)ptr = t1;
+            }
         }
-        public static byte[] getBytes(ushort inData)
+
+        public static unsafe T fromBytes<T>(byte[] inData, ref int startIndex) where T : unmanaged
         {
-            return BitConverter.GetBytes(inData);
+            var sizeOfT = Marshal.SizeOf<T>();
+            InternalCheck.checkValidArray(inData, startIndex, sizeOfT);
+
+            fixed (byte* ptr = &inData[startIndex])
+            {
+                startIndex += sizeOfT;
+                return *(T*)ptr;
+            }
         }
-        public static byte[] getBytes(int inData)
+        public static unsafe T fromBytes<T>(byte[] inData, int startIndex) where T : unmanaged
         {
-            return BitConverter.GetBytes(inData);
+            var sizeOfT = Marshal.SizeOf<T>();
+            if (inData == null)
+            {
+                NThrowHelper.throwArgNullException("inData");
+            }
+
+            if ((uint)startIndex >= inData.Length)
+            {
+                NThrowHelper.throwArgOutOfRangeException("startIndex", startIndex, inData.Length);
+            }
+
+            if (startIndex > inData.Length - sizeOfT)
+            {
+                NThrowHelper.throwArrayLengthToSmallException("inData", startIndex, inData.Length, sizeOfT);
+            }
+
+            fixed (byte* ptr = &inData[startIndex])
+            {
+                return *(T*)ptr;
+            }
         }
-        public static byte[] getBytes(uint inData)
+        public static unsafe T fromBytes<T>(Span<byte> inData, int startIndex) where T : unmanaged
         {
-            return BitConverter.GetBytes(inData);
+            var sizeOfT = Marshal.SizeOf<T>();
+            if (inData == null)
+            {
+                NThrowHelper.throwArgNullException("inData");
+            }
+
+            if ((uint)startIndex >= inData.Length)
+            {
+                NThrowHelper.throwArgOutOfRangeException("startIndex", startIndex, inData.Length);
+            }
+
+            if (startIndex > inData.Length - sizeOfT)
+            {
+                NThrowHelper.throwArrayLengthToSmallException("inData", startIndex, inData.Length, sizeOfT);
+            }
+
+            fixed (byte* ptr = &inData[startIndex])
+            {
+                return *(T*)ptr;
+            }
         }
-        public static byte[] getBytes(float inData)
-        {
-            return BitConverter.GetBytes(inData);
-        }
-        public static byte[] getBytes(long inData)
-        {
-            return BitConverter.GetBytes(inData);
-        }
-        public static byte[] getBytes(ulong inData)
-        {
-            return BitConverter.GetBytes(inData);
-        }
+
         /// <summary>
         /// UTF8 Encoding
         /// </summary>
@@ -134,123 +148,6 @@ namespace Nextension
         public static byte[] getBytes(string inData)
         {
             return Encoding.UTF8.GetBytes(inData);
-        }
-        public static byte[] getBytes(Vector2 inData)
-        {
-            var xBuffer = NConverter.getBytes(inData.x);
-            var yBuffer = NConverter.getBytes(inData.y);
-            return NUtils.mergeTo(xBuffer, yBuffer);
-        }
-        public static byte[] getBytes(Vector3 inData)
-        {
-            var xBuffer = NConverter.getBytes(inData.x);
-            var yBuffer = NConverter.getBytes(inData.y);
-            var zBuffer = NConverter.getBytes(inData.z);
-            return NUtils.merge(xBuffer, yBuffer, zBuffer);
-        }
-
-        public static short toInt16(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toInt16(inData, startIndex);
-            startIndex += 2;
-            return result;
-        }
-        public static ushort toUInt16(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toUInt16(inData, startIndex);
-            startIndex += 2;
-            return result;
-        }
-        public static int toInt32(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toInt32(inData, startIndex);
-            startIndex += 4;
-            return result;
-        }
-        public static uint toUInt32(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toUInt32(inData, startIndex);
-            startIndex += 4;
-            return result;
-        }
-        public static float toFloat(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toFloat(inData, startIndex);
-            startIndex += 4;
-            return result;
-        }
-        public static long toInt64(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toInt64(inData, startIndex);
-            startIndex += 8;
-            return result;
-        }
-        public static ulong toUInt64(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toUInt64(inData, startIndex);
-            startIndex += 8;
-            return result;
-        }
-        public static Vector2 toVector2(byte[] inData, ref int startIndex)
-        {
-            var result = NConverter.toVector2(inData, startIndex);
-            startIndex += 8;
-            return result;
-        }
-        public static Vector3 toVector3(byte[] inData, ref int startIndex)
-        {
-            var result = toVector3(inData, startIndex);
-            startIndex += 12;
-            return result;
-        }
-
-        public static short toInt16(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToInt16(inData, startIndex);
-            return result;
-        }
-        public static ushort toUInt16(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToUInt16(inData, startIndex);
-            return result;
-        }
-        public static int toInt32(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToInt32(inData, startIndex);
-            return result;
-        }
-        public static uint toUInt32(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToUInt32(inData, startIndex);
-            return result;
-        }
-        public static float toFloat(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToSingle(inData, startIndex);
-            return result;
-        }
-        public static long toInt64(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToInt64(inData, startIndex);
-            return result;
-        }
-        public static ulong toUInt64(byte[] inData, int startIndex)
-        {
-            var result = BitConverter.ToUInt64(inData, startIndex);
-            return result;
-        }
-        public static Vector2 toVector2(byte[] inData, int startIndex)
-        {
-            float x = BitConverter.ToSingle(inData, startIndex);
-            float y = BitConverter.ToSingle(inData, startIndex + 4);
-            return new Vector2(x, y);
-        }
-        public static Vector3 toVector3(byte[] inData, int startIndex)
-        {
-            float x = BitConverter.ToSingle(inData, startIndex);
-            float y = BitConverter.ToSingle(inData, startIndex + 4);
-            float z = BitConverter.ToSingle(inData, startIndex + 8);
-            return new Vector3(x, y, z);
         }
 
         public static string getUTF8String(byte[] inData, int startIndex, int count)
@@ -326,6 +223,17 @@ namespace Nextension
                 result = null;
                 return false;
             }
+        }
+        public static unsafe TOut bitConvert<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
+        {
+            var sizeOfTin = Marshal.SizeOf<TIn>();
+            var sizeOfTOut = Marshal.SizeOf<TOut>();
+
+            if (sizeOfTin != sizeOfTOut)
+            {
+                throw new Exception("TIn and TOut binary must be the same size");
+            }
+            return *(TOut*)&inValue;
         }
     }
 }

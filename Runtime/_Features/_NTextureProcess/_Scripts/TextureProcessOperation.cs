@@ -6,7 +6,7 @@ namespace Nextension.TextureProcess
     {
         public int OriginWidth { get; protected set; }
         public int OriginHeight { get; protected set; }
-        public Texture Texture { get; protected set; }
+        public Texture2D Texture { get; protected set; }
 
 
         internal abstract class AbsProcessOperation
