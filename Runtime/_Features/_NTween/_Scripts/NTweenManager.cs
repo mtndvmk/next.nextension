@@ -236,6 +236,18 @@ namespace Nextension.Tween
             return createTransform3Tweener(target, punchDestination, duration, TweenType.Transform_Local_Scale, TweenLoopType.Punch);
         }
 
+        public static NTweener shakePosition(Transform target, float distance, float duration, bool isLocalSpace = true)
+        {
+            if (isLocalSpace)
+            {
+                return createTransform3Tweener(target, new float3(distance, 0, 0), duration, TweenType.Transform_Local_Move, TweenLoopType.Shake);
+            }
+            else
+            {
+                return createTransform3Tweener(target, new float3(distance, 0, 0), duration, TweenType.Transform_World_Move, TweenLoopType.Shake);
+            }
+        }
+
         public static NTweener fromTo(float from, float destination, Action<float> onChanged, float duration)
         {
             return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float_Tween, TweenLoopType.Normal);

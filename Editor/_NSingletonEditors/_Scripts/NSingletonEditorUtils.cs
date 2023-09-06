@@ -2,7 +2,7 @@ using Nextension;
 using System;
 using System.Reflection;
 
-public class NSingletonEditorUtils : INPreprocessBuild
+public class NSingletonEditorUtils : IErrorCheckable
 {
     static void onPreprocessBuild()
     {
@@ -11,7 +11,7 @@ public class NSingletonEditorUtils : INPreprocessBuild
             throw e;
         }
     }
-    static void onReloadScript()
+    static void onEditorLoop()
     {
         if (checkHasErrorOnBuild(out var e))
         {
@@ -59,4 +59,5 @@ public class NSingletonEditorUtils : INPreprocessBuild
 
         }
     }
+
 }

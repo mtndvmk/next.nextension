@@ -3,18 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
 using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace Nextension
 {
     public static class NUtils
     {
-        #region Number Utils
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        #region Number & Bit mask
         [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isPOT(float n)
         {
             int int_n = (int)n;
@@ -24,8 +29,8 @@ namespace Nextension
             }
             return isPOT(int_n);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isPOT(int n)
         {
             return (n & (n - 1)) == 0 && n > 0;
@@ -33,17 +38,27 @@ namespace Nextension
         /// <summary>
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
-        public static bool checkBitMask<T>(T mask, int bitIndex) where T : Enum
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe bool checkBitMask<T>(T mask, int bitIndex) where T : unmanaged, Enum
         {
-            return checkBitMask((int)(object)mask, bitIndex);
+            var intOfEnum = *(int*)&mask;
+            return checkBitMask(intOfEnum, bitIndex);
+        }
+        /// <summary>
+        /// return true if (mask & filter) is not equal 0, otherwise return false
+        /// </summary>
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe bool checkMask<T>(T mask, T filter) where T : unmanaged, Enum
+        {
+            return ((*(int*)&mask) & (*(int*)&filter)) != 0;
         }
         /// <summary>
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(int mask, int bitIndex)
         {
             return (mask & (1 << bitIndex)) != 0;
@@ -51,13 +66,14 @@ namespace Nextension
         /// <summary>
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(long longMask, int bitIndex)
         {
             return (longMask & (1L << bitIndex)) != 0;
         }
         [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(byte[] byteMask, int bitIndex)
         {
             int byteIndex = bitIndex / 8;
@@ -66,47 +82,13 @@ namespace Nextension
             return (mask & 1 << maskIndex) != 0;
         }
         [BurstCompile]
-        public static bool checkBitMask(NBitMask128 mask128, int bitIndex)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool checkBitMask(NativeArray<byte> byteMask, int bitIndex)
         {
-            if (bitIndex < 64)
-            {
-                return checkBitMask(mask128.mask0, bitIndex);
-            }
-            else
-            {
-                return checkBitMask(mask128.mask1, bitIndex % 64);
-            }
-        }
-        [BurstCompile]
-        public static bool checkBitMask(NBitMask256 mask256, int bitIndex)
-        {
-            if (bitIndex < 128)
-            {
-                if (bitIndex < 64)
-                {
-                    return checkBitMask(mask256.mask0, bitIndex);
-                }
-                else
-                {
-                    return checkBitMask(mask256.mask1, bitIndex % 64);
-                }
-            }
-            else
-            {
-                if (bitIndex < 192)
-                {
-                    return checkBitMask(mask256.mask2, bitIndex % 64);
-                }
-                else
-                {
-                    return checkBitMask(mask256.mask3, bitIndex % 64);
-                }
-            }
-        }
-        [BurstCompile]
-        public static bool checkBitMask(NBitMask512 mask, int bitIndex)
-        {
-            return mask.checkBitMask(bitIndex);
+            int byteIndex = bitIndex / 8;
+            int maskIndex = bitIndex % 8;
+            byte mask = byteMask[byteIndex];
+            return (mask & 1 << maskIndex) != 0;
         }
 
         public static sbyte getBit1Index(int mask)
@@ -225,72 +207,76 @@ namespace Nextension
 
             return -1;
         }
-        public static int getBit1Index(byte[] byteMask)
+        public unsafe static int getBit1Index(byte[] byteMask)
         {
-            int byteIndex = -1;
-            for (int i = 0; i < byteMask.Length;++i)
+            if (byteMask == null || byteMask.Length == 0)
             {
-                if (byteMask[i] != 0)
-                {
-                    byteIndex = i;
-                    break;
-                }
+                throw new Exception("bytes is null or empty");
             }
 
-            if (byteIndex >= 0)
+            int index = byteMask.Length % 4;
+            int length = byteMask.Length / 4;
+            int num;
+
+            if (index != 0)
             {
-                var mask = byteMask[byteIndex];
-                for (byte i = 0; i < 8;++i)
+                fixed (byte* bPtr = &byteMask[0])
                 {
-                    if ((mask & 1 << i) != 0)
+                    num = *(int*)bPtr;
+                    if (num != 0)
                     {
-                        return byteIndex * 8 + i;
+                        return getBit1Index(num);
                     }
                 }
             }
+
+            int startBitIndex = index << 3;
+            fixed (byte* bPtr = &byteMask[index])
+            {
+                int* iPtr = (int*)bPtr;
+                while (length-- > 0)
+                {
+                    if ((num = *iPtr++) != 0)
+                    {
+                        return getBit1Index(num) + startBitIndex;
+                    }
+                    startBitIndex += 32;
+                }
+            }
+
             return -1;
         }
-        public static sbyte getBit1Index(NBitMask128 mask128)
+        public unsafe static int getBit1Index(NativeArray<byte> byteMask)
         {
-            sbyte bitIndex = getBit1Index(mask128.mask0);
-            if (bitIndex >= 0)
+            if (byteMask == null || byteMask.Length == 0)
             {
-                return bitIndex;
+                throw new Exception("bytes is null or empty");
             }
-            bitIndex = getBit1Index(mask128.mask1);
-            if (bitIndex >= 0)
+
+            int index = byteMask.Length % 4;
+            int length = byteMask.Length / 4;
+            int num;
+
+            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
+            if (index != 0)
             {
-                return (sbyte)(bitIndex + 64);
+                if ((num = *(int*)bPtr) != 0)
+                {
+                    return getBit1Index(num);
+                }
+            }
+
+            int startBitIndex = index << 3;
+            int* iPtr = (int*)(bPtr + index);
+            while (length-- > 0)
+            {
+                if ((num = *iPtr++) != 0)
+                {
+                    return getBit1Index(num) + startBitIndex;
+                }
+                startBitIndex += 32;
             }
             return -1;
-        }
-        public static int getBit1Index(NBitMask256 mask256)
-        {
-            int bitIndex = getBit1Index(mask256.mask0);
-            if (bitIndex >= 0)
-            {
-                return bitIndex;
-            }
-            bitIndex = getBit1Index(mask256.mask1);
-            if (bitIndex >= 0)
-            {
-                return bitIndex + 64;
-            }
-            bitIndex = getBit1Index(mask256.mask2);
-            if (bitIndex >= 0)
-            {
-                return bitIndex + 128;
-            }
-            bitIndex = getBit1Index(mask256.mask3);
-            if (bitIndex >= 0)
-            {
-                return bitIndex + 192;
-            }
-            return -1;
-        }
-        public static int getBit1Index(NBitMask512 mask)
-        {
-            return mask.getBit1Index();
         }
 
         public static sbyte getBit0Index(int mask)
@@ -409,148 +395,254 @@ namespace Nextension
 
             return -1;
         }
-        public static int getBit0Index(byte[] byteMask)
+        public unsafe static int getBit0Index(byte[] byteMask)
         {
-            int byteIndex = -1;
-            for (int i = 0; i < byteMask.Length;++i)
+            if (byteMask == null || byteMask.Length == 0)
             {
-                if (byteMask[i] == 0)
-                {
-                    byteIndex = i;
-                    break;
-                }
+                throw new Exception("bytes is null or empty");
             }
 
-            if (byteIndex >= 0)
+            int index = byteMask.Length % 4;
+            int length = byteMask.Length / 4;
+            int num;
+
+            if (index != 0)
             {
-                var mask = byteMask[byteIndex];
-                for (byte i = 0; i < 8;++i)
+                fixed (byte* bPtr = &byteMask[0])
                 {
-                    if ((mask & 1 << i) == 0)
+                    num = *(int*)bPtr;
+                    if (num != -1)
                     {
-                        return byteIndex * 8 + i;
+                        return getBit0Index(num);
                     }
                 }
             }
+
+            int startBitIndex = index << 3;
+            fixed (byte* bPtr = &byteMask[index])
+            {
+                int* iPtr = (int*)bPtr;
+                while (length-- > 0)
+                {
+                    if ((num = *iPtr++) != -1)
+                    {
+                        return getBit0Index(num) + startBitIndex;
+                    }
+                    startBitIndex += 32;
+                }
+            }
+
             return -1;
         }
-        public static sbyte getBit0Index(NBitMask128 mask128)
+        public unsafe static int getBit0Index(NativeArray<byte> byteMask)
         {
-            sbyte bitIndex = getBit0Index(mask128.mask0);
-            if (bitIndex >= 0)
+            if (byteMask == null || byteMask.Length == 0)
             {
-                return bitIndex;
+                throw new Exception("bytes is null or empty");
             }
-            bitIndex = getBit0Index(mask128.mask1);
-            if (bitIndex >= 0)
+
+            int index = byteMask.Length % 4;
+            int length = byteMask.Length / 4;
+            int num;
+
+            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
+            if (index != 0)
             {
-                return (sbyte)(bitIndex + 64);
+                if ((num = *(int*)bPtr) != -1)
+                {
+                    return getBit0Index(num);
+                }
+            }
+
+            int startBitIndex = index << 3;
+            int* iPtr = (int*)(bPtr + index);
+            while (length-- > 0)
+            {
+                if ((num = *iPtr++) != -1)
+                {
+                    return getBit0Index(num) + startBitIndex;
+                }
+                startBitIndex += 32;
             }
             return -1;
-        }
-        public static int getBit0Index(NBitMask256 mask256)
-        {
-            int bitIndex = getBit0Index(mask256.mask0);
-            if (bitIndex >= 0)
-            {
-                return bitIndex;
-            }
-            bitIndex = getBit0Index(mask256.mask1);
-            if (bitIndex >= 0)
-            {
-                return bitIndex + 64;
-            }
-            bitIndex = getBit0Index(mask256.mask2);
-            if (bitIndex >= 0)
-            {
-                return bitIndex + 128;
-            }
-            bitIndex = getBit0Index(mask256.mask3);
-            if (bitIndex >= 0)
-            {
-                return bitIndex + 192;
-            }
-            return -1;
-        }
-        public static int getBit0Index(NBitMask512 mask)
-        {
-            return mask.getBit0Index();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int setBit0(int mask, int bitIndex)
         {
             return mask &= ~(1 << bitIndex);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long setBit0(long mask, int bitIndex)
         {
             return mask &= ~(1L << bitIndex);
         }
-        public static NBitMask128 setBit0(NBitMask128 mask, int bitIndex)
-        {
-            mask.setBit0(bitIndex);
-            return mask;
-        }
-        public static NBitMask256 setBit0(NBitMask256 mask, int bitIndex)
-        {
-            mask.setBit0(bitIndex);
-            return mask;
-        }
-        public static void setBit0(byte[] bytes, int bitIndex)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void setBit0(this byte[] bytes, int bitIndex)
         {
             var byteIndex = bitIndex / 8;
             bitIndex %= 8;
             bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
-        public static void setBit0(NBitMask512 mask, int bitIndex)
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void setBit0(this NativeArray<byte> bytes, int bitIndex)
         {
-            mask.setBit0(bitIndex);
+            var byteIndex = bitIndex / 8;
+            bitIndex %= 8;
+            bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
-        
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int setBit1(int mask,int bitIndex)
         {
             return mask |= 1 << bitIndex;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static long setBit1(long mask, int bitIndex)
         {
             return mask |= 1L << bitIndex;
         }
-        public static NBitMask128 setBit1(NBitMask128 mask, int bitIndex)
-        {
-            mask.setBit1(bitIndex);
-            return mask;
-        }
-        public static NBitMask256 setBit1(this NBitMask256 mask, int bitIndex)
-        {
-            mask.setBit1(bitIndex);
-            return mask;
-        }
-        public static void setBit1(byte[] bytes, int bitIndex)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void setBit1(this byte[] bytes, int bitIndex)
         {
             var byteIndex = bitIndex / 8;
             bitIndex %= 8;
             bytes[byteIndex] |= (byte)(1 << bitIndex);
         }
-        public static void setBit1(NBitMask512 mask, int bitIndex)
+        [BurstCompile]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void setBit1(this NativeArray<byte> bytes, int bitIndex)
         {
-            mask.setBit1(bitIndex);
+            var byteIndex = bitIndex / 8;
+            bitIndex %= 8;
+            bytes[byteIndex] |= (byte)(1 << bitIndex);
         }
 
-        public static bool isOnly1(this byte[] bytes)
+        public unsafe static bool isOnly1(this byte[] bytes)
         {
-            for (int i = 0; i < bytes.Length;++i)
+            if (bytes == null || bytes.Length == 0)
             {
-                if (bytes[i] != 1)
+                throw new Exception("bytes is null or empty");
+            }
+
+            int index = bytes.Length % 4;
+            int length = bytes.Length / 4;
+
+            if (index != 0)
+            {
+                fixed (byte* bPtr = &bytes[0])
+                {
+                    int* iPtr = (int*)bPtr;
+                    if (*iPtr != -1)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            fixed (byte* bPtr = &bytes[index])
+            {
+                int* iPtr = (int*)bPtr;
+                while (length-- > 0)
+                {
+                    if (*iPtr++ != -1)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+        public unsafe static bool isOnly1(this NativeArray<byte> bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new Exception("bytes is null or empty");
+            }
+
+            int index = bytes.Length % 4;
+            int length = bytes.Length / 4;
+
+            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
+            if (index != 0)
+            {
+                if (*(int*)bPtr != -1)
+                {
+                    return false;
+                }
+            }
+
+            int* iPtr = (int*)(bPtr + index);
+            while (length-- > 0)
+            {
+                if (*iPtr++ != -1)
                 {
                     return false;
                 }
             }
             return true;
         }
-        public static bool isOnly0(this byte[] bytes)
+        public static unsafe bool isOnly0(this byte[] bytes)
         {
-            for (int i = 0; i < bytes.Length;++i)
+            if (bytes == null || bytes.Length == 0)
             {
-                if (bytes[i] != 0)
+                throw new Exception("bytes is null or empty");
+            }
+
+            int index = bytes.Length % 4;
+            int length = bytes.Length / 4;
+
+            if (index != 0)
+            {
+                fixed (byte* bPtr = &bytes[0])
+                {
+                    int* iPtr = (int*)bPtr;
+                    if (*iPtr != 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            fixed (byte* bPtr = &bytes[index])
+            {
+                int* iPtr = (int*)bPtr;
+                while (length-- > 0)
+                {
+                    if (*iPtr++ != 0)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+        public unsafe static bool isOnly0(this NativeArray<byte> bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new Exception("bytes is null or empty");
+            }
+
+            int index = bytes.Length % 4;
+            int length = bytes.Length / 4;
+
+            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
+            if (index != 0)
+            {
+                if (*(int*)bPtr != 0)
+                {
+                    return false;
+                }
+            }
+
+            int* iPtr = (int*)(bPtr + index);
+            while (length-- > 0)
+            {
+                if (*iPtr++ != 0)
                 {
                     return false;
                 }
@@ -559,7 +651,7 @@ namespace Nextension
         }
         #endregion
 
-        #region Unity Transform and Point Utils
+        #region Unity Transform and Point
 
         #region Vector2
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -978,6 +1070,7 @@ namespace Nextension
         }
         #endregion
 
+        #region Camera matrix
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Matrix4x4 getWorldToViewportMatrix(Camera camera)
         {
@@ -1029,10 +1122,11 @@ namespace Nextension
             var viewportPoint = screenToViewportPoint(screenPoint);
             return viewportToWorldPoint(viewport2WorldMatrix, viewportPoint);
         }
-
+        #endregion
+        
         #endregion
 
-        #region Unity Color Utils
+        #region Unity Color
         public static Color setR(this Color color, float r)
         {
             color.r = r;
@@ -1073,7 +1167,11 @@ namespace Nextension
             }
             return color;
         }
-
+        /// <summary>
+        /// Format: #RRGGBBAA
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
         public static string toHex(this Color color)
         {
             Color32 c = color;
@@ -1081,38 +1179,26 @@ namespace Nextension
             return hex;
         }
         /// <summary>
+        /// htmlCode format: #RGB,#RRGGBB,#RGBA, #RRGGBBAA, red, cyan, blue, darkblue, lightblue, purple, yellow, lime, fuchsia, white, silver, grey, black, orange, brown, maroon, green, olive, navy, teal, aqua, magenta
         /// </summary>
-        /// <param name="htmlCode">format: #XXXXXXXX</param>
-        /// <returns></returns>
         public static Color toColor(this string htmlCode)
         {
-            Color c = Color.clear;
-            var b = ColorUtility.TryParseHtmlString(htmlCode, out c);
-            if (!b)
+            if (ColorUtility.TryParseHtmlString(htmlCode, out var c))
             {
-                throw new Exception("---> Error to parse html color");
+                return c;
             }
-            return c;
+            throw new Exception("Error to parse html color");
         }
         public static byte[] to4Bytes(this Color color)
         {
-            byte r = (byte)(color.r * 255);
-            byte g = (byte)(color.g * 255);
-            byte b = (byte)(color.b * 255);
-            byte a = (byte)(color.a * 255);
-            var rgba = new byte[4] { r, g, b, a };
-            return rgba;
+            return NConverter.getBytes(color.toInt32());
         }
         /// <summary>
         /// 4 bytes to color
         /// </summary>
         public static Color bytesToColor(byte[] inData, int startIndex = 0)
         {
-            var r = inData[startIndex] / 255f;
-            var g = inData[startIndex + 1] / 255f;
-            var b = inData[startIndex + 2] / 255f;
-            var a = inData[startIndex + 3] / 255f;
-            return new Color(r, g, b, a);
+            return fromInt32(NConverter.fromBytesWithoutChecks<int>(inData, startIndex));
         }
         public static int toInt32(this Color color)
         {
@@ -1140,7 +1226,7 @@ namespace Nextension
         }
         #endregion
 
-        #region String Utils
+        #region String
         public static string firstCharToUpper(this string input)
         {
             if (String.IsNullOrEmpty(input))
@@ -1153,12 +1239,123 @@ namespace Nextension
             var s = totalSeconds % 60;
             return $"{m:0#}:{s:0#}";
         }
+        public static bool isHex(in string str)
+        {
+            int offset;
+            if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+            {
+                offset = 2;
+            }
+            else
+            {
+                offset = 0;
+            }
+            bool isHex;
+            for (int i = offset; i < str.Length; ++i)
+            {
+                var c = str[i];
+                isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+                if (!isHex)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public static string bytesToHex(byte[] inData, bool include0xPrefix = false)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (include0xPrefix)
+            {
+                sb.Append("0x");
+            }
+            for (int i = 0; i < inData.Length; i++)
+            {
+                sb.Append(inData[i].ToString("x2"));
+            }
+            return sb.ToString();
+        }
+        private static Dictionary<char, byte> _hexTable;
+
+        /// <summary>
+        /// Require hex length mod 2 == 0
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static byte[] hexToBytes(string hex)
+        {
+            if (hex.Length % 2 != 0)
+            {
+                throw new Exception("Invalid hex: " + hex);
+            }
+            int offset;
+            if (hex[1] == 'x' || hex[1] == 'X')
+            {
+                offset = 2;
+            }
+            else
+            {
+                offset = 0;
+            }
+            if (_hexTable == null)
+            {
+                _hexTable = new Dictionary<char, byte>();
+                byte num = 0;
+                for (char i = '0'; i <= '9'; ++i)
+                {
+                    _hexTable[i] = num++;
+                }
+                _hexTable['A'] = _hexTable['a'] = 10;
+                _hexTable['B'] = _hexTable['b'] = 11;
+                _hexTable['C'] = _hexTable['c'] = 12;
+                _hexTable['D'] = _hexTable['d'] = 13;
+                _hexTable['E'] = _hexTable['e'] = 14;
+                _hexTable['F'] = _hexTable['f'] = 15;
+            }
+
+            byte[] bytes = new byte[(hex.Length - offset) / 2];
+            for (int i = 0; i < bytes.Length; ++i)
+            {
+                var i2 = i * 2 + offset;
+                var c0 = _hexTable[hex[i2]];
+                var c1 = _hexTable[hex[i2 + 1]];
+                bytes[i] = (byte)(c0 << 4 | c1);
+            }
+
+            return bytes;
+        }
+        public static bool isEqualHex(string hex0, string hex1)
+        {
+            hex0 = hex0.ToLower();
+            hex1 = hex1.ToLower();
+            if (hex0[1] == 'x')
+            {
+                if (hex1[1] != 'x')
+                {
+                    hex0 = hex0.Remove(0, 2);
+                }
+            }
+            else if (hex1[1] == 'x')
+            {
+                hex1 = hex1.Remove(0, 2);
+            }
+            return hex0 == hex1;
+        }
+        public static string computeMD5(string s)
+        {
+            using var provider = System.Security.Cryptography.MD5.Create();
+            StringBuilder builder = new StringBuilder();
+
+            var hash = provider.ComputeHash(NConverter.getBytes(s));
+            return bytesToHex(hash);
+        }
         #endregion
 
-        #region List and Array Utils
-        public static List<T> add<T>(this List<T> self, T item, bool igoreIfExist = true)
+        #region List and Array
+        public static List<T> add<T>(this List<T> self, T item, bool ignoreIfExist = true)
         {
-            if (igoreIfExist)
+            if (ignoreIfExist)
             {
                 if (self.Contains(item))
                 {
@@ -1168,9 +1365,9 @@ namespace Nextension
             self.Add(item);
             return self;
         }
-        public static List<T> addAndSort<T>(this List<T> self, T item, bool igoreIfExist = true)
+        public static List<T> addAndSort<T>(this List<T> self, T item, bool ignoreIfExist = true)
         {
-            if (igoreIfExist)
+            if (ignoreIfExist)
             {
                 if (self.Contains(item))
                 {
@@ -1181,9 +1378,9 @@ namespace Nextension
             self.Sort();
             return self;
         }
-        public static List<T> addAndSort<T>(this List<T> self, T item, Comparison<T> comparison, bool igoreIfExist = true)
+        public static List<T> addAndSort<T>(this List<T> self, T item, Comparison<T> comparison, bool ignoreIfExist = true)
         {
-            if (igoreIfExist)
+            if (ignoreIfExist)
             {
                 if (self.Contains(item))
                 {
@@ -1209,18 +1406,70 @@ namespace Nextension
             return self;
         }
 
+        public static bool isSameItem<T>(this ICollection<T> a, ICollection<T> b)
+        {
+            if (a == null || b == null)
+            {
+                return false;
+            }
+            if (a.Count != b.Count)
+            {
+                return false;
+            }
+            return Enumerable.SequenceEqual(a, b);
+        }
+
         /// <summary>
         /// remove items in list
         /// </summary>
         /// <typeparam name="T">is a built-in type, struct or class</typeparam>
         /// <param name="self">is list contains item which you want remove</param>
         /// <param name="indexList">index of items which you want remove</param>
-        public static void removeAt<T>(this IList<T> self, params int[] indexs)
+        public static void removeAt<T>(this IList<T> self, params int[] indices)
         {
-            for (int i = indexs.Length - 1; i >= 0; --i)
+            for (int i = indices.Length - 1; i >= 0; --i)
             {
-                self.RemoveAt(indexs[i]);
+                self.RemoveAt(indices[i]);
             }
+        }
+        public static void removeLast<T>(this IList<T> list)
+        {
+            list.RemoveAt(list.Count - 1);
+        }
+        public static void removeLast(this IBList list)
+        {
+            list.removeAt(list.Count - 1);
+        }
+        public static T takeAndRemoveAt<T>(this IList<T> self, int index)
+        {
+            var item = self[index];
+            self.RemoveAt(index);
+            return item;
+        }
+        public static T takeAndRemoveAt<T>(this IBList<T> self, int index)
+        {
+            var item = self[index];
+            self.removeAt(index);
+            return item;
+        }
+        public static T takeAndRemoveLast<T>(this IList<T> self)
+        {
+            var item = self[self.Count - 1];
+            self.removeLast();
+            return item;
+        }
+        public static T takeAndRemoveLast<T>(this IBList<T> self)
+        {
+            var item = self[self.Count - 1];
+            self.removeLast();
+            return item;
+        }
+        public static bool removeSwapBack<T>(this IList<T> self, T item)
+        {
+            var index = self.IndexOf(item);
+            if (index < 0) return false;
+            self.removeAtSwapBack(index);
+            return true;
         }
         /// <summary>
         /// swap item to back and remove it
@@ -1239,34 +1488,56 @@ namespace Nextension
             }
             self.RemoveAt(lastIndex);
         }
-        public static bool isSameItem<T>(this ICollection<T> a, ICollection<T> b)
-        {
-            if (a == null || b == null)
-            {
-                return false;
-            }
-            if (a.Count != b.Count)
-            {
-                return false;
-            }
-            return Enumerable.SequenceEqual(a, b);
-        }
-
-        public static T takeAndRemoveAt<T>(this IList<T> self, int index)
+        public static T takeAndRemoveSwapBack<T>(this IList<T> self, int index)
         {
             var item = self[index];
-            self.RemoveAt(index);
+            self.removeAtSwapBack(index);
             return item;
         }
-        public static T takeAndRemoveAt<T>(this IBList<T> self, int index)
+        public static T[] merge<T>(params T[][] arrays)
         {
-            var item = self[index];
-            self.removeAt(index);
-            return item;
+            int totalLength = 0;
+            for (int i = 0; i < arrays.Length; ++i)
+            {
+                totalLength += arrays[i].Length;
+            }
+            var data = new T[totalLength];
+            int pointer = 0;
+            for (int i = 0; i < arrays.Length; ++i)
+            {
+                Buffer.BlockCopy(arrays[i], 0, data, pointer, arrays[i].Length);
+                pointer += arrays[i].Length;
+            }
+            return data;
+        }
+        public static T[] mergeTo<T>(this T[] a, T[] b)
+        {
+            var aOffset = a.Length;
+            Array.Resize(ref a, a.Length + b.Length);
+            Buffer.BlockCopy(b, 0, a, aOffset, b.Length);
+            return a;
+        }
+        public static T[] getBlock<T>(T[] src, int startIndex, int count)
+        {
+            T[] b = new T[count];
+            Buffer.BlockCopy(src, startIndex, b, 0, count);
+            return b;
+        }
+        public static Span<T> getBlockAsSpan<T>(T[] src, int startIndex, int count)
+        {
+            return new Span<T>(src, startIndex, count);
+        }
+        public static T[] getBlockToEnd<T>(T[] src, int startIndex)
+        {
+            return getBlock(src, startIndex, src.Length - startIndex);
+        }
+        public static Span<T> getBlockToEndAsSpan<T>(T[] src, int startIndex)
+        {
+            return new Span<T>(src, startIndex, src.Length - startIndex);
         }
         #endregion
 
-        #region Random Utils
+        #region Random
         public static int randInt32(int min, int max, ICollection<int> exceptNumbers)
         {
             var intRand = new System.Random();
@@ -1290,7 +1561,7 @@ namespace Nextension
             return array;
         }
 
-        public static int[] getRandomIndexs(int maxIndex, int count, int startIndex = 0)
+        public static int[] getRandomIndices(int maxIndex, int count, int startIndex = 0)
         {
             var rnd = new System.Random();
             return Enumerable.Range(startIndex, maxIndex).OrderBy(x => rnd.Next()).Take(count).ToArray();
@@ -1341,50 +1612,6 @@ namespace Nextension
             }
             index = randInt32(0, self.Count, exceptIndex);
             return self[index];
-        }
-        #endregion
-
-        #region Buffer Utils
-        public static byte[] merge(params byte[][] arrays)
-        {
-            int totalLength = 0;
-            for (int i = 0; i < arrays.Length;++i)
-            {
-                totalLength += arrays[i].Length;
-            }
-            var data = new byte[totalLength];
-            int pointer = 0;
-            for (int i = 0; i < arrays.Length;++i)
-            {
-                Buffer.BlockCopy(arrays[i], 0, data, pointer, arrays[i].Length);
-                pointer += arrays[i].Length;
-            }
-            return data;
-        }
-        public static byte[] mergeTo(this byte[] a, byte[] b)
-        {
-            var aOffset = a.Length;
-            Array.Resize(ref a, a.Length + b.Length);
-            Buffer.BlockCopy(b, 0, a, aOffset, b.Length);
-            return a;
-        }
-        public static T[] getBlock<T>(T[] src, int startIndex, int count)
-        {
-            T[] b = new T[count];
-            Buffer.BlockCopy(src, startIndex, b, 0, count);
-            return b;
-        }
-        public static Span<T> getBlockAsSpan<T>(T[] src, int startIndex, int count)
-        {
-            return new Span<T>(src, startIndex, count);
-        }
-        public static T[] getBlockToEnd<T>(T[] src, int startIndex)
-        {
-            return getBlock(src, startIndex, src.Length - startIndex);
-        }
-        public static Span<T> getBlockToEndAsSpan<T>(T[] src, int startIndex)
-        {
-            return new Span<T>(src, startIndex, src.Length - startIndex);
         }
         #endregion
 
@@ -1737,7 +1964,7 @@ namespace Nextension
             targetBoxCollider.center = bounds.center;
             targetBoxCollider.size = bounds.size;
 
-            NEditorUtils.setDirty(target);
+            NAssetUtils.setDirty(target);
             NUtils.destroyObject(cloneContainer);
             return targetBoxCollider;
         }
@@ -1824,7 +2051,7 @@ namespace Nextension
                 }
             }
 
-            NEditorUtils.setDirty(target);
+            NAssetUtils.setDirty(target);
             NUtils.destroyObject(cloneFrom, true);
             return boxCollider;
         }
@@ -1836,7 +2063,7 @@ namespace Nextension
         }
         #endregion
 
-        #region Animator Utils
+        #region Animator
         public static void setIntegerFromTo(this Animator animator, int fromHash, int toHash)
         {
             var value = animator.GetInteger(fromHash);
@@ -1844,7 +2071,12 @@ namespace Nextension
         }
         #endregion
 
-        #region C# Type Utils
+        #region C# Type
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static int sizeOf<T>() where T : unmanaged
+        {
+            return sizeof(T);
+        }
         public static object createInstance(this Type type)
         {
             var constructors = type.GetConstructors();
@@ -1866,10 +2098,10 @@ namespace Nextension
             return (T)createInstance(typeof(T));
         }
 
-        private static Type[] _typeCached;
+        private static Type[] _customTypeCached;
         public static Type[] getCustomTypes()
         {
-            if (_typeCached == null)
+            if (_customTypeCached == null)
             {
                 var typeList = new List<Type>();
                 var assembles = AppDomain.CurrentDomain.GetAssemblies();
@@ -1902,16 +2134,16 @@ namespace Nextension
                     var types = assembly.GetTypes();
                     typeList.AddRange(types);
                 }
-                _typeCached = typeList.ToArray();
+                _customTypeCached = typeList.ToArray();
                 if (Application.isPlaying)
                 {
-                    _ = NAwaiter.runDelay(1, () =>
+                    NAwaiter.runDelay(1, () =>
                     {
-                        _typeCached = null;
+                        _customTypeCached = null;
                     });
                 }
             }
-            return _typeCached;
+            return _customTypeCached;
         }
         public static bool isInherited(Type child, Type parent)
         {
@@ -1942,6 +2174,24 @@ namespace Nextension
         #endregion
 
         #region Others
+        public static async Task<byte[]> getBinaryFrom(Uri uri)
+        {
+            if (uri.IsFile && Application.platform != RuntimePlatform.WebGLPlayer)
+            {
+                return await System.IO.File.ReadAllBytesAsync(uri.LocalPath);
+            }
+            var unityWebRequest = UnityWebRequest.Get(uri);
+            await unityWebRequest.SendWebRequest();
+            if (string.IsNullOrEmpty(unityWebRequest.error))
+            {
+                var bin = unityWebRequest.downloadHandler.data;
+                unityWebRequest.Dispose();
+                return bin;
+            }
+            var err = unityWebRequest.error;
+            unityWebRequest.Dispose();
+            throw new Exception(err);
+        }
         public static void dispose(params IDisposable[] disposeables)
         {
             for (int i = 0; i < disposeables.Length;++i)

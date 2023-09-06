@@ -17,7 +17,7 @@ namespace Nextension.Tween
         public struct Job : IJobFor
         {
             [ReadOnly] private NativeArray<JobData<float>> _jobDatas;
-            [ReadOnly] private NativeArray<NBitMask256> _mask;
+            [ReadOnly] private NativeArray<byte> _mask;
             [WriteOnly] private NativeArray<float> _results;
 
             public Job(BasicFloatTweenChunk chunk)
@@ -29,11 +29,11 @@ namespace Nextension.Tween
 
             public void Execute(int index)
             {
-                var currentTime = TweenStaticManager.currentTimeInJob.Data;
-                var data = _jobDatas[index];
-                if (currentTime >= data.startTime)
+                if (NUtils.checkBitMask(_mask, index))
                 {
-                    if (NUtils.checkBitMask(_mask[0], index))
+                    var data = _jobDatas[index];
+                    var currentTime = TweenStaticManager.currentTimeInJob.Data;
+                    if (currentTime >= data.startTime)
                     {
                         var t = (currentTime - data.startTime) / data.duration;
                         BurstEaseUtils.ease(data.from, data.to, t, data.easeType, out var result);

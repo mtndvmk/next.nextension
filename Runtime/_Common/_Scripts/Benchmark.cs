@@ -16,7 +16,7 @@ namespace Nextension
 
             public override string ToString()
             {
-                return $"Avg: {avgTime}, Min: {minTime}, Max: {maxTime}, Run count: {runCount}";
+                return $"Avg: {avgTime}, Min: {minTime}, Max: {maxTime}, Run count: {runCount} (ticks)";
             }
         }
         public static Result run(Action action, int runCount = 1)

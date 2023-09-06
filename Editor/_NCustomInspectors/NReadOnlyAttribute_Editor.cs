@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Nextension.InspectorEditor
+namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NReadOnlyAttribute))]
     public class NReadOnlyDrawer : PropertyDrawer

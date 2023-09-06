@@ -1,6 +1,5 @@
-namespace Nextension.InspectorEditor
+namespace Nextension.NEditor
 {
-    using Nextension.NEditor;
     using System;
     using System.Linq;
     using UnityEditor;

@@ -11,7 +11,7 @@ namespace Nextension
 #if UNITY_EDITOR
         protected virtual async void OnEnable()
         {
-            await new NWaitUntil_Editor(() => NEditorUtils.isFile(this));
+            await new NWaitUntil_Editor(() => NAssetUtils.isFile(this));
             addThis();
         }
         [ContextMenu("Add to ResourceScriptableTable")]

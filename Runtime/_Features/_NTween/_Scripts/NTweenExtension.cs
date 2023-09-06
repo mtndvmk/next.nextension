@@ -6,6 +6,27 @@ namespace Nextension.Tween
 {
     public static class NTweenExtension
     {
+        public static void cancelAllTweener(this GameObject target, bool includeChildren, bool includeInActive)
+        {
+            if (target == null)
+            {
+                throw new NullReferenceException("cancelAllTweener.target");
+            }
+            Component[] components;
+            if (includeChildren)
+            {
+                components = target.GetComponents<Component>();
+            }
+            else
+            {
+                components = target.GetComponentsInChildren<Component>(includeInActive);
+            }
+            cancelAllTweener(new ObjectCancelControlKey(target));
+            foreach (var com in components)
+            {
+                cancelAllTweener(new ObjectCancelControlKey(com));
+            }
+        }
         public static void cancelAllTweener(this UnityEngine.Object target)
         {
             if (target == null)
@@ -13,6 +34,10 @@ namespace Nextension.Tween
                 throw new NullReferenceException("cancelAllTweener.target");
             }
             var controlKey = new ObjectCancelControlKey(target);
+            NTweenManager.cancelFromControlledTweener(controlKey);
+        }
+        public static void cancelAllTweener(AbsCancelControlKey controlKey)
+        {
             NTweenManager.cancelFromControlledTweener(controlKey);
         }
         public static NTweener moveTo(this Transform target, Vector3 destination, float duration, bool isLocalSpace = true)

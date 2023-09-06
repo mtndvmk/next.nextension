@@ -12,37 +12,43 @@ namespace Nextension.Tween
         }
         internal override void doCompleteOnStart()
         {
-            if (tweenLoopType == TweenLoopType.Normal)
+            switch (tweenLoopType)
             {
-                switch (tweenType)
-                {
-                    case TweenType.Transform_Local_Move:
-                        target.localPosition = destination;
+                case TweenLoopType.Normal:
+                    {
+                        switch (tweenType)
+                        {
+                            case TweenType.Transform_Local_Move:
+                                target.localPosition = destination;
+                                break;
+                            case TweenType.Transform_World_Move:
+                                target.position = destination;
+                                break;
+                            case TweenType.Transform_Local_Scale:
+                                target.localScale = destination;
+                                break;
+                            default:
+                                throw new NotImplementedException(tweenType.ToString());
+                        }
                         break;
-                    case TweenType.Transform_World_Move:
-                        target.position = destination;
-                        break;
-                    case TweenType.Transform_Local_Scale:
-                        target.localScale = destination;
-                        break;
-                    default:
-                        throw new NotImplementedException(tweenType.ToString());
-                }
+                    }
+
             }
         }
-        public override JobData<float3> toJobData()
+
+        public override JobData<float3> getJobData()
         {
-            var jobData = base.toJobData();
+            var jobData = base.getJobData();
             switch (tweenType)
             {
                 case TweenType.Transform_Local_Move:
-                    jobData.from = target.localPosition;
+                    from = jobData.from = target.localPosition;
                     break;
                 case TweenType.Transform_World_Move:
-                    jobData.from = target.position;
+                    from = jobData.from = target.position;
                     break;
                 case TweenType.Transform_Local_Scale:
-                    jobData.from = target.localScale;
+                    from = jobData.from = target.localScale;
                     break;
                 default:
                     throw new NotImplementedException(tweenType.ToString());

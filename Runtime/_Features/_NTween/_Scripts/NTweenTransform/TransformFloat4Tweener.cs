@@ -24,9 +24,9 @@ namespace Nextension.Tween
                     throw new NotImplementedException(tweenType.ToString());
             }
         }
-        public override JobData<float4> toJobData()
+        public override JobData<float4> getJobData()
         {
-            var jobData = base.toJobData();
+            var jobData = base.getJobData();
             Quaternion quaternion;
             switch (tweenType)
             {

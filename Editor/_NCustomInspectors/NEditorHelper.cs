@@ -69,5 +69,12 @@ namespace Nextension.NEditor
                 return default;
             }
         }
+        public static void clearLog()
+        {
+            var assembly = Assembly.GetAssembly(typeof(Editor));
+            var type = assembly.GetType("UnityEditor.LogEntries");
+            var method = type.GetMethod("Clear");
+            method.Invoke(new object(), null);
+        }
     }
 }

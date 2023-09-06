@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -15,28 +14,28 @@ namespace Nextension.Tween
     }
     internal abstract class AbsTweenChunk
     {
-        private static int[] _defaultEmptyIndexs;
+        private static int[] _defaultEmptyIndices;
 
         [StartupMethod]
         static void initialize()
         {
             _chunkIdOrder = 1;
             ChunkCount = 0;
-            _defaultEmptyIndexs = new int[ChunkSize];
+            _defaultEmptyIndices = new int[ChunkSize];
             for (int i = 0; i < ChunkSize; ++i)
             {
-                _defaultEmptyIndexs[i] = ChunkSize - i - 1;
+                _defaultEmptyIndices[i] = ChunkSize - i - 1;
             }
         }
         private static uint _chunkIdOrder;
         public static int ChunkCount { get; private set; }
-        public static int ChunkSize = Marshal.SizeOf(typeof(NBitMask256)) * 8;
+        public const int ChunkSize = 256;
         public AbsTweenChunk()
         {
             chunkId = _chunkIdOrder++;
             ChunkCount++;
-            mask = new NativeArray<NBitMask256>(1, Allocator.Persistent);
-            _emptyIndexs = new List<int>(_defaultEmptyIndexs);
+            mask = new NativeArray<byte>(ChunkSize, Allocator.Persistent);
+            _emptyIndices = new List<int>(_defaultEmptyIndices);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void dispose()
@@ -45,21 +44,21 @@ namespace Nextension.Tween
             ChunkCount--;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool isFull() => _emptyIndexs.Count == 0;
+        public bool isFull() => _emptyIndices.Count == 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool isEmpty() => _emptyIndexs.Count == ChunkSize;
+        public bool isEmpty() => _emptyIndices.Count == ChunkSize;
 
         public readonly uint chunkId;
         public float lastAccessTime;
         public Action onChunkBecomeNotFull;
-        protected NativeArray<NBitMask256> mask;
+        protected NativeArray<byte> mask;
 
-        protected List<int> _emptyIndexs;
+        protected List<int> _emptyIndices;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int getNextMaskIndex()
         {
-            return _emptyIndexs.takeAndRemoveAt(_emptyIndexs.Count - 1);
+            return _emptyIndices.takeAndRemoveLast();
         }
 
         public abstract void addTweener(NTweener tweener);
@@ -80,11 +79,9 @@ namespace Nextension.Tween
 
         protected void removeAt(int maskIndex)
         {
-            var mask = this.mask[0];
             var isFull = this.isFull();
             mask.setBit0(maskIndex);
-            this.mask[0] = mask;
-            _emptyIndexs.Add(maskIndex);
+            _emptyIndices.Add(maskIndex);
             if (isEmpty())
             {
                 lastAccessTime = TweenStaticManager.currentTime;
@@ -98,7 +95,6 @@ namespace Nextension.Tween
 
         public sealed override void addTweener(NTweener inTweener)
         {
-            var mask = this.mask[0];
             var tweener = inTweener as TNTweener;
 
 #if UNITY_EDITOR
@@ -111,7 +107,6 @@ namespace Nextension.Tween
             var maskIndex = getNextMaskIndex();
             tweeners[maskIndex] = tweener;
             mask.setBit1(maskIndex);
-            this.mask[0] = mask;
             lastAccessTime = -1;
             tweener.chunkIndex = new ChunkIndex(tweener.tweenType, chunkId, (ushort)maskIndex);
             onAddNewTweener(tweener);

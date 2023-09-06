@@ -15,6 +15,7 @@ namespace Nextension
     public interface IBList<V> : IBList
     {
         public V this[int index] { get; set; }
+        public int bIndexOf(V item);
     }
     /// <summary>
     /// 
@@ -125,15 +126,15 @@ namespace Nextension
                 return -1;
             }
         }
-        public int[] bFindIndexs(K searchKey)
+        public int[] bFindIndices(K searchKey)
         {
-            List<int> indexs = new List<int>();
+            List<int> indices = new List<int>();
             var fIndex = bFindIndex(searchKey);
             for (int i = fIndex; i >= 0; i--)
             {
                 if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
                 {
-                    indexs.Add(i);
+                    indices.Add(i);
                 }
                 else
                 {
@@ -141,20 +142,20 @@ namespace Nextension
                 }
             }
 
-            indexs.Reverse();
+            indices.Reverse();
 
             for (int i = fIndex + 1; i < _list.Count; ++i)
             {
                 if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
                 {
-                    indexs.Add(i);
+                    indices.Add(i);
                 }
                 else
                 {
                     break;
                 }
             }
-            return indexs.ToArray();
+            return indices.ToArray();
         }
         public int findIndex(Predicate<V> predicate)
         {
@@ -175,8 +176,8 @@ namespace Nextension
         }
         public int bIndexOf(V item)
         {
-            var indexs = bFindIndexs(getCompareKeyFromValue(item));
-            foreach (int i in indexs)
+            var indices = bFindIndices(getCompareKeyFromValue(item));
+            foreach (int i in indices)
             {
                 if (item.Equals(_list[i]))
                 {
@@ -314,12 +315,12 @@ namespace Nextension
         }
         public int removeAll(K key)
         {
-            var indexs = bFindIndexs(key);
-            for (int i = indexs.Length - 1; i >= 0; i--)
+            var indices = bFindIndices(key);
+            for (int i = indices.Length - 1; i >= 0; i--)
             {
                 _list.RemoveAt(i);
             }
-            return indexs.Length;
+            return indices.Length;
         }
         public void removeRange(int index, int count)
         {
@@ -327,8 +328,8 @@ namespace Nextension
         }
         public bool remove(V item)
         {
-            var indexs = bFindIndexs(getCompareKeyFromValue(item));
-            for (int i = indexs.Length - 1; i >= 0; i--)
+            var indices = bFindIndices(getCompareKeyFromValue(item));
+            for (int i = indices.Length - 1; i >= 0; i--)
             {
                 if (item.Equals(_list[i]))
                 {

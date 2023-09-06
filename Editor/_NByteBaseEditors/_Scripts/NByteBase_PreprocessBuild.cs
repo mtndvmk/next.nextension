@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Nextension.NByteBase.Editor
 {
-    public class NByteBase_PreprocessBuild : INPreprocessBuild
+    public class NByteBase_PreprocessBuild : IErrorCheckable
     {
         private NByteBase_PreprocessBuild() { }
         static void onPreprocessBuild()
@@ -18,13 +18,13 @@ namespace Nextension.NByteBase.Editor
                 throw new BuildFailedException(exception);
             }
         }
-        static void onReloadScript()
+        static void onEditorLoop()
         {
             Exception exception = null;
             NByteBaseEditorUtils.clearCache();
             if (NByteBaseEditorUtils.checkHasErrorOnBuild(out exception))
             {
-                Debug.LogError(exception);
+                throw exception;
             }
         }
     }

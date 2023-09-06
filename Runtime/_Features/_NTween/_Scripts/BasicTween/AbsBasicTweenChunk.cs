@@ -13,12 +13,12 @@ namespace Nextension.Tween
 
         public AbsBasicTweenChunk() : base()
         {
-            _jobDatas = new NativeArray<JobData<T>>(ChunkSize, Allocator.Persistent);
-            _results = new NativeArray<T>(ChunkSize, Allocator.Persistent);
+            _jobDatas = new NativeArray<JobData<T>>(ChunkSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _results = new NativeArray<T>(ChunkSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
         protected sealed override void onAddNewTweener(BasicTweener<T> tweener)
         {
-            _jobDatas[tweener.chunkIndex.maskIndex] = tweener.toJobData();
+            _jobDatas[tweener.chunkIndex.maskIndex] = tweener.getJobData();
         }
         protected sealed override void onTweenerUpdated(int maskIndex)
         {

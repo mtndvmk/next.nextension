@@ -4,6 +4,22 @@ using Unity.Jobs;
 
 namespace Nextension
 {
+    public static class NAwaiterEditor
+    {
+        public static void runDelay(float second, Action delayCallback)
+        {
+            _ = runDelayAsync(second, delayCallback);
+        }
+        public static async NWaitable runDelayAsync(float second, Action delayCallback)
+        {
+            if (delayCallback == null)
+            {
+                throw new NullReferenceException("NAwaiter.runDelay.delayCallback");
+            }
+            await new NWaitSecond_Editor(second);
+            delayCallback.Invoke();
+        }
+    }
     public struct NWaitUntil_Editor : IWaitable_Editor
     {
         internal readonly Func<bool> predicate;

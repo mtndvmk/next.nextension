@@ -7,9 +7,9 @@ namespace Nextension
 {
     public static class NAwaiter
     {
-        public static NWaitable runDelay(float second, Action delayCallback)
+        public static void runDelay(float second, Action delayCallback)
         {
-            return runDelayAsync(second, delayCallback);
+            _ = runDelayAsync(second, delayCallback);
         }
         public static async NWaitable runDelayAsync(float second, Action delayCallback)
         {

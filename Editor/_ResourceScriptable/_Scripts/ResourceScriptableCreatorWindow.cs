@@ -39,7 +39,7 @@ namespace Nextension.NEditor
                     {
                         if (GUILayout.Button("Create " + type.Name + " on resource"))
                         {
-                            NEditorUtils.createScriptableOnResource(type, fileName);
+                            NAssetUtils.createScriptableOnResource(type, fileName);
                         }
                     }
                 }

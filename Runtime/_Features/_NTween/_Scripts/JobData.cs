@@ -3,7 +3,7 @@ using Unity.Burst;
 namespace Nextension.Tween
 {
     [BurstCompile]
-    public struct JobData<T> where T : struct
+    internal struct JobData<T> where T : struct
     {
         public TweenType tweenType;
         public TweenLoopType tweenLoopType;

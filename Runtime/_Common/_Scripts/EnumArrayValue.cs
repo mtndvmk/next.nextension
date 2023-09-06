@@ -96,10 +96,10 @@ namespace Nextension
     }
 
     [Serializable]
-    public class EnumArrayValue<T1, T2> : IEnumArrayValue where T1 : Enum
+    public class EnumArrayValue<TEnum, TValue> : IEnumArrayValue where TEnum : Enum
     {
-        [SerializeField] private T2[] enumValues = new T2[EnumIndex<T1>.getCount()];
-        [SerializeField] private T1[] enumArrayCache;
+        [SerializeField] private TValue[] enumValues = new TValue[EnumIndex<TEnum>.getCount()];
+        [SerializeField] private TEnum[] enumArrayCache;
 
 #if UNITY_EDITOR
         public object getEditorCache()
@@ -109,25 +109,25 @@ namespace Nextension
                 refreshEditorCache();
             }
 
-            Dictionary<T1, T2> dict = new Dictionary<T1, T2>();
+            Dictionary<TEnum, TValue> dict = new Dictionary<TEnum, TValue>();
             for (int i = 0; i < enumArrayCache.Length; ++i)
             {
                 var k = enumArrayCache[i];
-                if (!EnumIndex<T1>.isValid(k) || i >= enumValues.Length) continue;
+                if (!EnumIndex<TEnum>.isValid(k) || i >= enumValues.Length) continue;
                 dict[k] = enumValues[i];
             }
             return dict;
         }
         public void refreshEditorCache()
         {
-            if (enumArrayCache != EnumIndex<T1>.IndexToEnumTable)
+            if (enumArrayCache != EnumIndex<TEnum>.IndexToEnumTable)
             {
-                enumArrayCache = EnumIndex<T1>.IndexToEnumTable;
+                enumArrayCache = EnumIndex<TEnum>.IndexToEnumTable;
             }
         }
         public void applyEditorCache(object cache)
         {
-            var dict = (Dictionary<T1, T2>)cache;
+            var dict = (Dictionary<TEnum, TValue>)cache;
             if (dict != null)
             {
                 foreach (var item in dict)
@@ -138,12 +138,12 @@ namespace Nextension
         }
 #endif
         public int Length => enumValues.Length;
-        public int EnumCount => EnumIndex<T1>.getCount();
+        public int EnumCount => EnumIndex<TEnum>.getCount();
         public EnumArrayValue()
         {
 
         }
-        public EnumArrayValue(params (T1, T2)[] enumValues)
+        public EnumArrayValue(params (TEnum, TValue)[] enumValues)
         {
             for (int i = 0; i < enumValues.Length; ++i)
             {
@@ -151,38 +151,38 @@ namespace Nextension
             }
         }
 
-        public T2 get(T1 enumType)
+        public TValue get(TEnum enumType)
         {
-            return enumValues[EnumIndex<T1>.getIndex(enumType)];
+            return enumValues[EnumIndex<TEnum>.getIndex(enumType)];
         }
-        public void set(T1 enumType, T2 val)
+        public void set(TEnum enumType, TValue val)
         {
-            var index = EnumIndex<T1>.getIndex(enumType);
+            var index = EnumIndex<TEnum>.getIndex(enumType);
             if (index < 0) return;
             enumValues[index] = val;
         }
-        public T2 this[T1 enumType]
+        public TValue this[TEnum enumType]
         {
             get => get(enumType);
             set => set(enumType, value);
         }
-        public IEnumerable<T2> enumerateValues()
+        public IEnumerable<TValue> enumerateValues()
         {
             for (int i = 0; i < Length; ++i)
             {
                 yield return enumValues[i];
             }
         }
-        public IEnumerable<(T1 enumType, T2 value)> enumerateTupleValues()
+        public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
         {
             for (int i = 0; i < Length; ++i)
             {
-                yield return (EnumIndex<T1>.getEnum(i), enumValues[i]);
+                yield return (EnumIndex<TEnum>.getEnum(i), enumValues[i]);
             }
         }
-        public EnumListValue<T1, T2> toEnumListValue(bool isIgnoreDefaultValue = false)
+        public EnumListValue<TEnum, TValue> toEnumListValue(bool isIgnoreDefaultValue = false)
         {
-            EnumListValue<T1, T2> enumListValue = new EnumListValue<T1, T2>();
+            EnumListValue<TEnum, TValue> enumListValue = new EnumListValue<TEnum, TValue>();
             foreach (var e in enumerateTupleValues())
             {
                 if (isIgnoreDefaultValue && object.Equals(e.value, default)) continue;
@@ -190,18 +190,18 @@ namespace Nextension
             }
             return enumListValue;
         }
-        public T2[] toArray()
+        public TValue[] toArray()
         {
             return enumValues.ToArray();
         }
 
         public Type getTypeOfEnum()
         {
-            return typeof(T1);
+            return typeof(TEnum);
         }
         public Type getTypeOfValue()
         {
-            return typeof(T2);
+            return typeof(TValue);
         }
         public object getEnumAtIndex(int index)
         {
@@ -212,33 +212,33 @@ namespace Nextension
             return enumValues[index];
         }
 
-        public T2 this[int index]
+        public TValue this[int index]
         {
             get => enumValues[index];
             set => enumValues[index] = value;
         }
-        public T1 getEnum(int index)
+        public TEnum getEnum(int index)
         {
-            return EnumIndex<T1>.getEnum(index);
+            return EnumIndex<TEnum>.getEnum(index);
         }
-        public EnumArrayValue<T1, T2> clone()
+        public EnumArrayValue<TEnum, TValue> clone()
         {
-            return new EnumArrayValue<T1, T2>() { enumValues = this.enumValues.ToArray() };
+            return new EnumArrayValue<TEnum, TValue>() { enumValues = this.enumValues.ToArray() };
         }
-        public void set(EnumListValue<T1, T2> listValue)
+        public void set(EnumListValue<TEnum, TValue> listValue)
         {
             foreach (var e in listValue.enumerateTupleValues())
             {
                 set(e.enumType, e.value);
             }
         }
-        public void set(EnumArrayValue<T1, T2> arrValue)
+        public void set(EnumArrayValue<TEnum, TValue> arrValue)
         {
             Array.Copy(arrValue.enumValues, enumValues, Length);
         }
-        public static EnumArrayValue<T1, T2> createFrom(EnumListValue<T1, T2> listValue)
+        public static EnumArrayValue<TEnum, TValue> createFrom(EnumListValue<TEnum, TValue> listValue)
         {
-            EnumArrayValue<T1, T2> enumArray = new EnumArrayValue<T1, T2>();
+            EnumArrayValue<TEnum, TValue> enumArray = new EnumArrayValue<TEnum, TValue>();
             foreach (var e in listValue.enumerateTupleValues())
             {
                 enumArray.set(e.enumType, e.value);

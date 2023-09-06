@@ -13,9 +13,9 @@ namespace Nextension.NEditor
             var objs = Selection.objects;
             foreach (var o in objs)
             {
-                NEditorUtils.setDirty(o);
+                NAssetUtils.setDirty(o);
             }
-            NEditorUtils.saveAssets();
+            NAssetUtils.saveAssets();
             Debug.Log($"Saved {objs.Length} objects");
         }
         [MenuItem("Nextension/Project/Force save project - *.asset")]
@@ -32,7 +32,7 @@ namespace Nextension.NEditor
                         var @object = AssetDatabase.LoadMainAssetAtPath(p);
                         if (@object != null)
                         {
-                            NEditorUtils.setDirty(@object);
+                            NAssetUtils.setDirty(@object);
                             count++;
                         }
                     }
@@ -42,7 +42,7 @@ namespace Nextension.NEditor
                     Debug.LogException(e);
                 }
             }
-            NEditorUtils.saveAssets();
+            NAssetUtils.saveAssets();
             Debug.Log($"Saved {count} objects");
         }
         [MenuItem("Nextension/Project/Force save project - *.prefab")]
@@ -59,7 +59,7 @@ namespace Nextension.NEditor
                         var @object = AssetDatabase.LoadMainAssetAtPath(p);
                         if (@object != null)
                         {
-                            NEditorUtils.setDirty(@object);
+                            NAssetUtils.setDirty(@object);
                             count++;
                         }
                     }
@@ -69,7 +69,7 @@ namespace Nextension.NEditor
                     Debug.LogException(e);
                 }
             }
-            NEditorUtils.saveAssets();
+            NAssetUtils.saveAssets();
             Debug.Log($"Saved {count} objects");
         }
         [MenuItem("Nextension/Project/Force save project - all")]
@@ -86,7 +86,7 @@ namespace Nextension.NEditor
                         var @object = AssetDatabase.LoadMainAssetAtPath(p);
                         if (@object != null)
                         {
-                            NEditorUtils.setDirty(@object);
+                            NAssetUtils.setDirty(@object);
                             count++;
                         }
                     }
@@ -96,7 +96,7 @@ namespace Nextension.NEditor
                     Debug.LogException(e);
                 }
             }
-            NEditorUtils.saveAssets();
+            NAssetUtils.saveAssets();
             Debug.Log($"Saved {count} objects");
         }
 

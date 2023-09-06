@@ -1,6 +1,6 @@
 ﻿namespace Nextension.Tween
 {
-    public enum TweenType : byte
+    internal enum TweenType : byte
     {
         Transform_Local_Move,
         Transform_World_Move,
@@ -13,10 +13,11 @@
         Basic_Float3_Tween,
         Basic_Float4_Tween,
     }
-    public enum TweenLoopType : byte
+    internal enum TweenLoopType : byte
     {
         Normal,
         Punch,
+        Shake,
     }
     //public enum TweenPriority : byte
     //{

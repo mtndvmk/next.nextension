@@ -32,7 +32,7 @@ namespace Nextension
         #region Unity methods
         private void Awake()
         {
-            if (IsDestroyAndUnuse)
+            if (IsDestroyedAndUnused)
             {
                 Destroy(gameObject);
             }
@@ -90,7 +90,7 @@ namespace Nextension
             {
                 if (IsPlaying)
                 {
-                    if (!m_IsDestroyFromInternal)
+                    if (!_isDestroyFromInternal)
                     {
                         Debug.LogWarning($"[SKIP] [NSingleton] Should call {getSingletonName()}.Instance.destroy()");
                     }
@@ -105,19 +105,19 @@ namespace Nextension
         }
         #endregion
 
-        private bool m_IsDestroyFromInternal;
-        private bool m_IsLocalInitialized;
+        private bool _isDestroyFromInternal;
+        private bool _isLocalInitialized;
         private void localInitialize()
         {
-            if (IsDestroyAndUnuse)
+            if (IsDestroyedAndUnused)
             {
                 Destroy(gameObject);
             }
             else if (IsPlaying)
             {
-                if (!m_IsLocalInitialized)
+                if (!_isLocalInitialized)
                 {
-                    m_IsLocalInitialized = true;
+                    _isLocalInitialized = true;
                     s_Instance = GetComponent<T>();
                     onInitialized();
                     if (m_DontDestroyOnLoad)
@@ -135,10 +135,10 @@ namespace Nextension
         }
         private static T s_Instance;
 
-        public void destroy(bool markUnuse = true)
+        public void destroy(bool markUnused = true)
         {
-            m_IsDestroyFromInternal = true;
-            IsDestroyAndUnuse |= markUnuse;
+            _isDestroyFromInternal = true;
+            IsDestroyedAndUnused |= markUnused;
             Destroy(gameObject);
         }
 
@@ -154,7 +154,7 @@ namespace Nextension
                         {
                             throw new Exception("Application is quitting");
                         }
-                        if (IsDestroyAndUnuse)
+                        if (IsDestroyedAndUnused)
                         {
                             throw new Exception("NSingleton has been destroyd and marked as unused");
                         }
@@ -176,11 +176,11 @@ namespace Nextension
             }
         }
         public static bool IsPlaying => NStartRunner.IsPlaying;
-        public static bool IsDestroyAndUnuse { get; protected set; }
+        public static bool IsDestroyedAndUnused { get; protected set; }
         public static bool IsInitialized => s_Instance != null;
         public static void initialize()
         {
-            if (IsPlaying && !IsDestroyAndUnuse)
+            if (IsPlaying && !IsDestroyedAndUnused)
             {
                 if (s_Instance == null)
                 {
@@ -197,7 +197,7 @@ namespace Nextension
                     {
                         singleton = s_Instance.GetComponent<NSingleton<T>>();
                     }
-                    if (!singleton.m_IsLocalInitialized)
+                    if (!singleton._isLocalInitialized)
                     {
                         singleton.localInitialize();
                     }

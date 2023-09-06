@@ -74,17 +74,24 @@ namespace Nextension
             {
                 innerBeforeRunFinalizeEvent();
                 IsFinalized = true;
-                try
+                if (onFinalizedEvent != null)
                 {
-                    onFinalizedEvent?.Invoke();
-                    innerAfterRunFinalizeEvent();
-                    finalizeOnDependedOperations();
+                    try
+                    {
+                        onFinalizedEvent.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                    finally
+                    {
+                        onFinalizedEvent = null;
+                    }
                 }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-                onFinalizedEvent = null;
+                
+                innerAfterRunFinalizeEvent();
+                finalizeOnDependedOperations();
             }
         }
 

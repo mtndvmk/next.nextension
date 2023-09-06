@@ -17,7 +17,7 @@ namespace Nextension
         }
         public void remove(Action callback)
         {
-            _actions.Remove(callback);
+            _actions.removeSwapBack(callback);
         }
         public void clear()
         {
@@ -78,7 +78,7 @@ namespace Nextension
         }
         public void remove(Action<T> callback)
         {
-            _actions.Remove(callback);
+            _actions.removeSwapBack(callback);
         }
         public void clear()
         {

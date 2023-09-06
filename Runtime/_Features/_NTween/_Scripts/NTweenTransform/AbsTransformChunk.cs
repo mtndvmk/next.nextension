@@ -16,7 +16,7 @@ namespace Nextension.Tween
         public AbsTransformChunk() : base()
         {
             transformAccessArray = new TransformAccessArray(ChunkSize);
-            jobDatas = new NativeArray<JobData<T>>(transformAccessArray.capacity, Allocator.Persistent);
+            jobDatas = new NativeArray<JobData<T>>(transformAccessArray.capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
         protected override void onAddNewTweener(TNTweener tweener)
         {

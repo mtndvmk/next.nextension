@@ -2,6 +2,7 @@
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine.Jobs;
+using Random = Unity.Mathematics.Random;
 
 namespace Nextension.Tween
 {
@@ -11,7 +12,7 @@ namespace Nextension.Tween
         {
             base.onAddNewTweener(tweener);
             var maskIndex = tweener.chunkIndex.maskIndex;
-            jobDatas[maskIndex] = tweener.toJobData();
+            jobDatas[maskIndex] = tweener.getJobData();
         }
         protected override Job createNewJob()
         {
@@ -19,9 +20,9 @@ namespace Nextension.Tween
         }
 
         [BurstCompile]
-        internal struct Job : IJobParallelForTransform
+        public struct Job : IJobParallelForTransform
         {
-            [ReadOnly] private NativeArray<NBitMask256> _mask;
+            [ReadOnly] private NativeArray<byte> _mask;
             [ReadOnly] private NativeArray<JobData<float3>> _jobDatas;
 
             internal Job(TransformFloat3Chunk chunk)
@@ -31,25 +32,42 @@ namespace Nextension.Tween
             }
             public void Execute(int index, TransformAccess transform)
             {
-                var currentTime = TweenStaticManager.currentTimeInJob.Data;
-                var data = _jobDatas[index];
-                if (currentTime >= data.startTime)
+                if (NUtils.checkBitMask(_mask, index))
                 {
-                    if (NUtils.checkBitMask(_mask[0], index))
+                    var currentTime = TweenStaticManager.currentTimeInJob.Data;
+                    var data = _jobDatas[index];
+                    var deltaTime = currentTime - data.startTime;
+                    if (deltaTime >= 0)
                     {
-                        var t = (currentTime - data.startTime) / data.duration;
-                        if (data.tweenLoopType == TweenLoopType.Punch)
+                        float3 result;
+                        if (data.tweenLoopType == TweenLoopType.Shake)
                         {
-                            if (t < 0.5f)
+                            if (deltaTime < data.duration)
                             {
-                                t /= 0.5f;
+                                var randValue = new Random(NConverter.bitConvert<float, uint>(deltaTime) ^ 0x6E624EB7u).NextFloat3() - 0.5f;
+                                result = randValue * data.to.x + data.from;
                             }
                             else
                             {
-                                t = (1 - t) / 0.5f;
+                                result = data.from;
                             }
                         }
-                        BurstEaseUtils.ease(data.from, data.to, t, data.easeType, out var result);
+                        else
+                        {
+                            var t = deltaTime / data.duration;
+                            if (data.tweenLoopType == TweenLoopType.Punch)
+                            {
+                                if (t < 0.5f)
+                                {
+                                    t /= 0.5f;
+                                }
+                                else
+                                {
+                                    t = (1 - t) / 0.5f;
+                                }
+                            }
+                            BurstEaseUtils.ease(data.from, data.to, t, data.easeType, out result);
+                        }
                         apply(data.tweenType, transform, result);
                     }
                 }

@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Nextension.NEditor
 {
-    public class EnumDiffValueAttributeCheckBuild : INPreprocessBuild
+    public class EnumDiffValueAttributeCheckBuild : IErrorCheckable
     {
         private EnumDiffValueAttributeCheckBuild() { }
         private static bool checkHasErrorOnBuild(out Exception e)
@@ -14,19 +14,20 @@ namespace Nextension.NEditor
             {
                 if (!type.IsEnum) continue;
                 var attr = type.GetCustomAttribute(typeof(EnumDiffAttribute));
-                if (attr!= null)
+                if (attr != null)
                 {
-                    var enumArr = Enum.GetValues(type);
-                    var list = new List<int>();
+                    var enumArr = Enum.GetValues(type) as int[];
+
+                    HashSet<int> hashset = new HashSet<int>();
+
                     for (int i = 0; i < enumArr.Length; ++i)
                     {
-                        var enumInt = (int)Convert.ChangeType(enumArr.GetValue(i), TypeCode.Int32);
-                        if (list.Contains(enumInt))
+                        if (hashset.Contains(enumArr[i]))
                         {
-                            e = new Exception($"Same value of enum: [{type}][{enumArr.GetValue(i)}:{enumInt}]");
+                            e = new Exception($"Same value of enum: [{type}][{enumArr.GetValue(i)}:{enumArr[i]}]");
                             return true;
                         }
-                        list.Add(enumInt);
+                        hashset.Add(enumArr[i]);
                     }
                 }
             }
@@ -40,7 +41,7 @@ namespace Nextension.NEditor
                 throw e;
             }
         }
-        public static void onReloadScript()
+        public static void onEditorLoop()
         {
             if (checkHasErrorOnBuild(out var e))
             {

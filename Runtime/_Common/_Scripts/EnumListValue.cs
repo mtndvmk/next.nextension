@@ -6,13 +6,13 @@ using UnityEngine;
 namespace Nextension
 {
     [Serializable]
-    public class EnumListValue<T1, T2> where T1 : Enum
+    public class EnumListValue<TEnum, TValue> where TEnum : Enum
     {
         [Serializable]
         private struct EnumValue : IComparable<EnumValue>
         {
-            public T1 enumType;
-            public T2 value;
+            public TEnum enumType;
+            public TValue value;
 
             public int CompareTo(EnumValue other)
             {
@@ -20,9 +20,9 @@ namespace Nextension
             }
         }
         [Serializable]
-        private class EnumValueBList : AbsBListCompareable<EnumValue, T1>
+        private class EnumValueBList : AbsBListCompareable<EnumValue, TEnum>
         {
-            protected override T1 getCompareKeyFromValue(EnumValue item)
+            protected override TEnum getCompareKeyFromValue(EnumValue item)
             {
                 return item.enumType;
             }
@@ -33,7 +33,7 @@ namespace Nextension
         [SerializeField] private EnumValueBList enumValueList = new EnumValueBList();
 
         public int Count => enumValueList.Count;
-        public void set(T1 enumType, T2 val)
+        public void set(TEnum enumType, TValue val)
         {
             var index = enumValueList.bFindIndex(enumType);
             if (index >= 0)
@@ -47,7 +47,7 @@ namespace Nextension
                 enumValueList.addAndSort(new EnumValue() { enumType = enumType, value = val });
             }        
         }
-        public T2 get(T1 enumType)
+        public TValue get(TEnum enumType)
         {
             if (tryGet(enumType, out var val))
             {
@@ -55,7 +55,7 @@ namespace Nextension
             }
             throw new Exception($"Not found value of enum [{enumType}]");
         }
-        public bool tryGet(T1 enumType, out T2 outValue)
+        public bool tryGet(TEnum enumType, out TValue outValue)
         {
             var index = enumValueList.bTryGetValue(enumType, out var val);
             if (index >= 0)
@@ -69,42 +69,42 @@ namespace Nextension
                 return false;
             }
         }
-        public bool isContain(T1 enumType)
+        public bool contains(TEnum enumType)
         {
             return enumValueList.bFindIndex(enumType) >= 0;
         }
-        public bool remove(T1 enumType)
+        public bool remove(TEnum enumType)
         {
             return enumValueList.remove(enumType);
         }
-        public T2 this[T1 enumType]
+        public TValue this[TEnum enumType]
         {
             get => get(enumType);
             set => set(enumType, value);
         }
-        public (T1 enumType, T2 value) this[int index]
+        public (TEnum enumType, TValue value) this[int index]
         {
             get => (enumValueList[index].enumType, enumValueList[index].value);
         }
-        public IEnumerable<(T1 enumType, T2 value)> enumerateTupleValues()
+        public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
         {
             foreach (var e in enumValueList.asEnumerable())
             {
                 yield return (e.enumType, e.value);
             }
         }
-        public EnumArrayValue<T1, T2> toEnumArrayValue()
+        public EnumArrayValue<TEnum, TValue> toEnumArrayValue()
         {
-            return EnumArrayValue<T1, T2>.createFrom(this);
+            return EnumArrayValue<TEnum, TValue>.createFrom(this);
         }
-        public IEnumerable<T2> enumerateValues()
+        public IEnumerable<TValue> enumerateValues()
         {
             for (int i = 0; i < Count; ++i)
             {
                 yield return enumValueList[i].value;
             }
         }
-        public T2[] asArray()
+        public TValue[] asArray()
         {
             return enumerateValues().ToArray();
         }

@@ -12,7 +12,7 @@ namespace Nextension
         private Action onCancelled;
         private Action onFinalized;
         private bool isFinalized;
-        
+
         public RunState Status { get; protected internal set; }
         public Exception Exception { get; protected internal set; }
         public override bool keepWaiting => !isFinalized;
@@ -198,6 +198,15 @@ namespace Nextension
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder))]
     public class NWaitable : AbsNWaitable
     {
+        private static NWaitable _completeWaitable;
+        public static NWaitable CompletedWaitable
+        {
+            get
+            {
+                if (_completeWaitable == null) _completeWaitable = new NWaitable() { Status = RunState.Completed };
+                return _completeWaitable;
+            }
+        }
     }
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder<>))]
     public class NWaitable<T> : AbsNWaitable
@@ -212,6 +221,6 @@ namespace Nextension
             Result = result;
             setState(RunState.Completed);
         }
-
+        public static NWaitable<T> fromResult(T result) { return new NWaitable<T>() { Status = RunState.Completed, Result = result }; }
     }
 }

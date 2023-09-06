@@ -8,7 +8,7 @@ using UnityEditor;
 
 namespace Nextension
 {
-    public sealed class ResourceScriptableTable : ScriptableObject, INPreprocessBuild
+    public sealed class ResourceScriptableTable : ScriptableObject, IErrorCheckable
     {
         private void OnEnable()
         {
@@ -49,7 +49,7 @@ namespace Nextension
         [MenuItem("Nextension/ResourceScriptableTable/Create Table")]
         private static void createTable()
         {
-            NEditorUtils.createScriptableOnResource(typeof(ResourceScriptableTable), TABLE_FILENAME);
+            NAssetUtils.createScriptableOnResource(typeof(ResourceScriptableTable), TABLE_FILENAME);
         }
 
         [InitializeOnLoadMethod]
@@ -118,7 +118,7 @@ namespace Nextension
         {
             if (_table)
             {
-                NEditorUtils.saveAsset(_table);
+                NAssetUtils.saveAsset(_table);
                 Debug.Log($"Saved {nameof(ResourceScriptableTable)}");
             }
         }
@@ -274,7 +274,7 @@ namespace Nextension
                     var scriptable = NUnityResourcesUtils.getObjectOnMainResource<ScriptableObject>(fileName);
                     if (!scriptable)
                     {
-                        NEditorUtils.createScriptableOnResource(type, fileName);
+                        NAssetUtils.createScriptableOnResource(type, fileName);
                     }
                 }
             }
@@ -400,7 +400,7 @@ namespace Nextension
                 }
 #if UNITY_EDITOR
                 var fileName = autoCreateAttr.getFileName(type);
-                var resourceScriptable = NEditorUtils.createScriptableOnResource(type, fileName) as ResourceScriptable;
+                var resourceScriptable = NAssetUtils.createScriptableOnResource(type, fileName) as ResourceScriptable;
                 if (resourceScriptable)
                 {
                     add(resourceScriptable);       

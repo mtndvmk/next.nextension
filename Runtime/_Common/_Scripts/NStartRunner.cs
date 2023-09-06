@@ -58,6 +58,15 @@ namespace Nextension
             }
         }
 
+        public static void quit()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
+
 #if RUN_LIFE_CYCLE_TEST && UNITY_EDITOR
         static string LOG_PREFIX = "LifeCycleOrder_";
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)] static void SubsystemRegistration() => Debug.Log(LOG_PREFIX + "Subsystem Registration"); // 0

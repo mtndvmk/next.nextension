@@ -35,6 +35,23 @@ namespace Nextension
                 NThrowHelper.throwArrayLengthToSmallException("inData", startIndex, inData.Length, lengthRequired);
             }
         }
+        internal static void checkValidArray<T>(Span<T> inData, int startIndex, int lengthRequired)
+        {
+            if (inData == null)
+            {
+                NThrowHelper.throwArgNullException("inData");
+            }
+
+            if ((uint)startIndex >= inData.Length)
+            {
+                NThrowHelper.throwArgOutOfRangeException("startIndex", startIndex, inData.Length);
+            }
+
+            if (startIndex > inData.Length - lengthRequired)
+            {
+                NThrowHelper.throwArrayLengthToSmallException("inData", startIndex, inData.Length, lengthRequired);
+            }
+        }
     }
 
     internal static class NThrowHelper

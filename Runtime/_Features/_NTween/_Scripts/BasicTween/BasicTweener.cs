@@ -42,7 +42,7 @@ namespace Nextension.Tween
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual JobData<T> toJobData()
+        public virtual JobData<T> getJobData()
         {
             return new JobData<T>()
             {
