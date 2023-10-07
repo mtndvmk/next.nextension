@@ -5,19 +5,19 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public abstract class AbsNWaitable : CustomYieldInstruction, IWaitable, ICancellable
+    public abstract class AbsNWaitable : CustomYieldInstruction, IWaitable, ICancelable
     {
-        private List<ICancellable> cancellables = new List<ICancellable>();
+        private List<ICancelable> _cancelables;
         private Action onCompleted;
-        private Action onCancelled;
+        private Action onCanceled;
         private Action onFinalized;
-        private bool isFinalized;
+        private bool _isFinalized;
 
         public RunState Status { get; protected internal set; }
         public Exception Exception { get; protected internal set; }
-        public override bool keepWaiting => !isFinalized;
+        public override bool keepWaiting => !_isFinalized;
 
-        WaiterLoopType IWaitable.LoopType => WaiterLoopType.Update;
+        NLoopType IWaitable.LoopType => NLoopType.Update;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFinished() => Status.isFinished();
@@ -27,14 +27,18 @@ namespace Nextension
             {
                 return;
             }
-            setState(RunState.Cancelled);
-            foreach (var c in cancellables)
+            setState(RunState.Canceled);
+            if (_cancelables != null)
             {
-                c.cancel();
+                var span = _cancelables.asSpan();
+                for (int i = span.Length - 1; i >= 0; i--)
+                {
+                    span[i].cancel();
+                }
             }
             try
             {
-                onCancelled?.Invoke();
+                onCanceled?.Invoke();
             }
             catch (Exception e)
             {
@@ -48,7 +52,7 @@ namespace Nextension
             {
                 try
                 {
-                    onCompleted?.Invoke();
+                    onCompleted.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -60,17 +64,18 @@ namespace Nextension
                 this.onCompleted += onCompleted;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeCompletedEvent(Action onCompleted)
         {
             this.onCompleted -= onCompleted;
         }
-        public void addCancelledEvent(Action onCancelled)
+        public void addCanceledEvent(Action onCanceled)
         {
-            if (Status == RunState.Cancelled)
+            if (Status == RunState.Canceled)
             {
                 try
                 {
-                    onCancelled?.Invoke();
+                    onCanceled.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -79,20 +84,21 @@ namespace Nextension
             }
             else if (Status <= RunState.Running)
             {
-                this.onCancelled += onCancelled;
+                this.onCanceled += onCanceled;
             }
         }
-        public void removeCancelledEvent(Action onCancelled)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void removeCanceledEvent(Action onCanceled)
         {
-            this.onCancelled -= onCancelled;
+            this.onCanceled -= onCanceled;
         }
         public void addFinalizedEvent(Action onFinalized)
         {
-            if (isFinalized)
+            if (_isFinalized)
             {
                 try
                 {
-                    onFinalized?.Invoke();
+                    onFinalized.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -104,6 +110,7 @@ namespace Nextension
                 this.onFinalized += onFinalized;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeFinalizedEvent(Action onFinalized)
         {
             this.onFinalized -= onFinalized;
@@ -111,9 +118,9 @@ namespace Nextension
 
         private void invokeFinalizedEvent()
         {
-            if (!isFinalized)
+            if (!_isFinalized)
             {
-                isFinalized = true;
+                _isFinalized = true;
                 try
                 {
                     onFinalized?.Invoke();
@@ -129,13 +136,13 @@ namespace Nextension
             }
         }
 
-        internal void addCancelleable(ICancellable cancellable)
+        internal void addCancelable(ICancelable cancellable)
         {
             if (Status.isFinished())
             {
                 return;
             }
-            cancellables.Add(cancellable);
+            (_cancelables ??= new(1)).Add(cancellable);
         }
         internal void setState(RunState runState)
         {
@@ -144,11 +151,11 @@ namespace Nextension
                 return;
             }
             Status = runState;
-            if (Status == RunState.Completed)
+            if (Status == RunState.Completed && onCompleted != null)
             {
                 try
                 {
-                    onCompleted?.Invoke();
+                    onCompleted.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -163,27 +170,29 @@ namespace Nextension
             {
                 return;
             }
-            setState(RunState.Exception);
             Exception = e;
+            setState(RunState.Exception);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void clearEvent()
         {
-            onCancelled = null;
+            onCanceled = null;
             onCompleted = null;
+            onFinalized = null;
         }
 
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
-                switch (Status)
+                return Status switch
                 {
-                    case RunState.Completed: return NWaitableResult.Completed;
-                    case RunState.Cancelled: return NWaitableResult.Cancelled;
-                    case RunState.Exception: return NWaitableResult.Exception(Exception);
-                    default: return NWaitableResult.None;
-                }
-            };
+                    RunState.Completed => NWaitableResult.Completed,
+                    RunState.Canceled => NWaitableResult.Canceled,
+                    RunState.Exception => NWaitableResult.Exception(Exception),
+                    _ => NWaitableResult.None,
+                };
+            }
             return func;
         }
         public async NWaitable waitCompleteOrException()
@@ -198,15 +207,8 @@ namespace Nextension
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder))]
     public class NWaitable : AbsNWaitable
     {
-        private static NWaitable _completeWaitable;
-        public static NWaitable CompletedWaitable
-        {
-            get
-            {
-                if (_completeWaitable == null) _completeWaitable = new NWaitable() { Status = RunState.Completed };
-                return _completeWaitable;
-            }
-        }
+        private static NWaitable _completedWaitable;
+        public static NWaitable CompletedWaitable => _completedWaitable ??= new NWaitable() { Status = RunState.Completed };
     }
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder<>))]
     public class NWaitable<T> : AbsNWaitable

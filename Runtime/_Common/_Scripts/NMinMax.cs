@@ -9,11 +9,11 @@ namespace Nextension
         [SerializeField] private float min;
         [SerializeField] private float max;
 
-        public float Min 
-        { 
-            get 
-            { 
-                return min; 
+        public float Min
+        {
+            get
+            {
+                return min;
             }
             set
             {

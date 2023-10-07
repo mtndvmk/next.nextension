@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension
@@ -13,7 +14,7 @@ namespace Nextension
         public Exception ErrorException { get; private set; }
 
         protected event Action onFinalizedEvent;
-        protected List<NOperation> dependedOperations = new List<NOperation>();
+        protected List<NOperation> _dependedOperations;
 
         public void addFinalizedEvent(Action onFinalized)
         {
@@ -21,7 +22,7 @@ namespace Nextension
             {
                 try
                 {
-                    onFinalized?.Invoke();
+                    onFinalized.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -33,14 +34,17 @@ namespace Nextension
                 onFinalizedEvent += onFinalized;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeFinalizedEvent(Action onFinalized)
         {
             onFinalizedEvent -= onFinalized;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeFinalizedEvents()
         {
             onFinalizedEvent = null;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void innerFinalize()
         {
             innerFinalize(exception: null);
@@ -72,7 +76,7 @@ namespace Nextension
         {
             if (!IsFinalized)
             {
-                innerBeforeRunFinalizeEvent();
+                onBeforeRunFinalizeEvent();
                 IsFinalized = true;
                 if (onFinalizedEvent != null)
                 {
@@ -89,14 +93,14 @@ namespace Nextension
                         onFinalizedEvent = null;
                     }
                 }
-                
-                innerAfterRunFinalizeEvent();
+
+                onAfterRunFinalizeEvent();
                 finalizeOnDependedOperations();
             }
         }
 
-        protected virtual void innerBeforeRunFinalizeEvent() { }
-        protected virtual void innerAfterRunFinalizeEvent() { }
+        protected virtual void onBeforeRunFinalizeEvent() { }
+        protected virtual void onAfterRunFinalizeEvent() { }
 
         public void dependBy(NOperation otherOperation)
         {
@@ -104,12 +108,16 @@ namespace Nextension
             {
                 return;
             }
-            otherOperation.dependedOperations.add(otherOperation);
+            (otherOperation._dependedOperations ??= new()).add(otherOperation);
         }
 
         private void finalizeOnDependedOperations()
         {
-            foreach (var dependedOperation in dependedOperations)
+            if (_dependedOperations == null)
+            {
+                return;
+            }
+            foreach (var dependedOperation in _dependedOperations)
             {
                 dependedOperation.innerFinalize(ErrorException);
             }
@@ -136,19 +144,22 @@ namespace Nextension
                 setProgressOnDependedOperations();
             }
         }
-        protected override void innerBeforeRunFinalizeEvent()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected override void onBeforeRunFinalizeEvent()
         {
             innerSetProgress(1);
         }
-        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void addProgressEvent(Action<float> callback)
         {
             onProgressEvent += callback;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeProgressEvent(Action<float> callback)
         {
             onProgressEvent -= callback;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeProgressEvents()
         {
             onProgressEvent = null;
@@ -156,7 +167,11 @@ namespace Nextension
 
         private void setProgressOnDependedOperations()
         {
-            foreach (var dependedOperation in dependedOperations)
+            if (_dependedOperations == null)
+            {
+                return;
+            }
+            foreach (var dependedOperation in _dependedOperations)
             {
                 if (dependedOperation is NProgressOperation)
                 {

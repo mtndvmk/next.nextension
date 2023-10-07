@@ -11,18 +11,18 @@ namespace Nextension
     public sealed class NCoroutine
     {
         private class Runner : MonoBehaviour { }
-        public class Data : ICancellable
+        public class Data : ICancelable
         {
             public readonly int groupId;
             internal readonly string name;
             public readonly Coroutine coroutine;
-            private Action onCancelled;
+            private Action onCanceled;
             internal Scene? inScene;
 
             public RunState Status { get; private set; }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool isFinished() => Status >= RunState.Cancelled;
+            public bool isFinished() => Status >= RunState.Canceled;
 
             public Data(IEnumerator func, int groupId)
             {
@@ -43,7 +43,7 @@ namespace Nextension
                 }
                 else
                 {
-                    hashset = new HashSet<Data>();
+                    hashset = new HashSet<Data>(1);
                     runningCoroutines.Add(groupId, hashset);
                 }
                 hashset.Add(this);
@@ -54,18 +54,18 @@ namespace Nextension
                 {
                     _runner.StopCoroutine(this.coroutine);
                     runningCoroutines[groupId].Remove(this);
-                    Status = RunState.Cancelled;
-                    this.onCancelled?.Invoke();
-                    this.onCancelled = null;
+                    Status = RunState.Canceled;
+                    this.onCanceled?.Invoke();
+                    this.onCanceled = null;
                 }
             }
-            public void addCancelledEvent(Action onCancelled)
+            public void addCanceledEvent(Action onCanceled)
             {
-                if (Status == RunState.Cancelled)
+                if (Status == RunState.Canceled)
                 {
                     try
                     {
-                        onCancelled?.Invoke();
+                        onCanceled?.Invoke();
                     }
                     catch (Exception e)
                     {
@@ -74,12 +74,12 @@ namespace Nextension
                 }
                 else if (Status <= RunState.Running)
                 {
-                    this.onCancelled += onCancelled;
+                    this.onCanceled += onCanceled;
                 }
             }
-            public void removeCancelledEvent(Action onCancelled)
+            public void removeCanceledEvent(Action onCanceled)
             {
-                this.onCancelled -= onCancelled;
+                this.onCanceled -= onCanceled;
             }
 
             /// <summary>
@@ -101,7 +101,7 @@ namespace Nextension
         private static Runner _runner;
         private static Dictionary<int, HashSet<Data>> runningCoroutines = new Dictionary<int, HashSet<Data>>();
         private const int DEFAULT_GROUP_ID = 0;
-        
+
         public static Data startCoroutine(IEnumerator func, StopType stopType = StopType.None)
         {
             InternalCheck.checkEditorMode();
@@ -114,7 +114,7 @@ namespace Nextension
             var data = new Data(func, groupId);
             return data;
         }
-        
+
         public static void stopCoroutine(IEnumerator func, StopType stopType = StopType.SameGroup)
         {
             stopCoroutine(func, DEFAULT_GROUP_ID, stopType);
@@ -262,7 +262,7 @@ namespace Nextension
             }
             if (clearCount > 0)
             {
-                Debug.Log("[NCoroutine] Clear data on load scene");
+                Debug.Log($"[NCoroutine] Clear data on load scene: {clearCount} routines");
             }
         }
     }

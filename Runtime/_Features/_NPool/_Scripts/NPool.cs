@@ -1,41 +1,39 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
     public interface IPoolable
     {
+        public const uint DEFAULT_MAX_POOL_ITEM_COUNT = 100;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void onSpawned() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void onDespawned() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void onDestroyed() { }
     }
-    public class NPool<T> where T : class, IPoolable
+    public class NPool<T> where T : class, IPoolable, new()
     {
-        private const uint MAX_CAPACITY_DEFAULT = 100;
-        private NBListUseHashCode<T> pool;
-        private static Type typeOfT = typeof(T);
+        private readonly NBListCompareHashCode<T> _pool;
 
         public int CountAll { get; private set; }
-        public int PoolCount => pool.Count;
-        public uint MaxCapacity { get; private set; }
+        public int PoolCount => _pool.Count;
+        public uint MaxPoolItemCount { get; set; }
         public NPool()
         {
-            pool = new NBListUseHashCode<T>();
-            MaxCapacity = MAX_CAPACITY_DEFAULT;
+            _pool = new NBListCompareHashCode<T>();
+            MaxPoolItemCount = IPoolable.DEFAULT_MAX_POOL_ITEM_COUNT;
         }
         public T get()
         {
             T item;
-            if (pool.Count > 0)
+            if (_pool.Count > 0)
             {
-                item = pool[0];
-                pool.removeAt(0);
+                item = _pool.takeAndRemoveLast();
             }
             else
             {
-                item = typeOfT.createInstance<T>();
+                item = new();
                 CountAll++;
             }
             item.onSpawned();
@@ -43,12 +41,13 @@ namespace Nextension
         }
         public bool release(T item)
         {
-            if (pool.bContains(item))
+            var isExist = _pool.bFindInsertIndex(item, out var insertIndex);
+            if (isExist)
             {
                 return false;
             }
 
-            if (pool.Count >= MaxCapacity) 
+            if (_pool.Count >= MaxPoolItemCount)
             {
                 item.onDestroyed();
                 return true;
@@ -56,13 +55,36 @@ namespace Nextension
             else
             {
                 item.onDespawned();
-                pool.addAndSort(item);
+                _pool.insert(insertIndex, item);
                 return true;
             }
         }
+        public T getAndRelease(IWaitable releaseWaitable)
+        {
+            T item = get();
+            releaseWaitable.startWaitable().addCompletedEvent(() =>
+            {
+                release(item);
+            });
+            return item;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T getAndRelease(float time)
+        {
+            return getAndRelease(new NWaitSecond(time));
+        }
+
         public void clear()
         {
-            pool.clear();
+            if (_pool.Count > 0)
+            {
+                CountAll -= _pool.Count;
+                foreach (var item in _pool.asEnumerable())
+                {
+                    item.onDestroyed();
+                }
+                _pool.clear();
+            }
         }
     }
 }

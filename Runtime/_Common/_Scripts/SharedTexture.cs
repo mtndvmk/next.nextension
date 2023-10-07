@@ -60,7 +60,7 @@ namespace Nextension
             _sharedList.clear();
         }
 
-        public bool IsDisposed {get; private set;}
+        public bool IsDisposed { get; private set; }
         public SharedTexture createSharedTexture()
         {
             if (IsDisposed)
@@ -77,7 +77,7 @@ namespace Nextension
             {
                 return;
             }
-            if (_sharedList.remove(sharedTexture))
+            if (_sharedList.removeValue(sharedTexture))
             {
                 if (isDisposeIfNoLongerUsed && _sharedList.Count == 0)
                 {

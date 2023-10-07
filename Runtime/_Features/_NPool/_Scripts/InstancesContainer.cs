@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -12,7 +11,8 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [Serializable]
-    public class InstancesContainer<T> where T : Object
+    public class InstancesContainer<T> : ISerializationCallbackReceiver
+        where T : Object
     {
         private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"Not support InstancesContainer for {type}");
 
@@ -31,46 +31,70 @@ namespace Nextension
             _prefab = prefab;
             _container = container;
         }
+
         [SerializeField] private T _prefab;
         [SerializeField] private Transform _container;
+        [SerializeField] private int _startupInstanceCount = 0;
 
         private List<T> _instanceList;
-        private List<T> InstanceList
+
+        private void requireCall()
         {
-            get
+            InternalCheck.checkEditorMode();
+            if (_instanceList == null)
             {
-                if (_instanceList == null)
-                {
-                    createInstanceList();
-                }
-                return _instanceList;
+                createInstanceList();
+            }
+        }
+        private void createInstanceList()
+        {
+            _instanceList = new(_startupInstanceCount);
+            if (_startupInstanceCount > 0)
+            {
+                createInstances(_startupInstanceCount);
+            }
+        }
+        private void createInstances(int count, bool isActive = false)
+        {
+            while (_instanceList.Count < count)
+            {
+                var ins = Object.Instantiate(_prefab, _container);
+#if UNITY_EDITOR
+                ins.name = _prefab.name + $" [Clone_{_instanceList.Count}]";
+#endif
+                ins.setActive(isActive);
+                _instanceList.Add(ins);
             }
         }
 
-        private int _activedCount;
+        private int _activeItemCount;
 
         public Transform Container => _container;
-        public int ActivedCount => _activedCount;
-        public int TotalCount => _instanceList.Count;
+        public int ActiveItemCount => _activeItemCount;
+        public int TotalCount => _instanceList == null ? 0 : _instanceList.Count;
 
         public void beginGetInstance()
         {
-            _activedCount = 0;
+            _activeItemCount = 0;
         }
         public void endGetInstance()
         {
-            for (int i = _activedCount; i < InstanceList.Count; ++i)
+            requireCall();
+            var span = _instanceList.asSpan();
+            int instanceCount = span.Length;
+            for (int i = _activeItemCount; i < instanceCount; ++i)
             {
-                InstanceList[i].setActive(false);
+                span[i].setActive(false);
             }
         }
         public T getNext()
         {
-            if (_activedCount >= InstanceList.Count)
+            requireCall();
+            if (_activeItemCount >= _instanceList.Count)
             {
-                createInstances(_activedCount + 1);
+                createInstances(_activeItemCount + 1, true);
             }
-            var ins = InstanceList[_activedCount++];
+            var ins = _instanceList[_activeItemCount++];
             ins.setActive(true);
             return ins;
         }
@@ -81,64 +105,75 @@ namespace Nextension
                 yield return getNext();
             }
         }
-        public IEnumerable<T> enumerateActived()
+        public IEnumerable<T> enumerateActiveItems()
         {
-            for (int i = 0; i < _activedCount; ++i)
+            requireCall();
+            for (int i = 0; i < _activeItemCount; ++i)
             {
-                yield return InstanceList[i];
+                yield return _instanceList[i];
             }
         }
         public IEnumerable<T> enumerateAll()
         {
-            return InstanceList.AsEnumerable();
+            requireCall();
+            return _instanceList;
         }
         public T getAt(int index)
         {
-            return InstanceList[index];
+            requireCall();
+            return _instanceList[index];
         }
         public T this[int index] => getAt(index);
 
-        private void createInstanceList()
-        {
-            _instanceList = new List<T>();
-        }
-        private void createInstances(int count, bool isActive = false)
-        {
-            while (InstanceList.Count < count)
-            {
-                var ins = Object.Instantiate(_prefab, _container);
-                ins.setActive(isActive);
-                InstanceList.Add(ins);
-            }
-        }
-
         public void clearInstances()
         {
-            foreach (var ins in InstanceList)
+            if (_instanceList == null || _instanceList.Count == 0)
+            {
+                return;
+            }
+            foreach (var ins in _instanceList)
             {
                 NUtils.destroyObject(ins);
             }
-            InstanceList.Clear();
+            _instanceList.Clear();
         }
         public void clearInstances(int keepCount)
         {
-            var removeCount = InstanceList.Count - keepCount;
+            if (_instanceList == null)
+            {
+                return;
+            }
+            var listCount = _instanceList.Count;
+            var removeCount = listCount - keepCount;
             if (removeCount > 0)
             {
-                for (int i = keepCount; i < InstanceList.Count; ++i)
+                var span = _instanceList.asSpan();
+                for (int i = keepCount; i < listCount; ++i)
                 {
-                    NUtils.destroyObject(InstanceList[i]);
+                    NUtils.destroyObject(span[i]);
                 }
-                InstanceList.RemoveRange(keepCount, removeCount);
+                _instanceList.RemoveRange(keepCount, removeCount);
             }
         }
         public void clearInstancesFitIn()
         {
-            clearInstances(_activedCount);
+            clearInstances(_activeItemCount);
         }
         public void clearInstancesPrefer(int count)
         {
-            clearInstances(count < _activedCount ? _activedCount : count);
+            clearInstances(count < _activeItemCount ? _activeItemCount : count);
+        }
+
+        public void OnBeforeSerialize()
+        {
+
+        }
+
+        public void OnAfterDeserialize()
+        {
+#if !UNITY_EDITOR
+            (new NWaitUntil(() => NStartRunner.IsPlaying)).startWaitable().addCompletedEvent(requireCall);
+#endif
         }
     }
 }

@@ -10,18 +10,18 @@ namespace Nextension.UI
     public class NButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [SerializeField] private float _betweenClickIntervalTime = 0.2f;
-        [SerializeField] private float _delayInvokeTime = 0.2f;
+        [SerializeField] private float _delayInvokeTime = 0.1f;
         [SerializeField] private bool _isInteractable = true;
 
-        public UnityEvent onButtonDownEvent = new UnityEvent();
-        public UnityEvent onButtonUpEvent = new UnityEvent();
-        public UnityEvent onButtonClickEvent = new UnityEvent();
-        public UnityEvent onButtonEnterEvent = new UnityEvent();
-        public UnityEvent onButtonExitEvent = new UnityEvent();
+        public UnityEvent onButtonDownEvent = new();
+        public UnityEvent onButtonUpEvent = new();
+        public UnityEvent onButtonClickEvent = new();
+        public UnityEvent onButtonEnterEvent = new();
+        public UnityEvent onButtonExitEvent = new();
 
-        private List<INButtonListener> _listeners;
+        private HashSet<INButtonListener> _listeners;
         protected float _lastClickTime;
-        protected bool _isAwaked;
+        protected bool _isSetup;
 
         public bool IsInteractable
         {
@@ -37,17 +37,28 @@ namespace Nextension.UI
 
         private void Awake()
         {
-            if (!_isAwaked)
-            {
-                if (_listeners == null)
-                {
-                    _listeners = new List<INButtonListener>();
-                }
-                _listeners.AddRange(GetComponents<INButtonListener>());
-                _isAwaked = true;
-            }
+            setup();
         }
 
+        private void setup()
+        {
+            if (!_isSetup)
+            {
+                var listeners = GetComponents<INButtonListener>();
+                if (listeners.Length > 0)
+                {
+                    if (_listeners == null)
+                    {
+                        _listeners = new(listeners);
+                    }
+                    else
+                    {
+                        _listeners.UnionWith(listeners);
+                    }
+                }
+                _isSetup = true;
+            }
+        }
         private async void invokeEvent(UnityEvent unityEvent)
         {
             if (_delayInvokeTime > 0)
@@ -64,97 +75,109 @@ namespace Nextension.UI
             }
         }
 
-        public void addListener(INButtonListener listeners)
+        public void addListener(INButtonListener listener)
         {
-            if (_listeners == null)
-            {
-                _listeners = new List<INButtonListener>();
-            }
-            _listeners.add(listeners);
-        }      
+            (_listeners ??= new(1)).Add(listener);
+        }
+        public void removeListener(INButtonListener listener)
+        {
+            _listeners?.Remove(listener);
+        }
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isAwaked)
+            if (!_isInteractable || !_isSetup)
             {
                 return;
             }
 
-            foreach (var listener in _listeners)
+            if (_listeners != null)
             {
-                try
+                foreach (var listener in _listeners)
                 {
-                    listener?.onButtonDown();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
+                    try
+                    {
+                        listener?.onButtonDown();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             invokeEvent(onButtonDownEvent);
         }
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isAwaked)
+            if (!_isInteractable || !_isSetup)
             {
                 return;
             }
 
-            foreach (var listener in _listeners)
+            if (_listeners != null)
             {
-                try
+                foreach (var listener in _listeners)
                 {
-                    listener?.onButtonUp();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
+                    try
+                    {
+                        listener?.onButtonUp();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             invokeEvent(onButtonUpEvent);
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isAwaked)
+            if (!_isInteractable || !_isSetup)
             {
                 return;
             }
 
-            foreach (var listener in _listeners)
+            if (_listeners != null) 
             {
-                try
+                foreach (var listener in _listeners)
                 {
-                    listener?.onButtonEnter();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
+                    try
+                    {
+                        listener?.onButtonEnter();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             invokeEvent(onButtonEnterEvent);
         }
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isAwaked)
+            if (!_isInteractable || !_isSetup)
             {
                 return;
             }
 
-            foreach (var listener in _listeners)
+            if (_listeners != null)
             {
-                try
+                foreach (var listener in _listeners)
                 {
-                    listener?.onButtonExit();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
+                    try
+                    {
+                        listener?.onButtonExit();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             invokeEvent(onButtonExitEvent);
         }
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isAwaked)
+            if (!_isInteractable || !_isSetup)
             {
                 return;
             }
@@ -164,15 +187,18 @@ namespace Nextension.UI
             }
             _lastClickTime = Time.time;
 
-            foreach (var listener in _listeners)
+            if (_listeners != null)
             {
-                try
+                foreach (var listener in _listeners)
                 {
-                    listener?.onButtonClick();
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
+                    try
+                    {
+                        listener?.onButtonClick();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             invokeEvent(onButtonClickEvent);

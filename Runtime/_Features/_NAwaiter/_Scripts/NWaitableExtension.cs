@@ -9,9 +9,9 @@ namespace Nextension
         {
             return asyncStartWaitable(waitable);
         }
-        public static NWaitable startWaitable(this IWaitableFromCancellable waitable)
+        public static NWaitable startWaitable(this IWaitableFromCancelable waitable)
         {
-            return asyncStartWaitableFromCancellable(waitable);
+            return asyncStartWaitableFromCancelable(waitable);
         }
         public static NWaitable startWaitable(this Task task)
         {
@@ -30,7 +30,7 @@ namespace Nextension
         {
             await waitable;
         }
-        internal static async NWaitable asyncStartWaitableFromCancellable(this IWaitableFromCancellable waitable)
+        internal static async NWaitable asyncStartWaitableFromCancelable(this IWaitableFromCancelable waitable)
         {
             await waitable;
         }

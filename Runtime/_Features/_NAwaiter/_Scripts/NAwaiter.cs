@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Jobs;
 using UnityEngine;
 
@@ -24,12 +25,12 @@ namespace Nextension
 
     public struct NWaitUntil : IWaitable
     {
-        public WaiterLoopType loopType;
+        public NLoopType loopType;
         internal readonly Func<bool> predicate;
 
-        WaiterLoopType IWaitable.LoopType => loopType;
+        NLoopType IWaitable.LoopType => loopType;
 
-        public NWaitUntil(Func<bool> predicate, WaiterLoopType loopType = WaiterLoopType.Update)
+        public NWaitUntil(Func<bool> predicate, NLoopType loopType = NLoopType.Update)
         {
             this.predicate = predicate;
             this.loopType = loopType;
@@ -38,7 +39,7 @@ namespace Nextension
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var predicate = this.predicate;
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
                 if (predicate())
                 {
@@ -51,12 +52,12 @@ namespace Nextension
     }
     public struct NWaitFrame : IWaitable
     {
-        public WaiterLoopType loopType;
+        public NLoopType loopType;
         internal readonly uint waitFrame;
 
-        WaiterLoopType IWaitable.LoopType => loopType;
+        NLoopType IWaitable.LoopType => loopType;
 
-        public NWaitFrame(uint waitFrame, WaiterLoopType loopType = WaiterLoopType.Update)
+        public NWaitFrame(uint waitFrame, NLoopType loopType = NLoopType.Update)
         {
             this.waitFrame = waitFrame;
             this.loopType = loopType;
@@ -65,25 +66,25 @@ namespace Nextension
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var targetFrame = NUpdater.UpdateCount + waitFrame;
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
                 if (NUpdater.UpdateCount >= targetFrame)
                 {
                     return NWaitableResult.Completed;
                 }
                 return NWaitableResult.None;
-            };
+            }
             return func;
         }
     }
     public struct NWaitSecond : IWaitable
     {
-        public WaiterLoopType loopType;
+        public NLoopType loopType;
         internal readonly float waitSecond;
 
-        WaiterLoopType IWaitable.LoopType => loopType;
+        NLoopType IWaitable.LoopType => loopType;
 
-        public NWaitSecond(float waitSecond, WaiterLoopType loopType = WaiterLoopType.Update)
+        public NWaitSecond(float waitSecond, NLoopType loopType = NLoopType.Update)
         {
             this.waitSecond = waitSecond;
             this.loopType = loopType;
@@ -92,25 +93,25 @@ namespace Nextension
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var targetSecond = Time.time + waitSecond;
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
                 if (Time.time >= targetSecond)
                 {
                     return NWaitableResult.Completed;
                 }
                 return NWaitableResult.None;
-            };
+            }
             return func;
         }
     }
     public struct NWaitRealtimeSecond : IWaitable
     {
-        public WaiterLoopType loopType;
+        public NLoopType loopType;
         internal readonly float waitSecond;
 
-        WaiterLoopType IWaitable.LoopType => loopType;
+        NLoopType IWaitable.LoopType => loopType;
 
-        public NWaitRealtimeSecond(float waitSecond, WaiterLoopType loopType = WaiterLoopType.Update)
+        public NWaitRealtimeSecond(float waitSecond, NLoopType loopType = NLoopType.Update)
         {
             this.waitSecond = waitSecond;
             this.loopType = loopType;
@@ -119,25 +120,25 @@ namespace Nextension
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var targetSecond = Time.realtimeSinceStartup + waitSecond;
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
                 if (Time.realtimeSinceStartup >= targetSecond)
                 {
                     return NWaitableResult.Completed;
                 }
                 return NWaitableResult.None;
-            };
+            }
             return func;
         }
     }
     public struct NWaitJobHandle : IWaitable
     {
-        public WaiterLoopType loopType;
+        public NLoopType loopType;
         internal readonly JobHandle jobHandle;
 
-        WaiterLoopType IWaitable.LoopType => loopType;
+        NLoopType IWaitable.LoopType => loopType;
 
-        public NWaitJobHandle(JobHandle jobHandle, WaiterLoopType loopType = WaiterLoopType.Update)
+        public NWaitJobHandle(JobHandle jobHandle, NLoopType loopType = NLoopType.Update)
         {
             this.jobHandle = jobHandle;
             this.loopType = loopType;
@@ -146,7 +147,7 @@ namespace Nextension
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
             var jobHandle = this.jobHandle;
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
                 if (jobHandle.IsCompleted)
                 {
@@ -154,41 +155,44 @@ namespace Nextension
                     return NWaitableResult.Completed;
                 }
                 return NWaitableResult.None;
-            };
+            }
             return func;
         }
     }
-    public struct NWaitRoutine : IWaitableFromCancellable
+    public struct NWaitRoutine : IWaitableFromCancelable
     {
-        public WaiterLoopType loopType;
+        public NLoopType loopType;
         internal readonly IEnumerator routine;
 
-        WaiterLoopType IWaitableFromCancellable.LoopType => loopType;
+        NLoopType IWaitableFromCancelable.LoopType => loopType;
 
-        public NWaitRoutine(IEnumerator routine, WaiterLoopType loopType = WaiterLoopType.Update)
+        public NWaitRoutine(IEnumerator routine, NLoopType loopType = NLoopType.Update)
         {
             this.routine = routine;
             this.loopType = loopType;
         }
 
-        (Func<NWaitableResult>, ICancellable) IWaitableFromCancellable.buildCompleteFunc()
+        (Func<NWaitableResult>, ICancelable) IWaitableFromCancelable.buildCompleteFunc()
         {
             var data = NCoroutine.startCoroutine(routine);
-            Func<NWaitableResult> func = () =>
+            NWaitableResult func()
             {
-                switch (data.Status)
+                return data.Status switch
                 {
-                    case RunState.Completed: return NWaitableResult.Completed;
-                    case RunState.Cancelled: return NWaitableResult.Cancelled;
-                    default: return NWaitableResult.None;
-                }
-            };
+                    RunState.Completed => NWaitableResult.Completed,
+                    RunState.Canceled => NWaitableResult.Canceled,
+                    _ => NWaitableResult.None,
+                };
+            }
             return (func, data);
         }
     }
     public struct CombineNWaitable : IWaitable
     {
+        public NLoopType loopType;
         public readonly NWaitable[] waitables;
+
+        NLoopType IWaitable.LoopType => loopType;
 
         public CombineNWaitable(params NWaitable[] waitables)
         {
@@ -197,24 +201,27 @@ namespace Nextension
                 throw new Exception("waitables is null or empty");
             }
             this.waitables = waitables;
+            loopType = NLoopType.Update;
         }
-
-        WaiterLoopType IWaitable.LoopType => WaiterLoopType.Update;
 
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
-            var waitables = this.waitables;
-            Func<NWaitableResult> func = () =>
+            var waitables = new List<NWaitable>(this.waitables);
+            NWaitableResult func()
             {
-                foreach (var waitable in waitables)
+                var span = waitables.asSpan();
+
+                for (int i = waitables.Count - 1; i >= 0; --i)
                 {
+                    var waitable = span[i];
                     switch (waitable.Status)
                     {
-                        case RunState.Cancelled:
-                            return NWaitableResult.Cancelled;
+                        case RunState.Canceled:
+                            return NWaitableResult.Canceled;
                         case RunState.Exception:
                             return NWaitableResult.Exception(waitable.Exception);
                         case RunState.Completed:
+                            waitables.removeAtSwapBack(i);
                             continue;
                         case RunState.Running:
                         case RunState.None:
@@ -222,8 +229,17 @@ namespace Nextension
                     }
                 }
                 return NWaitableResult.Completed;
-            };
+            }
             return func;
+        }
+    }
+    public readonly struct NWaitMainThread : IWaitable
+    {
+        readonly NLoopType IWaitable.LoopType => NLoopType.Update;
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        {
+            // because wait system iterates and runs continuation function on main thread
+            return NWaitableResult.CompletedFunc;
         }
     }
 }

@@ -8,22 +8,26 @@ namespace Nextension
     {
         [field: SerializeField] public int Id { get; private set; }
         [field: SerializeField] public bool IsUniquePool { get; private set; }
-        [NonSerialized] private bool isOrigin;
 
         internal void setPoolId(int id, bool isUniquePool)
         {
             Id = id;
             IsUniquePool = isUniquePool;
+#if UNITY_EDITOR
             isOrigin = true;
+#endif
         }
 
         private void OnDestroy()
         {
-            Debug.LogWarning("Origin instance has been destroyed");
+            if (NStartRunner.IsPlaying)
+            {
+                Debug.LogWarning("Origin instance has been destroyed");
+            }
         }
 
 #if UNITY_EDITOR
-
+        [NonSerialized] private bool isOrigin;
 
         [ContextMenu("Ping origin")]
         private void pingOrigin()

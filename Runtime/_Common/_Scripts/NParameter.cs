@@ -20,27 +20,22 @@ namespace Nextension
         [SerializeField] private string stringValue;
         [SerializeField] private Object componentValue;
 
-        public ParameterType Type => type;
-        public object Value
+        public readonly ParameterType Type => type;
+        public readonly object Value
         {
             get
             {
-                switch (type)
+                return type switch
                 {
-                    case ParameterType.Bool:
-                        return boolValue;
-                    case ParameterType.Number:
-                        return numberValue;
-                    case ParameterType.String:
-                        return stringValue;
-                    case ParameterType.Component:
-                        return componentValue;
-                    default:
-                        return null;
-                }
+                    ParameterType.Bool => boolValue,
+                    ParameterType.Number => numberValue,
+                    ParameterType.String => stringValue,
+                    ParameterType.Component => componentValue,
+                    _ => null,
+                };
             }
         }
-        public bool BoolValue
+        public readonly bool BoolValue
         {
             get
             {
@@ -51,7 +46,7 @@ namespace Nextension
                 return boolValue;
             }
         }
-        public float NumberValue
+        public readonly float NumberValue
         {
             get
             {
@@ -62,7 +57,7 @@ namespace Nextension
                 return numberValue;
             }
         }
-        public string StringValue
+        public readonly string StringValue
         {
             get
             {
@@ -73,7 +68,7 @@ namespace Nextension
                 return stringValue;
             }
         }
-        public Object ComponentValue
+        public readonly Object ComponentValue
         {
             get
             {
@@ -84,7 +79,11 @@ namespace Nextension
                 return componentValue;
             }
         }
-        private object getParameter(Type type)
+        public readonly T getComponent<T>() where T : Object
+        {
+            return ComponentValue as T;
+        }
+        private readonly object getParameter(Type type)
         {
             if (type == Value.GetType())
             {
@@ -113,12 +112,12 @@ namespace Nextension
             }
             throw new Exception($"Type: `{Value.GetType()}` not match with input type: `{type}`");
         }
-        public T getParameter<T>()
+        public readonly T getParameter<T>()
         {
             var result = getParameter(typeof(T));
             return (T)result;
         }
-        public bool tryGetParameter<T>(out T result)
+        public readonly bool tryGetParameter<T>(out T result)
         {
             try
             {
@@ -131,6 +130,27 @@ namespace Nextension
                 result = default;
                 return false;
             }
+        }
+
+        public void setBool(bool value)
+        {
+            type = ParameterType.Bool;
+            boolValue = value;
+        }
+        public void setNumber(float number)
+        {
+            type = ParameterType.Number;
+            numberValue = number;
+        }
+        public void setString(string value)
+        {
+            type = ParameterType.String;
+            stringValue = value;
+        }
+        public void setComponent<T>(T component) where T : Object
+        {
+            type = ParameterType.Component;
+            componentValue = component;
         }
     }
 }

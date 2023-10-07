@@ -10,6 +10,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.LowLevel;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
@@ -76,8 +77,8 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(byte[] byteMask, int bitIndex)
         {
-            int byteIndex = bitIndex / 8;
-            int maskIndex = bitIndex % 8;
+            int byteIndex = bitIndex >> 3;
+            int maskIndex = bitIndex & 0x7;
             byte mask = byteMask[byteIndex];
             return (mask & 1 << maskIndex) != 0;
         }
@@ -85,8 +86,8 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(NativeArray<byte> byteMask, int bitIndex)
         {
-            int byteIndex = bitIndex / 8;
-            int maskIndex = bitIndex % 8;
+            int byteIndex = bitIndex >> 3;
+            int maskIndex = bitIndex & 0x7;
             byte mask = byteMask[byteIndex];
             return (mask & 1 << maskIndex) != 0;
         }
@@ -124,7 +125,7 @@ namespace Nextension
             if (startIndex >= 0)
             {
                 var endIndex = startIndex + 8;
-                for (;startIndex < endIndex; startIndex++)
+                for (; startIndex < endIndex; startIndex++)
                 {
                     if ((mask & 1 << startIndex) != 0)
                     {
@@ -214,37 +215,10 @@ namespace Nextension
                 throw new Exception("bytes is null or empty");
             }
 
-            int index = byteMask.Length % 4;
-            int length = byteMask.Length / 4;
-            int num;
-
-            if (index != 0)
+            fixed (byte* ptr = &byteMask[0])
             {
-                fixed (byte* bPtr = &byteMask[0])
-                {
-                    num = *(int*)bPtr;
-                    if (num != 0)
-                    {
-                        return getBit1Index(num);
-                    }
-                }
+                return getBit1Index(ptr, byteMask.Length);
             }
-
-            int startBitIndex = index << 3;
-            fixed (byte* bPtr = &byteMask[index])
-            {
-                int* iPtr = (int*)bPtr;
-                while (length-- > 0)
-                {
-                    if ((num = *iPtr++) != 0)
-                    {
-                        return getBit1Index(num) + startBitIndex;
-                    }
-                    startBitIndex += 32;
-                }
-            }
-
-            return -1;
         }
         public unsafe static int getBit1Index(NativeArray<byte> byteMask)
         {
@@ -252,23 +226,26 @@ namespace Nextension
             {
                 throw new Exception("bytes is null or empty");
             }
+            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
+            return getBit1Index(ptr, byteMask.Length);
+        }
 
-            int index = byteMask.Length % 4;
-            int length = byteMask.Length / 4;
+        public unsafe static int getBit1Index(byte* ptr, int lengthOfBytes)
+        {
+            int index = lengthOfBytes & 3;
+            int intCount = lengthOfBytes >> 2;
             int num;
-
-            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
             if (index != 0)
             {
-                if ((num = *(int*)bPtr) != 0)
+                if ((num = *(int*)ptr) != 0)
                 {
                     return getBit1Index(num);
                 }
             }
 
             int startBitIndex = index << 3;
-            int* iPtr = (int*)(bPtr + index);
-            while (length-- > 0)
+            int* iPtr = (int*)(ptr + index);
+            while (intCount-- > 0)
             {
                 if ((num = *iPtr++) != 0)
                 {
@@ -402,37 +379,10 @@ namespace Nextension
                 throw new Exception("bytes is null or empty");
             }
 
-            int index = byteMask.Length % 4;
-            int length = byteMask.Length / 4;
-            int num;
-
-            if (index != 0)
+            fixed (byte* ptr = &byteMask[0])
             {
-                fixed (byte* bPtr = &byteMask[0])
-                {
-                    num = *(int*)bPtr;
-                    if (num != -1)
-                    {
-                        return getBit0Index(num);
-                    }
-                }
+                return getBit0Index(ptr, byteMask.Length);
             }
-
-            int startBitIndex = index << 3;
-            fixed (byte* bPtr = &byteMask[index])
-            {
-                int* iPtr = (int*)bPtr;
-                while (length-- > 0)
-                {
-                    if ((num = *iPtr++) != -1)
-                    {
-                        return getBit0Index(num) + startBitIndex;
-                    }
-                    startBitIndex += 32;
-                }
-            }
-
-            return -1;
         }
         public unsafe static int getBit0Index(NativeArray<byte> byteMask)
         {
@@ -440,23 +390,26 @@ namespace Nextension
             {
                 throw new Exception("bytes is null or empty");
             }
-
-            int index = byteMask.Length % 4;
-            int length = byteMask.Length / 4;
+            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
+            return getBit0Index(ptr, byteMask.Length);
+        }
+        public unsafe static int getBit0Index(byte* ptr, int lengthOfBytes)
+        {
+            int index = lengthOfBytes & 3;
+            int intCount = lengthOfBytes >> 2;
             int num;
 
-            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
             if (index != 0)
             {
-                if ((num = *(int*)bPtr) != -1)
+                if ((num = *(int*)ptr) != -1)
                 {
                     return getBit0Index(num);
                 }
             }
 
             int startBitIndex = index << 3;
-            int* iPtr = (int*)(bPtr + index);
-            while (length-- > 0)
+            int* iPtr = (int*)(ptr + index);
+            while (intCount-- > 0)
             {
                 if ((num = *iPtr++) != -1)
                 {
@@ -480,21 +433,21 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void setBit0(this byte[] bytes, int bitIndex)
         {
-            var byteIndex = bitIndex / 8;
-            bitIndex %= 8;
+            var byteIndex = bitIndex >> 3;
+            bitIndex &= 0x7;
             bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void setBit0(this NativeArray<byte> bytes, int bitIndex)
         {
-            var byteIndex = bitIndex / 8;
-            bitIndex %= 8;
+            var byteIndex = bitIndex >> 3;
+            bitIndex &= 0x7;
             bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int setBit1(int mask,int bitIndex)
+        public static int setBit1(int mask, int bitIndex)
         {
             return mask |= 1 << bitIndex;
         }
@@ -506,16 +459,16 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void setBit1(this byte[] bytes, int bitIndex)
         {
-            var byteIndex = bitIndex / 8;
-            bitIndex %= 8;
+            var byteIndex = bitIndex >> 3;
+            bitIndex &= 0x7;
             bytes[byteIndex] |= (byte)(1 << bitIndex);
         }
         [BurstCompile]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void setBit1(this NativeArray<byte> bytes, int bitIndex)
         {
-            var byteIndex = bitIndex / 8;
-            bitIndex %= 8;
+            var byteIndex = bitIndex >> 3;
+            bitIndex &= 0x7;
             bytes[byteIndex] |= (byte)(1 << bitIndex);
         }
 
@@ -526,34 +479,10 @@ namespace Nextension
                 throw new Exception("bytes is null or empty");
             }
 
-            int index = bytes.Length % 4;
-            int length = bytes.Length / 4;
-
-            if (index != 0)
+            fixed (byte* ptr = &bytes[0])
             {
-                fixed (byte* bPtr = &bytes[0])
-                {
-                    int* iPtr = (int*)bPtr;
-                    if (*iPtr != -1)
-                    {
-                        return false;
-                    }
-                }
+                return isOnly1(ptr, bytes.Length);
             }
-
-            fixed (byte* bPtr = &bytes[index])
-            {
-                int* iPtr = (int*)bPtr;
-                while (length-- > 0)
-                {
-                    if (*iPtr++ != -1)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
         public unsafe static bool isOnly1(this NativeArray<byte> bytes)
         {
@@ -561,20 +490,22 @@ namespace Nextension
             {
                 throw new Exception("bytes is null or empty");
             }
-
-            int index = bytes.Length % 4;
-            int length = bytes.Length / 4;
-
-            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
+            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
+            return isOnly1(ptr, bytes.Length);
+        }
+        public unsafe static bool isOnly1(byte* ptr, int lengthOfBytes)
+        {
+            int index = lengthOfBytes & 3;
+            int length = lengthOfBytes >> 2;
             if (index != 0)
             {
-                if (*(int*)bPtr != -1)
+                if (*(int*)ptr != -1)
                 {
                     return false;
                 }
             }
 
-            int* iPtr = (int*)(bPtr + index);
+            int* iPtr = (int*)(ptr + index);
             while (length-- > 0)
             {
                 if (*iPtr++ != -1)
@@ -584,6 +515,7 @@ namespace Nextension
             }
             return true;
         }
+
         public static unsafe bool isOnly0(this byte[] bytes)
         {
             if (bytes == null || bytes.Length == 0)
@@ -591,34 +523,10 @@ namespace Nextension
                 throw new Exception("bytes is null or empty");
             }
 
-            int index = bytes.Length % 4;
-            int length = bytes.Length / 4;
-
-            if (index != 0)
+            fixed (byte* ptr = &bytes[0])
             {
-                fixed (byte* bPtr = &bytes[0])
-                {
-                    int* iPtr = (int*)bPtr;
-                    if (*iPtr != 0)
-                    {
-                        return false;
-                    }
-                }
+                return isOnly0(ptr, bytes.Length);
             }
-
-            fixed (byte* bPtr = &bytes[index])
-            {
-                int* iPtr = (int*)bPtr;
-                while (length-- > 0)
-                {
-                    if (*iPtr++ != 0)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
         public unsafe static bool isOnly0(this NativeArray<byte> bytes)
         {
@@ -627,19 +535,23 @@ namespace Nextension
                 throw new Exception("bytes is null or empty");
             }
 
-            int index = bytes.Length % 4;
-            int length = bytes.Length / 4;
+            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
+            return isOnly0(ptr, bytes.Length);
+        }
+        public unsafe static bool isOnly0(byte* ptr, int lengthOfBytes)
+        {
+            int index = lengthOfBytes & 3;
+            int length = lengthOfBytes >> 2;
 
-            var bPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
             if (index != 0)
             {
-                if (*(int*)bPtr != 0)
+                if (*(int*)ptr != 0)
                 {
                     return false;
                 }
             }
 
-            int* iPtr = (int*)(bPtr + index);
+            int* iPtr = (int*)(ptr + index);
             while (length-- > 0)
             {
                 if (*iPtr++ != 0)
@@ -864,25 +776,25 @@ namespace Nextension
         [BurstCompile]
         public static Vector4 toVector4(this Quaternion quaternion)
         {
-            return new Vector4(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+            return NConverter.bitConvert<Quaternion, Vector4>(quaternion);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
         public static Quaternion toQuaternion(this Vector4 vector4)
         {
-            return new Quaternion(vector4.x, vector4.y, vector4.z, vector4.w);
+            return NConverter.bitConvert<Vector4, Quaternion>(vector4);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
         public static float4 toFloat4(this Quaternion quaternion)
         {
-            return new float4(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+            return NConverter.bitConvert<Quaternion, float4>(quaternion);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
         public static Quaternion toQuaternion(this float4 f4)
         {
-            return new Quaternion(f4.x, f4.y, f4.z, f4.w);
+            return NConverter.bitConvert<float4, Quaternion>(f4);
         }
         #endregion
 
@@ -918,6 +830,39 @@ namespace Nextension
             else
             {
                 self.position = self.position.setZ(z);
+            }
+        }
+        public static void plusPositionX(this Transform self, float x, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.plusX(x);
+            }
+            else
+            {
+                self.position = self.position.plusX(x);
+            }
+        }
+        public static void plusPositionY(this Transform self, float y, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.plusY(y);
+            }
+            else
+            {
+                self.position = self.position.plusY(y);
+            }
+        }
+        public static void plusPositionZ(this Transform self, float z, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.plusZ(z);
+            }
+            else
+            {
+                self.position = self.position.plusZ(z);
             }
         }
         public static void setEulerAnglesX(this Transform self, float x, bool isLocal = true)
@@ -1081,7 +1026,7 @@ namespace Nextension
         {
             return Matrix4x4.Inverse(getWorldToViewportMatrix(camera));
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Vector2 viewportToScreenPoint(Vector2 viewportPoint)
         {
@@ -1092,7 +1037,7 @@ namespace Nextension
         {
             return new Vector2(screenPoint.x / Screen.width, screenPoint.y / Screen.height);
         }
-        
+
         public static Vector2 worldToViewportPoint(Matrix4x4 world2ViewportMatrix, Vector3 worldPoint)
         {
             var clipPoint = world2ViewportMatrix.MultiplyPoint3x4(worldPoint);
@@ -1111,7 +1056,7 @@ namespace Nextension
             var viewportPoint = worldToViewportPoint(world2ViewportMatrix, worldPoint);
             return new Vector2(viewportPoint.x * Screen.width, viewportPoint.y * Screen.height);
         }
-        
+
         public static Vector3 viewportToWorldPoint(Matrix4x4 viewport2WorldMatrix, Vector2 viewportPoint)
         {
             var clipPoint = viewportPoint * 2f - Vector2.one;
@@ -1123,7 +1068,7 @@ namespace Nextension
             return viewportToWorldPoint(viewport2WorldMatrix, viewportPoint);
         }
         #endregion
-        
+
         #endregion
 
         #region Unity Color
@@ -1202,10 +1147,10 @@ namespace Nextension
         }
         public static int toInt32(this Color color)
         {
-            byte r = (byte)(color.r * 255);
-            byte g = (byte)(color.g * 255);
-            byte b = (byte)(color.b * 255);
-            byte a = (byte)(color.a * 255);
+            byte r = (byte)Math.Round(color.r * 255);
+            byte g = (byte)Math.Round(color.g * 255);
+            byte b = (byte)Math.Round(color.b * 255);
+            byte a = (byte)Math.Round(color.a * 255);
             return r | g << 8 | b << 16 | a << 24;
         }
         public static Color fromInt32(int from)
@@ -1218,21 +1163,15 @@ namespace Nextension
         }
         public static float4 toFloat4(this Color from)
         {
-            return new float4(from.r, from.g, from.b, from.a);
+            return NConverter.bitConvert<Color, float4>(from);
         }
         public static Color toColor(this float4 from)
         {
-            return new Color(from.x, from.y, from.z, from.w);
+            return NConverter.bitConvert<float4, Color>(from);
         }
         #endregion
 
         #region String
-        public static string firstCharToUpper(this string input)
-        {
-            if (String.IsNullOrEmpty(input))
-                throw new ArgumentException("Input is null or empty");
-            return input.First().ToString().ToUpper() + input.Substring(1).ToLower();
-        }
         public static string formatToMMSS(int totalSeconds)
         {
             var m = totalSeconds / 60;
@@ -1242,7 +1181,8 @@ namespace Nextension
         public static bool isHex(in string str)
         {
             int offset;
-            if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+            var span = str.AsSpan();
+            if (span[0] == '0' && (span[1] == 'x' || span[1] == 'X'))
             {
                 offset = 2;
             }
@@ -1251,9 +1191,10 @@ namespace Nextension
                 offset = 0;
             }
             bool isHex;
-            for (int i = offset; i < str.Length; ++i)
+            int strLength = str.Length;
+            for (; offset < strLength; ++offset)
             {
-                var c = str[i];
+                var c = span[offset];
                 isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
                 if (!isHex)
                 {
@@ -1264,12 +1205,14 @@ namespace Nextension
         }
         public static string bytesToHex(byte[] inData, bool include0xPrefix = false)
         {
-            StringBuilder sb = new StringBuilder();
+            int inDataLength = inData.Length;
+            int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
+            StringBuilder sb = new (hexLength);
             if (include0xPrefix)
             {
                 sb.Append("0x");
             }
-            for (int i = 0; i < inData.Length; i++)
+            for (int i = 0; i < inDataLength; i++)
             {
                 sb.Append(inData[i].ToString("x2"));
             }
@@ -1285,22 +1228,22 @@ namespace Nextension
         /// <exception cref="Exception"></exception>
         public static byte[] hexToBytes(string hex)
         {
-            if (hex.Length % 2 != 0)
+            if (hex.Length >> 1 != 0)
             {
                 throw new Exception("Invalid hex: " + hex);
             }
-            int offset;
+            ReadOnlySpan<char> hexSpan;
             if (hex[1] == 'x' || hex[1] == 'X')
             {
-                offset = 2;
+                hexSpan = hex.AsSpan(2);
             }
             else
             {
-                offset = 0;
+                hexSpan = hex.AsSpan();
             }
             if (_hexTable == null)
             {
-                _hexTable = new Dictionary<char, byte>();
+                _hexTable = new Dictionary<char, byte>(22);
                 byte num = 0;
                 for (char i = '0'; i <= '9'; ++i)
                 {
@@ -1314,12 +1257,12 @@ namespace Nextension
                 _hexTable['F'] = _hexTable['f'] = 15;
             }
 
-            byte[] bytes = new byte[(hex.Length - offset) / 2];
+            byte[] bytes = new byte[hexSpan.Length / 2];
             for (int i = 0; i < bytes.Length; ++i)
             {
-                var i2 = i * 2 + offset;
-                var c0 = _hexTable[hex[i2]];
-                var c1 = _hexTable[hex[i2 + 1]];
+                var i2 = i * 2;
+                var c0 = _hexTable[hexSpan[i2]];
+                var c1 = _hexTable[hexSpan[i2 + 1]];
                 bytes[i] = (byte)(c0 << 4 | c1);
             }
 
@@ -1327,96 +1270,126 @@ namespace Nextension
         }
         public static bool isEqualHex(string hex0, string hex1)
         {
-            hex0 = hex0.ToLower();
-            hex1 = hex1.ToLower();
-            if (hex0[1] == 'x')
+            ReadOnlySpan<char> hexSpan0;
+            ReadOnlySpan<char> hexSpan1;
+            if (hex0[1] == 'x' || hex0[1] == 'X')
             {
-                if (hex1[1] != 'x')
-                {
-                    hex0 = hex0.Remove(0, 2);
-                }
+                hexSpan0 = hex0.AsSpan(2);
             }
-            else if (hex1[1] == 'x')
+            else
             {
-                hex1 = hex1.Remove(0, 2);
+                hexSpan0 = hex0.AsSpan();
             }
-            return hex0 == hex1;
+
+            if (hex1[1] == 'x' || hex1[1] == 'X')
+            {
+                hexSpan1 = hex1.AsSpan(2);
+            }
+            else
+            {
+                hexSpan1 = hex1.AsSpan();
+            }
+            return hexSpan0.Equals(hexSpan1, StringComparison.OrdinalIgnoreCase);
         }
         public static string computeMD5(string s)
         {
             using var provider = System.Security.Cryptography.MD5.Create();
-            StringBuilder builder = new StringBuilder();
-
             var hash = provider.ComputeHash(NConverter.getBytes(s));
             return bytesToHex(hash);
         }
         #endregion
 
-        #region List and Array
-        public static List<T> add<T>(this List<T> self, T item, bool ignoreIfExist = true)
+        #region Collection
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Span<T> asSpan<T>(this List<T> list)
+        {
+            return list.AsSpan();
+        }
+        public static void add<T>(this ICollection<T> self, T item, bool ignoreIfExist = true)
         {
             if (ignoreIfExist)
             {
                 if (self.Contains(item))
                 {
-                    return self;
+                    return;
                 }
             }
             self.Add(item);
-            return self;
         }
-        public static List<T> addAndSort<T>(this List<T> self, T item, bool ignoreIfExist = true)
+        public static void addAndSort<T>(this List<T> self, T item, bool ignoreIfExist = true)
         {
             if (ignoreIfExist)
             {
                 if (self.Contains(item))
                 {
-                    return self;
+                    return;
                 }
             }
             self.Add(item);
             self.Sort();
-            return self;
         }
-        public static List<T> addAndSort<T>(this List<T> self, T item, Comparison<T> comparison, bool ignoreIfExist = true)
+        public static void addAndSort<T>(this List<T> self, T item, Comparison<T> comparison, bool ignoreIfExist = true)
         {
             if (ignoreIfExist)
             {
                 if (self.Contains(item))
                 {
-                    return self;
+                    return;
                 }
             }
             self.Add(item);
             self.Sort(comparison);
-            return self;
-        }
-        /// <summary>
-        /// append appendArray to self (target array)
-        /// </summary>
-        /// <typeparam name="T">is a built-in type, struct or class</typeparam>
-        /// <param name="self">is target array</param>
-        /// <param name="appendArray">is append array</param>
-        /// <returns></returns>
-        public static T[] appendArray<T>(this T[] self, ICollection<T> appendArray)
-        {
-            int oldLength = self.Length;
-            Array.Resize(ref self, self.Length + appendArray.Count);
-            appendArray.CopyTo(self, oldLength);
-            return self;
         }
 
-        public static bool isSameItem<T>(this ICollection<T> a, ICollection<T> b)
+        public static bool isSameItem<T>(this T[] a, T[] b) where T : IEquatable<T>
         {
             if (a == null || b == null)
             {
                 return false;
             }
+
+            if (a.Length != b.Length)
+            {
+                return false;
+            }
+
+            return a.AsSpan().SequenceEqual(b.AsSpan());
+        }
+        public static bool isSameItem<T>(this List<T> a, List<T> b) where T : IEquatable<T>
+        {
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
             if (a.Count != b.Count)
             {
                 return false;
             }
-            return Enumerable.SequenceEqual(a, b);
+
+            return a.asSpan().SequenceEqual(b.asSpan());
+        }
+        public static bool contains<T>(this ICollection<T> self, ICollection<T> b)
+        {
+            foreach (var item in b)
+            {
+                if (!self.Contains(item))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public static bool contains<T>(this ICollection<T> self, Span<T> b)
+        {
+            for (int i = 0, length = b.Length; i < length; i++)
+            {
+                if (!self.Contains(b[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>
@@ -1425,14 +1398,14 @@ namespace Nextension
         /// <typeparam name="T">is a built-in type, struct or class</typeparam>
         /// <param name="self">is list contains item which you want remove</param>
         /// <param name="indexList">index of items which you want remove</param>
-        public static void removeAt<T>(this IList<T> self, params int[] indices)
+        public static void removeAt<T>(this List<T> self, params int[] indices)
         {
             for (int i = indices.Length - 1; i >= 0; --i)
             {
                 self.RemoveAt(indices[i]);
             }
         }
-        public static void removeLast<T>(this IList<T> list)
+        public static void removeLast<T>(this List<T> list)
         {
             list.RemoveAt(list.Count - 1);
         }
@@ -1440,7 +1413,11 @@ namespace Nextension
         {
             list.removeAt(list.Count - 1);
         }
-        public static T takeAndRemoveAt<T>(this IList<T> self, int index)
+        public static void removeLast<T>(this NativeList<T> list) where T : unmanaged
+        {
+            list.RemoveAt(list.Length - 1);
+        }
+        public static T takeAndRemoveAt<T>(this List<T> self, int index)
         {
             var item = self[index];
             self.RemoveAt(index);
@@ -1452,19 +1429,37 @@ namespace Nextension
             self.removeAt(index);
             return item;
         }
-        public static T takeAndRemoveLast<T>(this IList<T> self)
+        public static V takeAndRemove<K, V>(this IDictionary<K, V> self, K key)
         {
-            var item = self[self.Count - 1];
+            if (!self.TryGetValue(key, out var v)) return default;
+            self.Remove(key);
+            return v;
+        }
+        public static bool tryTakeAndRemove<K, V>(this IDictionary<K, V> self, K key, out V value)
+        {
+            if (!self.TryGetValue(key, out value)) return false;
+            self.Remove(key);
+            return true;
+        }
+        public static T takeAndRemoveLast<T>(this List<T> self)
+        {
+            var item = self[^1];
             self.removeLast();
             return item;
         }
         public static T takeAndRemoveLast<T>(this IBList<T> self)
         {
-            var item = self[self.Count - 1];
+            var item = self[^1];
             self.removeLast();
             return item;
         }
-        public static bool removeSwapBack<T>(this IList<T> self, T item)
+        public static T takeAndRemoveLast<T>(this NativeList<T> self) where T : unmanaged
+        {
+            var item = self[^1];
+            self.removeLast();
+            return item;
+        }
+        public static bool removeSwapBack<T>(this List<T> self, T item)
         {
             var index = self.IndexOf(item);
             if (index < 0) return false;
@@ -1474,7 +1469,7 @@ namespace Nextension
         /// <summary>
         /// swap item to back and remove it
         /// </summary>
-        public static void removeAtSwapBack<T>(this IList<T> self, int index)
+        public static void removeAtSwapBack<T>(this List<T> self, int index)
         {
             var lastIndex = self.Count - 1;
             if (lastIndex <= 0)
@@ -1488,66 +1483,113 @@ namespace Nextension
             }
             self.RemoveAt(lastIndex);
         }
-        public static T takeAndRemoveSwapBack<T>(this IList<T> self, int index)
+        public static T takeAndRemoveSwapBack<T>(this List<T> self, int index)
         {
             var item = self[index];
             self.removeAtSwapBack(index);
             return item;
         }
+        public static T takeAndRemoveSwapBack<T>(this NativeList<T> self, int index) where T : unmanaged
+        {
+            var item = self[index];
+            self.RemoveAtSwapBack(index);
+            return item;
+        }
+        public static T[] add<T>(this T[] arrays, params T[] items)
+        {
+            var srcLength = arrays.Length;
+            var itemsLength = items.Length;
+            var result = new T[srcLength + itemsLength];
+            Array.Copy(arrays, 0, result, 0, srcLength);
+            Array.Copy(items, 0, result, srcLength, itemsLength);
+            return result;
+        }
+        public static T[] createOrAdd<T>(this T[] arrays, params T[] items)
+        {
+            if (arrays == null)
+            {
+                return items;
+            }
+            else
+            {
+                return add(arrays, items);
+            }
+        }
         public static T[] merge<T>(params T[][] arrays)
         {
             int totalLength = 0;
-            for (int i = 0; i < arrays.Length; ++i)
+            int arrLength = arrays.Length;
+            for (int i = 0; i < arrLength; ++i)
             {
                 totalLength += arrays[i].Length;
             }
             var data = new T[totalLength];
             int pointer = 0;
-            for (int i = 0; i < arrays.Length; ++i)
+            for (int i = 0; i < arrLength; ++i)
             {
-                Buffer.BlockCopy(arrays[i], 0, data, pointer, arrays[i].Length);
-                pointer += arrays[i].Length;
+                var item = arrays[i];
+                Array.Copy(item, 0, data, pointer, item.Length);
+                pointer += item.Length;
             }
             return data;
         }
-        public static T[] mergeTo<T>(this T[] a, T[] b)
+        public static T[] mergeNullableArrays<T>(params T[][] arrays)
         {
-            var aOffset = a.Length;
-            Array.Resize(ref a, a.Length + b.Length);
-            Buffer.BlockCopy(b, 0, a, aOffset, b.Length);
+            int totalLength = 0;
+            int arrLength = arrays.Length;
+            for (int i = 0; i < arrLength; ++i)
+            {
+                if (arrays[i] != null)
+                {
+                    totalLength += arrays[i].Length;
+                }
+            }
+            var data = new T[totalLength];
+            int pointer = 0;
+            for (int i = 0; i < arrLength; ++i)
+            {
+                var item = arrays[i];
+                if (item != null)
+                {
+                    Array.Copy(item, 0, data, pointer, item.Length);
+                    pointer += item.Length;
+                }
+            }
+            return data;
+        }
+        public static T[] mergeWith<T>(this T[] a, T[] b)
+        {
+            var aLength = a.Length;
+            var bLength = b.Length;
+            var result = new T[aLength + bLength];
+            Array.Copy(a, 0, result, 0, aLength);
+            Array.Copy(b, 0, result, aLength, bLength);
             return a;
         }
         public static T[] getBlock<T>(T[] src, int startIndex, int count)
         {
             T[] b = new T[count];
-            Buffer.BlockCopy(src, startIndex, b, 0, count);
+            Array.Copy(src, startIndex, b, 0, count);
             return b;
-        }
-        public static Span<T> getBlockAsSpan<T>(T[] src, int startIndex, int count)
-        {
-            return new Span<T>(src, startIndex, count);
-        }
-        public static T[] getBlockToEnd<T>(T[] src, int startIndex)
-        {
-            return getBlock(src, startIndex, src.Length - startIndex);
-        }
-        public static Span<T> getBlockToEndAsSpan<T>(T[] src, int startIndex)
-        {
-            return new Span<T>(src, startIndex, src.Length - startIndex);
         }
         #endregion
 
         #region Random
-        public static int randInt32(int min, int max, ICollection<int> exceptNumbers)
+        public static Unity.Mathematics.Random newRandom(uint seed = 0)
         {
-            var intRand = new System.Random();
-            if (exceptNumbers == null || exceptNumbers.Count == 0)
+            if (seed == 0)
             {
-                return intRand.Next(min, max);
+                return new Unity.Mathematics.Random(NConverter.bitConvert<float, uint>(Time.realtimeSinceStartup) ^ 0x6E624EB7u);
             }
-            var allNumbers = Enumerable.Range(min, max).Where(i => !exceptNumbers.Contains(i)).ToArray();
-            var randIdx = intRand.Next(allNumbers.Length);
-            return allNumbers[randIdx];
+            return new Unity.Mathematics.Random(seed);
+        }
+        public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers)
+        {
+            if (exclusiveNumbers == null || exclusiveNumbers.Count == 0)
+            {
+                return newRandom().NextInt(min, max);
+            }
+            return Enumerable.Range(min, max).Except(exclusiveNumbers).ToArray().randItem();
         }
         /// <summary>
         /// return random int array
@@ -1555,43 +1597,56 @@ namespace Nextension
         public static int[] createRandomIntArray(int arrayLength, int fillCount)
         {
             int[] array = new int[arrayLength];
-            var rnd = new System.Random();
-            var randomNumbers = Enumerable.Range(0, arrayLength).OrderBy(x => rnd.Next()).Take(fillCount).ToArray();
-            Array.Copy(randomNumbers, array, randomNumbers.Length);
+            for (int i = 1; i < fillCount; i++)
+            {
+                array[i] = i;
+            }
+            array.shuffle(fillCount);
             return array;
         }
 
         public static int[] getRandomIndices(int maxIndex, int count, int startIndex = 0)
         {
-            var rnd = new System.Random();
-            return Enumerable.Range(startIndex, maxIndex).OrderBy(x => rnd.Next()).Take(count).ToArray();
+            var arr = Enumerable.Range(startIndex, maxIndex).Take(count).ToArray();
+            arr.shuffle();
+            return arr;
         }
         public static T randItem<T>(this IList<T> list, out int randIndex)
         {
             if (list.Count == 0)
             {
-                randIndex = -1;
-                return default;
+                throw new Exception("List is empty");
             }
-            randIndex = UnityEngine.Random.Range(0, list.Count);
+            randIndex = newRandom().NextInt(list.Count);
             return list[randIndex];
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T randItem<T>(this IList<T> list)
         {
             return list.randItem(out _);
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void shuffle<T>(this IList<T> list)
         {
-            var rnd = new System.Random();
-            int n = list.Count;
-            while (n > 1)
+            shuffle(list, list.Count);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> list, int count)
+        {
+            shuffle(list, 0, count);
+        }
+        public static void shuffle<T>(this IList<T> list, int startIndex, int count)
+        {
+            var rnd = newRandom();
+            int n = startIndex + count;
+
+            if (n > list.Count) n = list.Count;
+
+            int startIndexPlus1 = startIndex + 1;
+            while (n > startIndexPlus1)
             {
-                int k = rnd.Next(n);
-                n--;
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                int k = rnd.NextInt(startIndex, n--);
+                (list[n], list[k]) = (list[k], list[n]);
             }
         }
 
@@ -1601,16 +1656,15 @@ namespace Nextension
         /// <typeparam name="T">is a built-in type, struct or class</typeparam>
         /// <param name="self">is contain list</param>
         /// <param name="index">index of returned item</param>
-        /// <param name="exceptIndex">exclude indexes if you didn't want it is returned</param>
+        /// <param name="exclusiveIndices">exclude indices if you didn't want it is returned</param>
         /// <returns></returns>
-        public static T randItem<T>(this IList<T> self, out int index, IList<int> exceptIndex = null)
+        public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices = null)
         {
-            if (self.Count <= 0)
+            if (self.Count == 0)
             {
-                index = -1;
-                return default;
+                throw new Exception("List is empty");
             }
-            index = randInt32(0, self.Count, exceptIndex);
+            index = randInt32(0, self.Count, exclusiveIndices);
             return self[index];
         }
         #endregion
@@ -1623,13 +1677,13 @@ namespace Nextension
         }
         public static void setActive(this UnityEngine.Object target, bool isActive)
         {
-            if (target is Component)
+            if (target is Component component)
             {
-                (target as Component).setActive(isActive);
+                component.setActive(isActive);
             }
-            else if (target is GameObject)
+            else if (target is GameObject gameObject)
             {
-                (target as GameObject).setActive(isActive);
+                gameObject.setActive(isActive);
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1651,8 +1705,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T getOrAddComponent<T>(this GameObject target) where T : Component
         {
-            var com = target.GetComponent<T>();
-            if (com == null)
+            if (!target.TryGetComponent<T>(out var com))
             {
                 com = target.AddComponent<T>();
             }
@@ -1720,20 +1773,6 @@ namespace Nextension
             return findResults[0];
         }
 
-        public static T getParentContainComponent<T>(this GameObject target) where T : Component
-        {
-            Transform parent = target.transform;
-            while (parent != null)
-            {
-                var comp = parent.GetComponent<T>();
-                if (comp)
-                {
-                    return comp;
-                }
-                parent = parent.parent;
-            }
-            return null;
-        }
         public static void setLayer(this GameObject target, string layerName, bool isIncludeChildren = true)
         {
             int layer = LayerMask.NameToLayer(layerName);
@@ -1756,7 +1795,7 @@ namespace Nextension
         }
         private static void innerDestroy(UnityEngine.Object target, bool isImmediate = false)
         {
-            if (!Application.isPlaying || isImmediate)
+            if (isImmediate || !NStartRunner.IsPlaying)
             {
                 UnityEngine.Object.DestroyImmediate(target);
             }
@@ -1765,40 +1804,36 @@ namespace Nextension
                 UnityEngine.Object.Destroy(target);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void destroy(UnityEngine.Object target, bool isImmediate = false)
         {
             if (target == null) return;
             innerDestroy(target, isImmediate);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void destroyObject(UnityEngine.Object target, bool isImmediate = false)
         {
             if (target == null) return;
-            if (target is Component)
+            if (target is Component component)
             {
-                innerDestroy((target as Component).gameObject, isImmediate);
+                innerDestroy(component.gameObject, isImmediate);
             }
-            else if (target is GameObject)
+            else if (target is GameObject gameObject)
             {
-                innerDestroy((target as GameObject), isImmediate);
+                innerDestroy(gameObject, isImmediate);
             }
             else
             {
                 innerDestroy(target, isImmediate);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void destroyObject(Component component, bool isImmediate = false)
         {
             if (component == null) return;
             innerDestroy(component.gameObject, isImmediate);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void destroyObject(GameObject go, bool isImmediate = false)
         {
             if (go == null) return;
-            innerDestroy(go.gameObject, isImmediate);
+            innerDestroy(go, isImmediate);
         }
         public static Transform getChild(this Transform g, string name)
         {
@@ -1807,7 +1842,7 @@ namespace Nextension
             {
                 return null;
             }
-            for (int i = 0; i < p.childCount;++i)
+            for (int i = 0; i < p.childCount; ++i)
             {
                 var child = p.GetChild(i);
                 if (child.name == name)
@@ -1826,11 +1861,10 @@ namespace Nextension
             }
             return null;
         }
-
         public static Transform getChild(this Transform g, string name, string parentName)
         {
             var p = g.transform;
-            for (int i = 0; i < p.childCount;++i)
+            for (int i = 0; i < p.childCount; ++i)
             {
                 var child = p.GetChild(i);
                 if (child.name == name && child.parent.name == parentName)
@@ -1851,7 +1885,6 @@ namespace Nextension
             }
             return null;
         }
-
         public static Transform getChildWithChainNames(this Transform g, params string[] names)
         {
             if (names.Length == 1)
@@ -1918,10 +1951,10 @@ namespace Nextension
         #endregion
 
         #region Bounds and Collider
-        public static Bounds getLocalBounds(this GameObject target, bool isIncludeChildren = true)
+        public static Bounds getLocalBounds(this GameObject target, bool isIncludeChildren = true, bool isIncludeInactive = true)
         {
             var cloneContainer = new GameObject("Container");
-            cloneContainer.gameObject.SetActive(false);
+            cloneContainer.SetActive(false);
             var clone = GameObject.Instantiate(target, cloneContainer.transform);
 
             clone.transform.resetTransform(false);
@@ -1929,12 +1962,11 @@ namespace Nextension
             var bounds = new Bounds(Vector3.zero, Vector3.zero);
             if (!isIncludeChildren)
             {
-                var renderer = clone.GetComponent<Renderer>();
-                bounds = renderer ? renderer.bounds : bounds;
+                bounds = clone.TryGetComponent<Renderer>(out var renderer) ? renderer.bounds : bounds;
             }
             else
             {
-                foreach (Renderer r in clone.GetComponentsInChildren<Renderer>())
+                foreach (Renderer r in clone.GetComponentsInChildren<Renderer>(isIncludeInactive))
                 {
                     bounds.Encapsulate(r.bounds);
                 }
@@ -1956,7 +1988,7 @@ namespace Nextension
             }
 
             var cloneContainer = new GameObject("Container");
-            cloneContainer.gameObject.SetActive(false);
+            cloneContainer.SetActive(false);
             var clone = GameObject.Instantiate(target, cloneContainer.transform);
 
             clone.transform.resetTransform(false);
@@ -1989,65 +2021,61 @@ namespace Nextension
             }
 
             var cloneFrom = GameObject.Instantiate(from);
+            var cloneTranform = cloneFrom.transform;
+            var targetTransform = target.transform;
 
             if (applyPosition)
             {
-                target.transform.position = cloneFrom.transform.position;
+                targetTransform.position = cloneTranform.position;
             }
             if (applyRotation)
             {
-                target.transform.rotation = cloneFrom.transform.rotation;
+                targetTransform.rotation = cloneTranform.rotation;
             }
             if (applyScale)
             {
-                if (!target.transform.parent || target.transform.lossyScale.hasZeroAxis())
+                if (!targetTransform.parent || targetTransform.lossyScale.hasZeroAxis())
                 {
-                    if (cloneFrom.transform.lossyScale.hasZeroAxis())
+                    if (cloneTranform.lossyScale.hasZeroAxis())
                     {
-                        target.transform.localScale = cloneFrom.transform.localScale;
+                        targetTransform.localScale = cloneTranform.localScale;
                     }
                     else
                     {
-                        target.transform.localScale = cloneFrom.transform.localScale.div(cloneFrom.transform.lossyScale);
+                        targetTransform.localScale = cloneTranform.localScale.div(cloneTranform.lossyScale);
                     }
                 }
                 else
                 {
-                    target.transform.localScale = cloneFrom.transform.lossyScale.div(target.transform.lossyScale);
+                    targetTransform.localScale = cloneTranform.lossyScale.div(targetTransform.lossyScale);
                 }
             }
 
             target.removeComponents<Collider>();
-            target.keepSingleComponent<BoxCollider>();
-
-            var boxCollider = target.GetComponent<BoxCollider>();
-            if (!boxCollider)
-            {
-                boxCollider = target.AddComponent<BoxCollider>();
-            }
+            var boxCollider = target.keepSingleComponent<BoxCollider>();
 
             if (applyPosition)
             {
-                boxCollider.center = target.transform.InverseTransformPoint(cloneFrom.transform.TransformPoint(cloneFrom.center));
+                boxCollider.center = targetTransform.InverseTransformPoint(cloneTranform.TransformPoint(cloneFrom.center));
             }
             else
             {
                 boxCollider.center = cloneFrom.center;
             }
 
-            if (cloneFrom.transform.lossyScale.hasZeroAxis())
+            if (cloneTranform.lossyScale.hasZeroAxis())
             {
                 boxCollider.size = cloneFrom.size;
             }
             else
             {
-                if (target.transform.lossyScale.hasZeroAxis())
+                if (targetTransform.lossyScale.hasZeroAxis())
                 {
-                    boxCollider.size = cloneFrom.size.mul(cloneFrom.transform.lossyScale);
+                    boxCollider.size = cloneFrom.size.mul(cloneTranform.lossyScale);
                 }
                 else
                 {
-                    boxCollider.size = cloneFrom.size.mul(cloneFrom.transform.lossyScale.div(target.transform.lossyScale));
+                    boxCollider.size = cloneFrom.size.mul(cloneTranform.lossyScale.div(targetTransform.lossyScale));
                 }
             }
 
@@ -2077,14 +2105,24 @@ namespace Nextension
         {
             return sizeof(T);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BindingFlags getStaticBindingFlags()
+        {
+            return BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+        }
+        public static bool isInherited(this Type type, Type parent)
+        {
+            return type.IsSubclassOf(parent) || type == parent;
+        }
         public static object createInstance(this Type type)
         {
             var constructors = type.GetConstructors();
             if (constructors.Length > 0)
             {
-                if (constructors[0].GetParameters().Length == 0)
+                var c = constructors[0];
+                if (c.GetParameters().Length == 0)
                 {
-                    return constructors[0].Invoke(null);
+                    return c.Invoke(null);
                 }
             }
             return System.Runtime.Serialization.FormatterServices.GetUninitializedObject(type);
@@ -2098,7 +2136,7 @@ namespace Nextension
             return (T)createInstance(typeof(T));
         }
 
-        private static Type[] _customTypeCached;
+        private static ExpirableValue<Type[]> _customTypeCached;
         public static Type[] getCustomTypes()
         {
             if (_customTypeCached == null)
@@ -2107,55 +2145,42 @@ namespace Nextension
                 var assembles = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (var assembly in assembles)
                 {
-                    if (assembly.GetName().Name.ToLower().StartsWith("unity"))
+                    var assemblyName = assembly.GetName().Name;
+
+                    if (assemblyName == "mscorlib")
                     {
                         continue;
                     }
-                    if (assembly.GetName().Name.ToLower().StartsWith("nunit."))
+                    if (assemblyName == "ExCSS.Unity")
                     {
                         continue;
                     }
-                    if (assembly.GetName().Name == "mscorlib")
+                    if (assemblyName.StartsWith("System"))
                     {
                         continue;
                     }
-                    if (assembly.GetName().Name == "ExCSS.Unity")
+                    if (assemblyName.StartsWith("Mono."))
                     {
                         continue;
                     }
-                    if (assembly.GetName().Name.StartsWith("System"))
+
+                    if (assemblyName.StartsWith("unity", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
-                    if (assembly.GetName().Name.StartsWith("Mono."))
+                    if (assemblyName.StartsWith("nunit.", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
-                    var types = assembly.GetTypes();
-                    typeList.AddRange(types);
+
+                    typeList.AddRange(assembly.GetTypes());
                 }
-                _customTypeCached = typeList.ToArray();
-                if (Application.isPlaying)
+                _customTypeCached = new(typeList.ToArray(), 10, () =>
                 {
-                    NAwaiter.runDelay(1, () =>
-                    {
-                        _customTypeCached = null;
-                    });
-                }
+                    _customTypeCached = null;
+                });
             }
             return _customTypeCached;
-        }
-        public static bool isInherited(Type child, Type parent)
-        {
-            while (child != null)
-            {
-                child = child.BaseType;
-                if (child != null && child == parent)
-                {
-                    return true;
-                }
-            }
-            return false;
         }
         public static FieldInfo getField(this Type type, string name, BindingFlags bindingFlags, bool recursiveInBaseType = true)
         {
@@ -2163,9 +2188,13 @@ namespace Nextension
             if (fieldInfo == null && recursiveInBaseType)
             {
                 type = type.BaseType;
-                while (fieldInfo == null && type != null)
+                while (type != null)
                 {
                     fieldInfo = type.GetField(name, bindingFlags);
+                    if (fieldInfo != null)
+                    {
+                        break;
+                    }
                     type = type.BaseType;
                 }
             }
@@ -2174,30 +2203,83 @@ namespace Nextension
         #endregion
 
         #region Others
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool equals<T>(this T self, T other)
+        {
+            return EqualityComparer<T>.Default.Equals(self, other);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int compareTo<TEnum>(this TEnum a, TEnum b)
+        {
+            return NGenericComparer<TEnum>.compare(a, b);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static int unsafeCompareAsNumber<Type, TNumberType>(Type a, Type b)
+            where Type : unmanaged
+            where TNumberType : unmanaged, IComparable<TNumberType>
+        {
+            return (*(TNumberType*)&a).CompareTo(*(TNumberType*)&b);
+        }
+        public static async Task<byte[]> getBinaryFrom(string url)
+        {
+            return await getBinaryFrom(new Uri(url));
+        }
         public static async Task<byte[]> getBinaryFrom(Uri uri)
         {
-            if (uri.IsFile && Application.platform != RuntimePlatform.WebGLPlayer)
+#if !UNITY_WEBGL || UNITY_EDITOR
+            if (uri.IsFile)
             {
                 return await System.IO.File.ReadAllBytesAsync(uri.LocalPath);
             }
-            var unityWebRequest = UnityWebRequest.Get(uri);
+#endif
+            using var unityWebRequest = UnityWebRequest.Get(uri);
             await unityWebRequest.SendWebRequest();
             if (string.IsNullOrEmpty(unityWebRequest.error))
             {
-                var bin = unityWebRequest.downloadHandler.data;
-                unityWebRequest.Dispose();
-                return bin;
+                return unityWebRequest.downloadHandler.data;
             }
-            var err = unityWebRequest.error;
-            unityWebRequest.Dispose();
-            throw new Exception(err);
+            throw new Exception(unityWebRequest.error);
         }
-        public static void dispose(params IDisposable[] disposeables)
+        public static void dispose(params IDisposable[] disposables)
         {
-            for (int i = 0; i < disposeables.Length;++i)
+            for (int i = 0; i < disposables.Length; ++i)
             {
-                disposeables[i].Dispose();
+                disposables[i].Dispose();
             }
+        }
+        public static string removeExtension(this string path)
+        {
+            var indexOfDot = path.LastIndexOf('.');
+            if (indexOfDot >= 0)
+            {
+                return path[..indexOfDot];
+            }
+            return path;
+        }
+        public static PlayerLoopSystem addPlayerLoopSystem<TLoopSystemType>(PlayerLoopSystem defaultPlayerLoop, PlayerLoopSystem sys) where TLoopSystemType : struct
+        {
+            var loopSystemType = typeof(TLoopSystemType);
+            var subSystemList = defaultPlayerLoop.subSystemList.ToArray();
+            bool added = false;
+
+            for (int i = 0; i < subSystemList.Length; ++i)
+            {
+                var subSytem = subSystemList[i];
+                if (loopSystemType == subSytem.type)
+                {
+                    subSytem.subSystemList = subSytem.subSystemList.createOrAdd(sys);
+                    subSystemList[i] = subSytem;
+                    added = true;
+                    break;
+                }
+            }
+
+            if (!added)
+            {
+                Debug.LogWarning($"Can't PlayerLoopSystem, reason: Not found type `{loopSystemType}`");
+            }
+            defaultPlayerLoop.subSystemList = subSystemList;
+            return defaultPlayerLoop;
         }
         #endregion
     }

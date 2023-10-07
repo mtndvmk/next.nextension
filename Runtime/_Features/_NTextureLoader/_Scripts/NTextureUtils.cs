@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using Unity.Burst;
 using Unity.Collections;
@@ -6,9 +8,52 @@ using UnityEngine;
 
 namespace Nextension.TextureLoader
 {
+    public enum ImageExtension
+    {
+        Unknown,
+        JPG,
+        BMP,
+        GIF,
+        PNG
+    }
     public static class NTextureUtils
     {
-        public static async Task<(NativeArray<Color32>, int, int)> resize(NativeArray<Color32> src, int srcWidth, int srcHeight, int maxDimension)
+        public static ImageExtension getImageExtension(Stream stream)
+        {
+            Span<byte> bytes = stackalloc byte[8];
+            stream.Read(bytes);
+            return getImageExtension(bytes);
+        }
+        public static ImageExtension getImageExtension(Span<byte> bytes)
+        {
+            ulong firstNum = NConverter.fromBytes<ulong>(bytes);
+
+            var num2 = firstNum & 0xffff;
+            if (num2 == 0xd8ff)
+            {
+                return ImageExtension.JPG;
+            }
+            if (num2 == 0x4d42)
+            {
+                return ImageExtension.BMP;
+            }
+
+            if ((firstNum & 0xffffff) == 0x464947)
+            {
+                return ImageExtension.GIF;
+            }
+
+            if (firstNum == 0x0a1a0a0d474e5089)
+            {
+                return ImageExtension.PNG;
+            }
+
+            return ImageExtension.Unknown;
+        }
+        /// <summary>
+        /// A `T` item is a color
+        /// </summary>
+        public static async Task<(NativeArray<T>, int, int)> asyncResizeColor<T>(NativeArray<T> src, int srcWidth, int srcHeight, int maxDimension) where T : unmanaged
         {
             float higher = Mathf.Max(srcWidth, srcHeight);
 
@@ -27,9 +72,9 @@ namespace Nextension.TextureLoader
             outHeight = (int)(srcHeight / ratio);
             var targetSize = outWidth * outHeight;
 
-            var dst = new NativeArray<Color32>(targetSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var dst = new NativeArray<T>(targetSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            var job = new Job_ResizeTexture_Color32()
+            var job = new Job_ResizeTexture_PixelData<T>()
             {
                 src = src,
                 dst = dst,
@@ -43,7 +88,10 @@ namespace Nextension.TextureLoader
             await jobHandle;
             return (dst, outWidth, outHeight);
         }
-        public static async Task<(NativeArray<byte>, int, int)> resize(NativeArray<byte> src, int srcWidth, int srcHeight, int maxDimension)
+        /// <summary>
+        /// sizePerPixel bytes is binary of a color
+        /// </summary>
+        public static async Task<(NativeArray<byte>, int, int)> asyncResizeBinaryColor(NativeArray<byte> src, int srcWidth, int srcHeight, int maxDimension)
         {
             float higher = Mathf.Max(srcWidth, srcHeight);
 
@@ -82,23 +130,62 @@ namespace Nextension.TextureLoader
 
             return (nativeDst, outWidth, outHeight);
         }
-        public static async Task<Texture2D> resize(Texture2D texture2D, int maxDimension)
+        public static async Task<Texture2D> asyncResizeReadableTexture(Texture2D src, int maxDimension)
         {
-            var rawData = new NativeArray<Color32>(texture2D.GetPixels32(), Allocator.TempJob);
-            (var nativeDst, var w, var h) = await resize(rawData, texture2D.width, texture2D.height, maxDimension);
+            if (src == null) return null;
+            var srcWidth = src.width;
+            var srcHeight = src.height;
+            float higher = Mathf.Max(srcWidth, srcHeight);
+            if (higher <= maxDimension)
+            {
+                return src;
+            }
+
+            var originColorNativeArr = new NativeArray<Color32>(src.GetPixels32(), Allocator.TempJob);
+            (var resizedColorNativeArr, var outWidth, var outHeight) = await asyncResizeColor(originColorNativeArr, srcWidth, srcHeight, maxDimension);
             var setting = new TextureSetting();
-            Texture2D result = setting.createTexture(w, h);
-            rawData.Dispose();
-            result.LoadRawTextureData(nativeDst);
-            nativeDst.Dispose();
+            Texture2D result = setting.createTexture(outWidth, outHeight);
+            originColorNativeArr.Dispose();
+            result.LoadRawTextureData(resizedColorNativeArr);
+            resizedColorNativeArr.Dispose();
             await setting.apply(result);
+            return result;
+        }
+        public static async Task<Texture2D> asyncResizeTextureUseBlit(Texture2D src, int maxDimension)
+        {
+            if (src == null) return null;
+            var srcWidth = src.width;
+            var srcHeight = src.height;
+            float higher = Mathf.Max(srcWidth, srcHeight);
+            if (higher <= maxDimension)
+            {
+                return src;
+            }
+
+            var ratio = higher / maxDimension;
+            var outWidth = (int)(srcWidth / ratio);
+            var outHeight = (int)(srcHeight / ratio);
+
+            RenderTexture currentRT = RenderTexture.active;
+            RenderTexture tempRenderTexture = RenderTexture.GetTemporary(outWidth, outHeight);
+            RenderTexture.active = tempRenderTexture;
+            Graphics.Blit(src, tempRenderTexture);
+
+            Texture2D result = new Texture2D(outWidth, outHeight, TextureFormat.RGBA32, false);
+            result.ReadPixels(new Rect(0, 0, result.width, result.height), 0, 0);
+            result.Apply(false, false);
+            await new NWaitFrame(1);
+            result.Compress(false);
+
+            RenderTexture.active = currentRT;
+            RenderTexture.ReleaseTemporary(tempRenderTexture);
             return result;
         }
 
         /// <summary>
         /// Convert binary of RGBA color array (32bit) to Color array
         /// </summary>
-        public static async Task<NativeArray<Color>> convertBinary32ToColor(NativeArray<byte> src)
+        public static async Task<NativeArray<Color>> asyncConvertBinary32ToColor(NativeArray<byte> src)
         {
             var nativeDst = new NativeArray<Color>(src.Length / 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var job = new Job_ConvertBinary32ToColor()
@@ -113,7 +200,7 @@ namespace Nextension.TextureLoader
         /// <summary>
         /// Convert binary of RGB color array (24bit) to Color array
         /// </summary>
-        public static async Task<NativeArray<Color>> convertBinary24ToColor(NativeArray<byte> src)
+        public static async Task<NativeArray<Color>> asyncConvertBinary24ToColor(NativeArray<byte> src)
         {
             var nativeDst = new NativeArray<Color>(src.Length / 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var job = new Job_ConvertBinary24ToColor()
@@ -128,25 +215,26 @@ namespace Nextension.TextureLoader
         /// <summary>
         /// Convert binary of RGBA color array (32bit) to binary of RGB color array (24bit)
         /// </summary>
-        public static async Task<NativeArray<T>> convertT32ToT24<T>(NativeArray<T> src) where T : unmanaged
+        public static async Task<NativeArray<T>> asyncConvertT32ToT24<T>(NativeArray<T> src) where T : unmanaged
         {
-            var nativeDst = new NativeArray<T>(src.Length / 4 * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            int colorCount = src.Length / 4;
+            var nativeDst = new NativeArray<T>(colorCount * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var job = new Job_ConvertT32ToT24<T>()
             {
                 src = src,
                 dst = nativeDst,
             };
-            var jobHandle = job.Schedule(src.Length / 4, 64);
+            var jobHandle = job.Schedule(colorCount, 64);
             await jobHandle;
             return nativeDst;
         }
 
         [BurstCompile]
-        private struct Job_ResizeTexture_Color32 : IJobParallelFor
+        private struct Job_ResizeTexture_PixelData<T> : IJobParallelFor where T : unmanaged
         {
-            [NativeDisableParallelForRestriction, WriteOnly] public NativeArray<Color32> dst;
+            [NativeDisableParallelForRestriction, WriteOnly] public NativeArray<T> dst;
 
-            [NativeDisableParallelForRestriction, ReadOnly] public NativeArray<Color32> src;
+            [NativeDisableParallelForRestriction, ReadOnly] public NativeArray<T> src;
             [ReadOnly] public int srcWidth;
             [ReadOnly] public int srcHeight;
             [ReadOnly] public int outWidth;

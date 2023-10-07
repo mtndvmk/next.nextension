@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public abstract class AbsNWaitableAwaiter : AbsAwaiter, ICancellable
+    public abstract class AbsNWaitableAwaiter : AbsAwaiter, ICancelable
     {
         internal NWaitableHandle handle;
         protected AbsNWaitableAwaiter() { }
@@ -17,7 +17,7 @@ namespace Nextension
                 case RunState.Completed:
                     invokeComplete();
                     return;
-                case RunState.Cancelled:
+                case RunState.Canceled:
                     return;
                 case RunState.Running:
                     handle = NWaitableHandle.Factory.create(this, new NWaitUntil(() => waitable.Status.isFinished()));
@@ -66,7 +66,7 @@ namespace Nextension
             awaiter.setup(handle);
             return awaiter;
         }
-        public static NWaitableAwaiter create(IWaitableFromCancellable waitable)
+        public static NWaitableAwaiter create(IWaitableFromCancelable waitable)
         {
             var awaiter = _pool.get();
             var handle = NWaitableHandle.Factory.create(awaiter, waitable);

@@ -27,13 +27,6 @@ namespace Nextension
         private static AudioClip _tempClip;
         private static string _deviceName;
 
-        [StartupMethod]
-        private static void initialize()
-        {
-            tryStopAndDipose();
-            Application.quitting += tryStopAndDipose;
-        }
-
         public static bool IsRecording => Microphone.devices.Length > 0 && Microphone.IsRecording(null);
 
         public static void startRecord(int frequency = 8000, string deviceName = null)
@@ -95,7 +88,8 @@ namespace Nextension
                 _allCacheClips.Add(_tempClip);
             }
 
-            if (_allCacheClips.Count == 0)
+            int maxClipIndex = _allCacheClips.Count - 1;
+            if (maxClipIndex < 0)
             {
                 throw new Exception("Microphone record cache is empty");
             }
@@ -105,16 +99,18 @@ namespace Nextension
 
             int currentOffset = 0;
             AudioClip clip;
-            float[] sample = new float[_allCacheClips[0].samples];
-            for (int i = 0; i < _allCacheClips.Count - 1; i++)
+            var span = _allCacheClips.asSpan();
+            float[] sample = new float[span[0].samples];
+
+            for (int i = 0; i < maxClipIndex; i++)
             {
-                clip = _allCacheClips[i];
+                clip = span[i];
                 clip.GetData(sample, 0);
                 finalClip.SetData(sample, currentOffset);
                 currentOffset += sample.Length;
             }
 
-            clip = _allCacheClips[_allCacheClips.Count - 1];
+            clip = span[maxClipIndex];
             sample = new float[finalClip.samples - currentOffset];
             clip.GetData(sample, 0);
             finalClip.SetData(sample, currentOffset);
@@ -149,6 +145,8 @@ namespace Nextension
             _startRecordTime = 0;
             _tempSample = null;
         }
+
+        [EditorQuittingMethod]
         private static void tryStopAndDipose()
         {
             try
@@ -160,7 +158,7 @@ namespace Nextension
             }
             catch (Exception e)
             {
-
+                Debug.LogException(e);
             }
             finally
             {

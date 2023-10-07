@@ -1,25 +1,38 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Nextension
 {
     public class NDownloader
     {
-        private const int MAX_DOWNLOAD_A_TIME = 5;
-        private const int KEEP_CACHE_DAY = 21;
+        private const int KEEP_CACHE_DAY = 30;
         private const int TOTAL_DAY = 366;
 
-        private static List<NDownloadTask> _pendingTasks;
-        private static List<NDownloadTask> _downloadingTasks;
+        protected static NScheduler<NDownloadTask> _scheduler;
 
         private static string _cacheRootPath;
         private static int _cachePeriodNumber;
 
+        public static int MaximumNumberOfTasksAtOnce
+        {
+            get => _scheduler?.MaxSchedulableAtOnce ?? 0;
+            set
+            {
+                if (_scheduler == null)
+                {
+                    _scheduler = new(value);
+                }
+                else
+                {
+                    _scheduler.MaxSchedulableAtOnce = value;
+                }
+            }
+        }
+
         private static void requireFunc()
         {
+            _scheduler ??= new();
             if (string.IsNullOrEmpty(_cacheRootPath))
             {
                 try
@@ -32,13 +45,24 @@ namespace Nextension
 
                     _cachePeriodNumber = getCachePeriodNumber(DateTime.Now.DayOfYear, KEEP_CACHE_DAY);
                     cleanOldCache(_cachePeriodNumber);
-                    Application.quitting += clearAllTasks;
-                    NUpdater.onLateUpdateEvent.add(updateAllTask);
+                    NUpdater.onLateUpdateEvent.add(updateDownloadingProgress);
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
                 }
+            }
+        }
+        private static void updateDownloadingProgress()
+        {
+            var executingTasks = _scheduler.Executing;
+            if (executingTasks.Count == 0)
+            {
+                return;
+            }
+            foreach (var task in executingTasks)
+            {
+                task.updateProgress();
             }
         }
 
@@ -83,175 +107,6 @@ namespace Nextension
                 }
             }
         }
-
-        public static NDownloadTask requestDownload(string url, DownloadOption option = DownloadOption.None)
-        {
-            try
-            {
-                var uri = new Uri(url);
-                url = uri.AbsoluteUri;
-                if (uri.IsFile && File.Exists(uri.LocalPath))
-                {
-                    NDownloadTask localFileTask = NDownloadTask.createLocalFileTask(url, uri.LocalPath);
-                    return localFileTask;
-                }
-            }
-            catch (Exception ex)
-            {
-                return NDownloadTask.createErrorTask(url, ex.Message);
-            }
-
-            if ((option & DownloadOption.ForceNewDownload) == 0)
-            {
-                requireFunc();
-                var path = getDataInCache(url, true);
-                if (!string.IsNullOrEmpty(path))
-                {
-                    return NDownloadTask.createLocalFileTask(url, path);
-                }
-            }
-
-            NDownloadTask task = null;
-
-            if (_downloadingTasks != null)
-            {
-                task = _downloadingTasks.Find(item => item.url.Equals(url));
-            }
-
-            if (task == null && _pendingTasks != null)
-            {
-                task = _pendingTasks.Find(item => item.url.Equals(url));
-            }
-
-            if (task == null)
-            {
-                requireFunc();
-                task = new NDownloadTask(url, (option & DownloadOption.NotStoreOnDisk) == 0);
-                if (_pendingTasks == null)
-                {
-                    _pendingTasks = new(1);
-                }
-                _pendingTasks.Add(task);
-            }
-
-            return task;
-        }
-        /// <summary>
-        /// return null if data are not exist in cache, else return path of data
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        public static string getDataInCache(string url, bool isMoveToNewCache)
-        {
-            var path0 = generatePath(url, _cachePeriodNumber);
-            if (File.Exists(path0))
-            {
-                return path0;
-            }
-            var path1 = generatePath(url, _cachePeriodNumber - 1);
-            if (File.Exists(path1))
-            {
-                if (isMoveToNewCache)
-                {
-                    moveToNewestCache(url);
-                    return path0;
-                }
-                return path1;
-            }
-            return null;
-        }
-        public static bool hasDataInCache(string url)
-        {
-            return !string.IsNullOrEmpty(getDataInCache(url, false));
-        }
-        private static void moveToNewestCache(string url)
-        {
-            var path0 = generatePath(url, _cachePeriodNumber);
-            if (File.Exists(path0))
-            {
-                Debug.LogWarning("Exists in cache: " + path0);
-                return;
-            }
-            var path1 = generatePath(url, _cachePeriodNumber - 1);
-            if (!File.Exists(path1))
-            {
-                Debug.LogWarning("Not found in cache: " + path1);
-            }
-            File.Move(path1, path0);
-        }
-        public static void deleteInCache(string url)
-        {
-            var path = getDataInCache(url, false);
-            if (!string.IsNullOrEmpty(path))
-            {
-                File.Delete(path);
-            }
-        }
-        public static void cleanAllCache()
-        {
-            if (Directory.Exists(_cacheRootPath))
-            {
-                Directory.Delete(_cacheRootPath, true);
-            }
-        }
-
-        private static void updateAllTask()
-        {
-            checkDownloadingTask();
-            checkPendingTask();
-        }
-        private static void checkDownloadingTask()
-        {
-            if (_downloadingTasks == null || _downloadingTasks.Count == 0)
-            {
-                return;
-            }
-
-            for (int i = _downloadingTasks.Count - 1; i >= 0; --i)
-            {
-                var task = _downloadingTasks[i];
-                task.updateProgress();
-                if (task.IsFinalized)
-                {
-                    _downloadingTasks.RemoveAt(i);
-                }
-            }
-        }
-        private static void checkPendingTask()
-        {
-            if (_pendingTasks == null || _pendingTasks.Count == 0)
-            {
-                return;
-            }
-
-            while (_downloadingTasks == null || _downloadingTasks.Count < MAX_DOWNLOAD_A_TIME)
-            {
-                var task = takeAndRemoveNext();
-                startDownload(task);
-                if (_pendingTasks.Count == 0) 
-                {
-                    break;
-                }
-            }
-        }
-        private static NDownloadTask takeAndRemoveNext()
-        {
-            if (_pendingTasks.Count > 0)
-            {
-                return _pendingTasks.takeAndRemoveAt(0);
-            }
-            return null;
-        }
-        private static void startDownload(NDownloadTask task)
-        {
-            var path = generatePath(task.url, _cachePeriodNumber);
-            task.startDownloadAndSaveTo(path);
-            if (_downloadingTasks == null)
-            {
-                _downloadingTasks = new List<NDownloadTask>(1);
-            }
-            _downloadingTasks.Add(task);
-        }
         private static string getCacheNumberPath(int cacheNumber)
         {
             return Path.Combine(_cacheRootPath, cacheNumber.ToString());
@@ -271,10 +126,120 @@ namespace Nextension
             }
             return Path.Combine(cachePath, fileName);
         }
-        private static void clearAllTasks()
+
+        public static NDownloadTask requestDownload(string url, int priority = 0, DownloadOption option = DownloadOption.None)
         {
-            _pendingTasks?.Clear();
-            _downloadingTasks?.Clear();
+            try
+            {
+                var uri = new Uri(url);
+                url = uri.AbsoluteUri;
+                if (uri.IsFile && File.Exists(uri.LocalPath))
+                {
+                    NDownloadTask localFileTask = NDownloadTask.createLocalFileTask(url, uri.LocalPath);
+                    return localFileTask;
+                }
+            }
+            catch (Exception ex)
+            {
+                return NDownloadTask.createErrorTask(url, ex.Message);
+            }
+
+            if ((option & DownloadOption.NotLoadOnDisk) == 0)
+            {
+                requireFunc();
+                var path = getDataInCache(url, true);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return NDownloadTask.createLocalFileTask(url, path);
+                }
+            }
+
+
+            if (_scheduler != null)
+            {
+                var executingTasks = _scheduler.Executing;
+                foreach (var task in executingTasks)
+                {
+                    if (task.url.Equals(url))
+                    {
+                        return task;
+                    }
+                }
+
+                var pendingTasks = _scheduler.Pending;
+                var existTaskIndex = pendingTasks.findIndex(item => item.url.Equals(url));
+                if (existTaskIndex >= 0)
+                {
+                    var task = pendingTasks[existTaskIndex];
+                    if (task.priority < priority)
+                    {
+                        pendingTasks.removeAt(existTaskIndex);
+                        task.priority = priority;
+                        pendingTasks.addAndSort(task);
+                    }
+                    return task;
+                }
+            }
+            {
+                NDownloadTask task;
+                requireFunc();
+                if ((option & DownloadOption.NotStoreOnDisk) == 0)
+                {
+                    var path = generatePath(url, _cachePeriodNumber);
+                    task = new NDownloadTask(url, true, path);
+                }
+                else
+                {
+                    task = new NDownloadTask(url, false, null);
+                }
+
+                task.priority = priority;
+                _scheduler.schedule(task);
+                return task;
+            }
+        }
+        /// <summary>
+        /// return null if data are not exist in cache, else return path of data
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public static string getDataInCache(string url, bool isMoveToNewestCache)
+        {
+            var path0 = generatePath(url, _cachePeriodNumber);
+            if (File.Exists(path0))
+            {
+                return path0;
+            }
+            var path1 = generatePath(url, _cachePeriodNumber - 1);
+            if (File.Exists(path1))
+            {
+                if (isMoveToNewestCache)
+                {
+                    File.Move(path1, path0);
+                    return path0;
+                }
+                return path1;
+            }
+            return null;
+        }
+        public static bool hasDataInCache(string url)
+        {
+            return !string.IsNullOrEmpty(getDataInCache(url, false));
+        }
+        public static void deleteInCache(string url)
+        {
+            var path = getDataInCache(url, false);
+            if (!string.IsNullOrEmpty(path))
+            {
+                File.Delete(path);
+            }
+        }
+        public static void cleanAllCache()
+        {
+            if (Directory.Exists(_cacheRootPath))
+            {
+                Directory.Delete(_cacheRootPath, true);
+            }
         }
     }
 }

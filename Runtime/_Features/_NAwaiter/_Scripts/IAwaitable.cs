@@ -5,12 +5,12 @@ namespace Nextension
     public interface IWaitable
     {
         internal Func<NWaitableResult> buildCompleteFunc();
-        internal WaiterLoopType LoopType { get; }
+        internal NLoopType LoopType { get; }
     }
-    public interface IWaitableFromCancellable
+    public interface IWaitableFromCancelable
     {
-        internal (Func<NWaitableResult>, ICancellable) buildCompleteFunc();
-        internal WaiterLoopType LoopType { get; }
+        internal (Func<NWaitableResult>, ICancelable) buildCompleteFunc();
+        internal NLoopType LoopType { get; }
     }
     public interface IWaitable_Editor
     {

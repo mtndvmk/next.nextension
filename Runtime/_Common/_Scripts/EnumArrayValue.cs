@@ -1,83 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension
 {
-    public static class EnumIndex<T> where T : Enum
-    {
-        private static T[] _indexToEnumTable;
-        internal static T[] IndexToEnumTable
-        {
-            get
-            {
-                if (_indexToEnumTable == null)
-                {
-                    createTable();
-                }
-                return _indexToEnumTable;
-            }
-        }
-        private static Dictionary<T, int> _enumToIndexTable;
-        internal static Dictionary<T, int> EnumToIndexTable
-        {
-            get
-            {
-                if (_enumToIndexTable == null)
-                {
-                    createTable();
-                }
-                return _enumToIndexTable;
-            }
-        }
-        private static void createTable()
-        {
-            var list = new List<T>();
-            var enumArr = Enum.GetValues(typeof(T));
-            for (int i = 0; i < enumArr.Length; ++i)
-            {
-                var enumType = (T)enumArr.GetValue(i);
-                list.Add(enumType);
-            }
-            list.Sort();
-            _indexToEnumTable = list.ToArray();
-            _enumToIndexTable = new Dictionary<T, int>();
-            for (int i = 0; i < list.Count; ++i)
-            {
-                _enumToIndexTable[list[i]] = i;
-            }
-        }
-
-        public static int getIndex(T enumType)
-        {
-            if (EnumToIndexTable.TryGetValue(enumType, out var index))
-            {
-                return index;
-            }
-            return -1;
-        }
-        public static T getEnum(int index)
-        {
-            return IndexToEnumTable[index];
-        }
-        public static int getCount()
-        {
-            return IndexToEnumTable.Length;
-        }
-        public static T getRandomEnum()
-        {
-            return IndexToEnumTable.randItem();
-        }
-        public static IEnumerable<T> asEnumerable()
-        {
-            return IndexToEnumTable.AsEnumerable<T>();
-        }
-        public static bool isValid(T enumType)
-        {
-            return EnumToIndexTable.ContainsKey(enumType);
-        }
-    }
 
     public interface IEnumArrayValue
     {
@@ -96,11 +24,14 @@ namespace Nextension
     }
 
     [Serializable]
-    public class EnumArrayValue<TEnum, TValue> : IEnumArrayValue where TEnum : Enum
+    public class EnumArrayValue<TEnum, TValue> : IEnumArrayValue, ISerializationCallbackReceiver where TEnum : unmanaged, Enum
     {
         [SerializeField] private TValue[] enumValues = new TValue[EnumIndex<TEnum>.getCount()];
+#pragma warning disable 0414
         [SerializeField] private TEnum[] enumArrayCache;
+#pragma warning restore 0414
 
+        #region Editor
 #if UNITY_EDITOR
         public object getEditorCache()
         {
@@ -109,7 +40,7 @@ namespace Nextension
                 refreshEditorCache();
             }
 
-            Dictionary<TEnum, TValue> dict = new Dictionary<TEnum, TValue>();
+            Dictionary<TEnum, TValue> dict = new(enumArrayCache.Length);
             for (int i = 0; i < enumArrayCache.Length; ++i)
             {
                 var k = enumArrayCache[i];
@@ -137,6 +68,8 @@ namespace Nextension
             }
         }
 #endif
+        #endregion
+
         public int Length => enumValues.Length;
         public int EnumCount => EnumIndex<TEnum>.getCount();
         public EnumArrayValue()
@@ -151,6 +84,7 @@ namespace Nextension
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue get(TEnum enumType)
         {
             return enumValues[EnumIndex<TEnum>.getIndex(enumType)];
@@ -166,47 +100,60 @@ namespace Nextension
             get => get(enumType);
             set => set(enumType, value);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<TValue> enumerateValues()
         {
-            for (int i = 0; i < Length; ++i)
-            {
-                yield return enumValues[i];
-            }
+            return enumValues;
         }
         public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
         {
-            for (int i = 0; i < Length; ++i)
+            for (int i = 0; i < enumValues.Length; ++i)
             {
                 yield return (EnumIndex<TEnum>.getEnum(i), enumValues[i]);
             }
         }
         public EnumListValue<TEnum, TValue> toEnumListValue(bool isIgnoreDefaultValue = false)
         {
-            EnumListValue<TEnum, TValue> enumListValue = new EnumListValue<TEnum, TValue>();
-            foreach (var e in enumerateTupleValues())
+            EnumListValue<TEnum, TValue> enumListValue = new();
+            if (isIgnoreDefaultValue)
             {
-                if (isIgnoreDefaultValue && object.Equals(e.value, default)) continue;
-                enumListValue.set(e.enumType, e.value);
+                foreach (var (enumType, value) in enumerateTupleValues())
+                {
+                    if (value.equals(default)) continue;
+                    enumListValue.set(enumType, value);
+                }
+            }
+            else
+            {
+                foreach (var (enumType, value) in enumerateTupleValues())
+                {
+                    enumListValue.set(enumType, value);
+                }
             }
             return enumListValue;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue[] toArray()
         {
             return enumValues.ToArray();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type getTypeOfEnum()
         {
             return typeof(TEnum);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type getTypeOfValue()
         {
             return typeof(TValue);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public object getEnumAtIndex(int index)
         {
             return getEnum(index);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public object getValueAtIndex(int index)
         {
             return enumValues[index];
@@ -217,19 +164,21 @@ namespace Nextension
             get => enumValues[index];
             set => enumValues[index] = value;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TEnum getEnum(int index)
         {
             return EnumIndex<TEnum>.getEnum(index);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public EnumArrayValue<TEnum, TValue> clone()
         {
             return new EnumArrayValue<TEnum, TValue>() { enumValues = this.enumValues.ToArray() };
         }
         public void set(EnumListValue<TEnum, TValue> listValue)
         {
-            foreach (var e in listValue.enumerateTupleValues())
+            foreach (var (enumType, value) in listValue.enumerateTupleValues())
             {
-                set(e.enumType, e.value);
+                set(enumType, value);
             }
         }
         public void set(EnumArrayValue<TEnum, TValue> arrValue)
@@ -238,12 +187,24 @@ namespace Nextension
         }
         public static EnumArrayValue<TEnum, TValue> createFrom(EnumListValue<TEnum, TValue> listValue)
         {
-            EnumArrayValue<TEnum, TValue> enumArray = new EnumArrayValue<TEnum, TValue>();
-            foreach (var e in listValue.enumerateTupleValues())
+            EnumArrayValue<TEnum, TValue> enumArray = new();
+            foreach (var (enumType, value) in listValue.enumerateTupleValues())
             {
-                enumArray.set(e.enumType, e.value);
+                enumArray.set(enumType, value);
             }
             return enumArray;
+        }
+
+        public void OnBeforeSerialize()
+        {
+            
+        }
+
+        public void OnAfterDeserialize()
+        {
+#if !UNITY_EDITOR
+            enumArrayCache = null;
+#endif
         }
     }
 }

@@ -9,6 +9,10 @@ namespace Nextension.UI.NEditor
         private static bool _isShowEvent;
         public override void OnInspectorGUI()
         {
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+            EditorGUI.EndDisabledGroup();
+
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_betweenClickIntervalTime"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_delayInvokeTime"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_isInteractable"));
@@ -24,6 +28,8 @@ namespace Nextension.UI.NEditor
                 EditorGUILayout.PropertyField(serializedObject.FindProperty("onButtonExitEvent"));
                 EditorGUI.indentLevel--;
             }
+
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }

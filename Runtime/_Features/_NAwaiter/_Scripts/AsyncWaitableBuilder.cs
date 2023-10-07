@@ -36,21 +36,21 @@ namespace Nextension
                 return;
             }
             awaiter.OnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancellable)
+            if (awaiter is ICancelable)
             {
-                waitable.addCancelleable(awaiter as ICancellable);
+                waitable.addCancelable(awaiter as ICancelable);
             }
         }
         public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : ICriticalNotifyCompletion where TStateMachine : IAsyncStateMachine
         {
-            if (waitable.Status == RunState.Cancelled)
+            if (waitable.Status == RunState.Canceled)
             {
                 return;
             }
             awaiter.UnsafeOnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancellable)
+            if (awaiter is ICancelable)
             {
-                waitable.addCancelleable(awaiter as ICancellable);
+                waitable.addCancelable(awaiter as ICancelable);
             }
         }
     }
@@ -87,21 +87,21 @@ namespace Nextension
                 return;
             }
             awaiter.OnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancellable)
+            if (awaiter is ICancelable)
             {
-                waitable.addCancelleable(awaiter as ICancellable);
+                waitable.addCancelable(awaiter as ICancelable);
             }
         }
         public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : ICriticalNotifyCompletion where TStateMachine : IAsyncStateMachine
         {
-            if (waitable.Status == RunState.Cancelled)
+            if (waitable.Status == RunState.Canceled)
             {
                 return;
             }
             awaiter.UnsafeOnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancellable)
+            if (awaiter is ICancelable)
             {
-                waitable.addCancelleable(awaiter as ICancellable);
+                waitable.addCancelable(awaiter as ICancelable);
             }
         }
     }

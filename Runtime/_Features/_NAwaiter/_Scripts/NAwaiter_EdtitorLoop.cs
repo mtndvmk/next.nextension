@@ -22,11 +22,12 @@ namespace Nextension
         private static void update()
         {
             UpdateCount++;
+            var span = waitables.asSpan();
             for (int i = waitables.Count - 1; i >= 0; i--)
             {
                 try
                 {
-                    var isFinished = waitables[i].checkComplete().isFinished();
+                    var isFinished = span[i].checkComplete().isFinished();
                     if (isFinished)
                     {
                         waitables.RemoveAt(i);

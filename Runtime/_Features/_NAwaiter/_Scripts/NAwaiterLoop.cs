@@ -4,77 +4,88 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public enum WaiterLoopType
-    {
-        Update,
-        LateUpdate,
-        EndOfFrameUpdate,
-    } 
     internal class NAwaiterLoop
     {
-        private static Dictionary<WaiterLoopType, List<NWaitableHandle>> allWaitables = new Dictionary<WaiterLoopType, List<NWaitableHandle>>();
+        [EditorQuittingMethod]
+        private void reset()
+        {
+            _updateWaitableHandles?.Clear();
+            _lateUpdateWaitableHandles?.Clear();
+            _endOfFrameWaitableHandles?.Clear();
+        }
+        private static List<NWaitableHandle> _updateWaitableHandles;
+        private static List<NWaitableHandle> _lateUpdateWaitableHandles;
+        private static List<NWaitableHandle> _endOfFrameWaitableHandles;
+        
         public static void addAwaitable(NWaitableHandle waitable)
         {
-            if (allWaitables.ContainsKey(waitable.loopType))
+            switch (waitable.loopType)
             {
-                allWaitables[waitable.loopType].Add(waitable);
-            }
-            else
-            {
-                allWaitables.Add(waitable.loopType, new List<NWaitableHandle>() { waitable });
-
+                case NLoopType.Update:
+                    {
+                        (_updateWaitableHandles ??= new(1)).Add(waitable);
+                        break;
+                    }
+                case NLoopType.LateUpdate:
+                    {
+                        (_lateUpdateWaitableHandles ??= new(1)).Add(waitable);
+                        break;
+                    }
+                case NLoopType.EndOfFrameUpdate:
+                    {
+                        (_endOfFrameWaitableHandles ??= new(1)).Add(waitable);
+                        break;
+                    }
             }
         }
 
-        [StartupMethod]
-        private static void init()
+        private static void update(List<NWaitableHandle> handleList)
         {
-            NUpdater.onUpdateEvent.add(onUpdate);
-            NUpdater.onLateUpdateEvent.add(onLateUpdate);
-            NUpdater.onEndOfFrameEvent.add(onEndOfFrameUpdate);
-        }
-        private static void update(WaiterLoopType loopType)
-        {
-            if (allWaitables.TryGetValue(loopType, out var waitables))
+            var handleSpan = handleList.asSpan();
+            for (int i = handleSpan.Length - 1; i >= 0; i--)
             {
-                if (waitables == null)
+                var handle = handleSpan[i];
+                try
                 {
-                    Debug.LogWarning("waitables list is null?");
-                    allWaitables.Remove(loopType);
-                    return;
+                    var isFinished = handle.checkComplete().isFinished();
+                    if (isFinished)
+                    {
+                        NWaitableHandle.Factory.release(handle);
+                        handleList.removeAtSwapBack(i);
+                    }
                 }
-                for (int i = waitables.Count - 1; i >= 0; i--)
+                catch (Exception e)
                 {
-                    try
-                    {
-                        var isFinished = waitables[i].checkComplete().isFinished();
-                        if (isFinished)
-                        {
-                            NWaitableHandle.Factory.release(waitables[i]);
-                            waitables.removeAtSwapBack(i);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                        NWaitableHandle.Factory.release(waitables[i]);
-                        waitables.removeAtSwapBack(i);
-                    }
+                    Debug.LogException(e);
+                    NWaitableHandle.Factory.release(handle);
+                    handleList.removeAtSwapBack(i);
                 }
             }
         }
-
+        
+        [LoopMethod(NLoopType.Update)]
         private static void onUpdate()
         {
-            update(WaiterLoopType.Update);
+            if (_updateWaitableHandles?.Count > 0)
+            {
+                update(_updateWaitableHandles);
+            }
         }
+        [LoopMethod(NLoopType.LateUpdate)]
         private static void onLateUpdate()
         {
-            update(WaiterLoopType.LateUpdate);
+            if (_lateUpdateWaitableHandles?.Count > 0)
+            {
+                update(_lateUpdateWaitableHandles);
+            }
         }
+        [LoopMethod(NLoopType.EndOfFrameUpdate)]
         private static void onEndOfFrameUpdate()
         {
-            update(WaiterLoopType.EndOfFrameUpdate);
+            if (_endOfFrameWaitableHandles?.Count > 0)
+            {
+                update(_endOfFrameWaitableHandles);
+            }
         }
     }
 }

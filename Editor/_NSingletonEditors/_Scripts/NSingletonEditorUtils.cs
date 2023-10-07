@@ -6,7 +6,7 @@ public class NSingletonEditorUtils : IErrorCheckable
 {
     static void onPreprocessBuild()
     {
-        if(checkHasErrorOnBuild(out var e))
+        if (checkHasErrorOnBuild(out var e))
         {
             throw e;
         }

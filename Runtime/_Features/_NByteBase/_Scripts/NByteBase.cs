@@ -117,7 +117,7 @@ namespace Nextension.NByteBase
             if (other == null) return false;
             if (getValueType() != other.getValueType()) return false;
             var casted = (NByteBase<T>)other;
-            return Value.Equals(casted.Value);
+            return Value.equals(casted.Value);
         }
     }
     /// <summary>

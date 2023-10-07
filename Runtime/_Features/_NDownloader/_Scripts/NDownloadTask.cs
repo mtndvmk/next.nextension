@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 namespace Nextension
 {
-    public class NDownloadTask : NProgressOperation
+    public class NDownloadTask : NProgressOperation, ISchedulable
     {
         private const string TMP_DOWNLOAD_PATH_SUFFIX = ".tmp";
         internal static NDownloadTask createErrorTask(string url, string errorMsg)
@@ -22,10 +22,11 @@ namespace Nextension
             return operation;
         }
 
-        internal NDownloadTask(string url, bool isStoreDisk)
+        internal NDownloadTask(string url, bool isStoreDisk, string storePath = null)
         {
             this.url = url;
             this.isStoreOnDisk = isStoreDisk;
+            this._storePath = storePath;
         }
         internal void updateProgress()
         {
@@ -42,6 +43,15 @@ namespace Nextension
         private byte[] _downloadedData;
         private string _downloadedPath;
         private bool _isStarted;
+        private string _storePath;
+
+        internal int priority;
+
+        int ISchedulable.Priority => priority;
+        void ISchedulable.onStartExecute()
+        {
+            startDownload();
+        }
 
         private UnityWebRequestAsyncOperation _requestOperation;
 
@@ -75,11 +85,7 @@ namespace Nextension
                 }
                 try
                 {
-                    if (_downloadedData == null)
-                    {
-                        _downloadedData = File.ReadAllBytes(DownloadedPath);
-                    }
-                    return _downloadedData;
+                    return _downloadedData ??= File.ReadAllBytes(DownloadedPath);
                 }
                 catch (Exception e)
                 {
@@ -89,26 +95,25 @@ namespace Nextension
             }
         }
 
-        internal void startDownloadAndSaveTo(string filePath)
+        internal void startDownload()
         {
             if (_isStarted)
             {
                 return;
             }
             _isStarted = true;
-            var tmpPath = filePath + TMP_DOWNLOAD_PATH_SUFFIX;
 
             try
             {
-                if (File.Exists(tmpPath))
-                {
-                    File.Delete(tmpPath);
-                }
-
                 var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET);
-                if (isStoreOnDisk)
+                if (isStoreOnDisk && !string.IsNullOrEmpty(_storePath))
                 {
-                    _downloadedPath = Path.GetFullPath(filePath);
+                    var tmpPath = _storePath + TMP_DOWNLOAD_PATH_SUFFIX;
+                    if (File.Exists(tmpPath))
+                    {
+                        File.Delete(tmpPath);
+                    }
+                    _downloadedPath = Path.GetFullPath(_storePath);
                     var downloadHandler = new DownloadHandlerFile(tmpPath);
                     downloadHandler.removeFileOnAbort = true;
                     request.downloadHandler = downloadHandler;
@@ -131,7 +136,8 @@ namespace Nextension
         {
             try
             {
-                if (string.IsNullOrEmpty(_requestOperation.webRequest.error))
+                var err = _requestOperation.webRequest.error;
+                if (string.IsNullOrEmpty(err))
                 {
                     if (isStoreOnDisk)
                     {
@@ -145,7 +151,7 @@ namespace Nextension
                 }
                 else
                 {
-                    innerFinalize(new Exception(_requestOperation.webRequest.error));
+                    innerFinalize(new Exception(err));
                 }
             }
             catch (Exception e)

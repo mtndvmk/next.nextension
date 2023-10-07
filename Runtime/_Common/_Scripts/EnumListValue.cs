@@ -1,51 +1,53 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension
 {
     [Serializable]
-    public class EnumListValue<TEnum, TValue> where TEnum : Enum
+    public class EnumListValue<TEnum, TValue> where TEnum : unmanaged, Enum
     {
         [Serializable]
-        private struct EnumValue : IComparable<EnumValue>
+        private struct EnumValue
         {
             public TEnum enumType;
             public TValue value;
-
-            public int CompareTo(EnumValue other)
-            {
-                return enumType.CompareTo(other);
-            }
         }
         [Serializable]
-        private class EnumValueBList : AbsBListCompareable<EnumValue, TEnum>
+        private class EnumValueBList : AbsBList<EnumValue, TEnum>
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             protected override TEnum getCompareKeyFromValue(EnumValue item)
             {
                 return item.enumType;
             }
+
+            protected override int compareKey(TEnum k1, TEnum k2)
+            {
+                return k1.compareTo(k2);
+            }
+
             public EnumValueBList() : base() { }
-            public EnumValueBList(IEnumerable<EnumValue> values) : base(values) { }
         }
 
-        [SerializeField] private EnumValueBList enumValueList = new EnumValueBList();
+        [SerializeField] private EnumValueBList _enumValueList = new();
 
-        public int Count => enumValueList.Count;
+        public int Count => _enumValueList.Count;
         public void set(TEnum enumType, TValue val)
         {
-            var index = enumValueList.bFindIndex(enumType);
+            var index = _enumValueList.bFindIndex(enumType);
             if (index >= 0)
             {
-                var enumValue = enumValueList[index];
+                var enumValue = _enumValueList[index];
                 enumValue.value = val;
-                enumValueList[index] = enumValue;
+                _enumValueList[index] = enumValue;
             }
             else
             {
-                enumValueList.addAndSort(new EnumValue() { enumType = enumType, value = val });
-            }        
+                _enumValueList.addAndSort(new EnumValue() { enumType = enumType, value = val });
+            }
         }
         public TValue get(TEnum enumType)
         {
@@ -57,7 +59,7 @@ namespace Nextension
         }
         public bool tryGet(TEnum enumType, out TValue outValue)
         {
-            var index = enumValueList.bTryGetValue(enumType, out var val);
+            var index = _enumValueList.bTryGetValue(enumType, out var val);
             if (index >= 0)
             {
                 outValue = val.value;
@@ -71,11 +73,11 @@ namespace Nextension
         }
         public bool contains(TEnum enumType)
         {
-            return enumValueList.bFindIndex(enumType) >= 0;
+            return _enumValueList.bFindIndex(enumType) >= 0;
         }
         public bool remove(TEnum enumType)
         {
-            return enumValueList.remove(enumType);
+            return _enumValueList.removeKey(enumType);
         }
         public TValue this[TEnum enumType]
         {
@@ -84,11 +86,11 @@ namespace Nextension
         }
         public (TEnum enumType, TValue value) this[int index]
         {
-            get => (enumValueList[index].enumType, enumValueList[index].value);
+            get => (_enumValueList[index].enumType, _enumValueList[index].value);
         }
         public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
         {
-            foreach (var e in enumValueList.asEnumerable())
+            foreach (var e in _enumValueList.asEnumerable())
             {
                 yield return (e.enumType, e.value);
             }
@@ -101,10 +103,10 @@ namespace Nextension
         {
             for (int i = 0; i < Count; ++i)
             {
-                yield return enumValueList[i].value;
+                yield return _enumValueList[i].value;
             }
         }
-        public TValue[] asArray()
+        public TValue[] toArray()
         {
             return enumerateValues().ToArray();
         }

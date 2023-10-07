@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Nextension
 {
@@ -11,22 +10,21 @@ namespace Nextension
             data = nValue;
         }
         public readonly byte[] data;
+        public int Length => data.Length;
+
         public byte[] toBytes()
         {
-            return NUtils.merge(BitConverter.GetBytes(data.Length), data);
+            return new NInteger(data.Length).getBytes().mergeWith(data);
         }
-        public int Length => data.Length;
     }
 
     public static class NDataUtils
     {
         public static NData readNext(this byte[] inData, ref int startIndex)
         {
-            var length = NConverter.fromBytes<int>(inData, ref startIndex);
+            var length = (int)NInteger.fromBytes(inData, ref startIndex).Value;
             var data = NUtils.getBlock(inData, startIndex, length); startIndex += length;
-
-            NData nData = new NData(data);
-            return nData;
+            return new NData(data);
         }
         public static bool tryReadNext(this byte[] inData, int startIndex, out NData outNData, out int nextIndex)
         {
@@ -55,18 +53,23 @@ namespace Nextension
         }
         public static byte[] merge(params NData[] nData)
         {
-            int totalLength = 0;
-            for (int i = 0; i < nData.Length; ++i)
+            int nDataCount = nData.Length;
+            Span<byte> nDataLengthSpan = stackalloc byte[nDataCount];
+            NInteger dataLengthNInteger = default;
+            long totalLength = nDataCount;
+            for (int i = 0; i < nDataCount; ++i)
             {
-                totalLength += nData[i].Length;
+                dataLengthNInteger.Value = nData[i].Length;
+                totalLength += dataLengthNInteger.Value + (nDataLengthSpan[i] = dataLengthNInteger.estNumberBytesLength());
             }
             var data = new byte[totalLength];
             int pointer = 0;
-            for (int i = 0; i < nData.Length; ++i)
+            for (int i = 0; i < nDataCount; ++i)
             {
-                var bytes = nData[i].toBytes();
-                Buffer.BlockCopy(bytes, 0, data, pointer, bytes.Length);
-                pointer += bytes.Length;
+                var item = nData[i];
+                dataLengthNInteger.Value = item.Length;
+                dataLengthNInteger.writeTo(data, nDataLengthSpan[i], ref pointer);
+                Buffer.BlockCopy(item.data, 0, data, pointer, item.Length); pointer += item.Length;
             }
             return data;
         }
@@ -74,17 +77,17 @@ namespace Nextension
         {
             return new NData(merge(nData));
         }
-        public static NData[] splitNData(NData inNData)
+        public static IEnumerable<NData> splitNData(NData inNData)
         {
-            List<NData> nDatas = new List<NData>();
+            return splitNData(inNData.data);
+        }
+        public static IEnumerable<NData> splitNData(byte[] inData)
+        {
             int startIndex = 0;
-            var inData = inNData.data;
             while (startIndex < inData.Length)
             {
-                var tempNData = readNext(inData, ref startIndex);
-                nDatas.Add(tempNData);
+                yield return readNext(inData, ref startIndex);
             }
-            return nDatas.ToArray();
         }
         public static string getString(this NData nData)
         {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -12,20 +11,26 @@ namespace Nextension
         public int Count { get; }
         public void removeAt(int index);
     }
-    public interface IBList<V> : IBList
+    public interface IBList<TValue> : IBList
     {
-        public V this[int index] { get; set; }
-        public int bIndexOf(V item);
+        public TValue this[int index] { get; set; }
+        public int bIndexOf(TValue item);
     }
     /// <summary>
     /// 
     /// </summary>
-    /// <typeparam name="V">Value Type of List</typeparam>
-    /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBList<V, K> : IBList<V>
+    /// <typeparam name="TValue">Value Type of List</typeparam>
+    /// <typeparam name="TCompareKey">Key Type to compare Value in List</typeparam>
+    public abstract class AbsBList<TValue, TCompareKey> : IBList<TValue>
     {
-        protected abstract int compareKey(K k1, K k2);
-        private int exeCompareKey(K k1, K k2)
+        protected abstract int compareKey(TCompareKey k1, TCompareKey k2);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected bool equalValue(TValue item1, TValue item2)
+        {
+            return item1.equals(item2);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int exeCompareKey(TCompareKey k1, TCompareKey k2)
         {
             try
             {
@@ -37,27 +42,60 @@ namespace Nextension
                 return -1;
             }
         }
-        private int exeCompareValue(V a, V b)
+        private int exeCompareValue(TValue a, TValue b)
         {
             return exeCompareKey(getCompareKeyFromValue(a), getCompareKeyFromValue(b));
         }
-        [SerializeField] protected List<V> _list;
+        private int exeFindIndexOf(TValue value, int centerIndex)
+        {
+            int listCount = _list.Count;
+            var span = _list.asSpan();
+            var searchKey = getCompareKeyFromValue(value);
+            for (int i = centerIndex; i >= 0; i--)
+            {
+                if (exeCompareKey(searchKey, getCompareKeyFromValue(span[i])) != 0)
+                {
+                    break;
+                }
+                if (equalValue(span[i], value))
+                {
+                    return i;
+                }
+            }
+            for (int i = centerIndex + 1; i < listCount; i++)
+            {
+                if (exeCompareKey(searchKey, getCompareKeyFromValue(span[i])) != 0)
+                {
+                    break;
+                }
+                if (equalValue(span[i], value))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        [SerializeField] protected List<TValue> _list;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected abstract K getCompareKeyFromValue(V item);
+        protected abstract TCompareKey getCompareKeyFromValue(TValue item);
 
         public AbsBList()
         {
-            _list = new List<V>();
+            _list = new List<TValue>();
         }
-        public AbsBList(IEnumerable<V> collection)
+        public AbsBList(int capacity)
         {
-            _list = new List<V>(collection);
+            _list = new List<TValue>(capacity);
+        }
+        public AbsBList(IEnumerable<TValue> collection)
+        {
+            _list = new List<TValue>(collection);
             sort();
         }
 
         public int Count => _list.Count;
-
-        public V this[int index]
+        public TValue this[int index]
         {
             get => _list[index];
             set
@@ -72,11 +110,9 @@ namespace Nextension
             }
         }
 
-        public void sort()
-        {
-            _list.Sort(exeCompareValue);
-        }
-        public V bFind(K searchKey)
+        #region Query from TKey
+
+        public TValue bFind(TCompareKey searchKey)
         {
             var index = bFindIndex(searchKey);
             if (index >= 0)
@@ -85,7 +121,7 @@ namespace Nextension
             }
             return default;
         }
-        public int bFindIndex(K searchKey)
+        public int bFindIndex(TCompareKey searchKey)
         {
             int listCount = _list.Count;
             if (listCount == 0)
@@ -93,46 +129,119 @@ namespace Nextension
                 return -1;
             }
 
-            int start = 0;
-            int end = listCount - 1;
-            int mid;
-            int compareValue;
+            int startIndex = 0;
+            int endIndex = listCount - 1;
+            int midIndex;
+            int compareResult;
+            var span = _list.asSpan();
 
-            while (start < end)
+            while (startIndex < endIndex)
             {
-                mid = (start + end) / 2;
-                compareValue = exeCompareKey(searchKey, getCompareKeyFromValue(_list[mid]));
-                if (compareValue == 0)
+                midIndex = (startIndex + endIndex) >> 1;
+                compareResult = exeCompareKey(searchKey, getCompareKeyFromValue(span[midIndex]));
+                if (compareResult == 0)
                 {
-                    return mid;
+                    return midIndex;
                 }
-                else if (compareValue > 0)
+                else if (compareResult > 0)
                 {
-                    start = mid + 1;
+                    startIndex = midIndex + 1;
                 }
                 else
                 {
-                    end = mid - 1;
+                    endIndex = midIndex - 1;
                 }
             }
 
-            compareValue = exeCompareKey(searchKey, getCompareKeyFromValue(_list[start]));
-            if (compareValue == 0)
+            compareResult = exeCompareKey(searchKey, getCompareKeyFromValue(span[startIndex]));
+            if (compareResult == 0)
             {
-                return start;
+                return startIndex;
             }
             else
             {
                 return -1;
             }
         }
-        public int[] bFindIndices(K searchKey)
+        public int bFindInsertIndex(TCompareKey searchKey)
         {
-            List<int> indices = new List<int>();
+            var span = _list.asSpan();
+            int listCount = span.Length;
+            switch (listCount)
+            {
+                case 0:
+                    return 0;
+                case 1:
+                    if (exeCompareKey(searchKey, getCompareKeyFromValue(span[0])) >= 0)
+                    {
+                        return listCount;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+            }
+
+            if (exeCompareKey(searchKey, getCompareKeyFromValue(span[0])) < 0)
+            {
+                return 0;
+            }
+            if (exeCompareKey(searchKey, getCompareKeyFromValue(span[^1])) >= 0)
+            {
+                return listCount;
+            }
+
+            int startIndex = 0;
+            int endIndex = listCount - 1;
+            int midIndex;
+            int midIndexPlus1;
+            int compareResult0;
+            int compareResult1;
+
+            while (startIndex < endIndex)
+            {
+                midIndex = (startIndex + endIndex) >> 1;
+                midIndexPlus1 = midIndex + 1;
+                compareResult0 = exeCompareKey(searchKey, getCompareKeyFromValue(span[midIndex]));
+                switch (compareResult0)
+                {
+                    case 0:
+                        return midIndexPlus1;
+                    case 1:
+                        compareResult1 = exeCompareKey(searchKey, getCompareKeyFromValue(span[midIndexPlus1]));
+                        switch (compareResult1)
+                        {
+                            case 0:
+                            case -1:
+                                return midIndexPlus1;
+                            default:
+                                startIndex = midIndexPlus1;
+                                break;
+                        }
+                        break;
+                    default:
+                        endIndex = midIndex;
+                        break;
+                }
+            }
+            return ++startIndex;
+        }
+        public Span<int> bFindIndices(TCompareKey searchKey)
+        {
             var fIndex = bFindIndex(searchKey);
+
+            if (fIndex == -1)
+            {
+                return new Span<int>();
+            }
+
+            List<int> indices = new();
+            var span = _list.asSpan();
+            int listCount = span.Length;
+
             for (int i = fIndex; i >= 0; i--)
             {
-                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
+                if (exeCompareKey(getCompareKeyFromValue(span[i]), searchKey) == 0)
                 {
                     indices.Add(i);
                 }
@@ -144,9 +253,9 @@ namespace Nextension
 
             indices.Reverse();
 
-            for (int i = fIndex + 1; i < _list.Count; ++i)
+            for (int i = fIndex + 1; i < listCount; ++i)
             {
-                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
+                if (exeCompareKey(getCompareKeyFromValue(span[i]), searchKey) == 0)
                 {
                     indices.Add(i);
                 }
@@ -155,13 +264,44 @@ namespace Nextension
                     break;
                 }
             }
-            return indices.ToArray();
+            return indices.asSpan();
         }
-        public int findIndex(Predicate<V> predicate)
+        /// <summary>
+        /// Enumerable indices without sort
+        /// </summary>
+        public IEnumerable<int> bFindIndicesWithoutSort(TCompareKey searchKey)
         {
-            return _list.FindIndex(predicate);
+            var fIndex = bFindIndex(searchKey);
+            if (fIndex == -1)
+            {
+                yield break;
+            }
+            int listCount = _list.Count;
+            for (int i = fIndex; i >= 0; i--)
+            {
+                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
+                {
+                    yield return i;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            for (int i = fIndex + 1; i < listCount; ++i)
+            {
+                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
+                {
+                    yield return i;
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
-        public int bTryGetValue(K searchKey, out V item)
+
+        public int bTryGetValue(TCompareKey searchKey, out TValue item)
         {
             var index = bFindIndex(searchKey);
             if (index >= 0)
@@ -174,136 +314,8 @@ namespace Nextension
             }
             return index;
         }
-        public int bIndexOf(V item)
-        {
-            var indices = bFindIndices(getCompareKeyFromValue(item));
-            foreach (int i in indices)
-            {
-                if (item.Equals(_list[i]))
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        public bool bContains(V item)
-        {
-            return bIndexOf(item) >= 0;
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void add(V item)
-        {
-            _list.Add(item);
-        }
-
-        /// <summary>
-        /// return false if item already exists in the list, otherwise return true
-        /// </summary>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        public bool addAndSortIfNotExist(V item)
-        {
-            if (bContains(item))
-            {
-                return false;
-            }
-            addAndSort(item);
-            return true;
-        }
-        public int addAndSort(V item)
-        {
-            int listCount = _list.Count;
-            K searchKey = getCompareKeyFromValue(item);
-            switch (listCount)
-            {
-                case 0:
-                    _list.Insert(0, item);
-                    return 0;
-                case 1:
-                    if (exeCompareKey(searchKey, getCompareKeyFromValue(_list[0])) >= 0)
-                    {
-                        _list.Add(item);
-                        return listCount;
-                    }
-                    else
-                    {
-                        _list.Insert(0, item);
-                        return 0;
-                    }
-            }
-
-            if (exeCompareKey(searchKey, getCompareKeyFromValue(_list[0])) < 0)
-            {
-                _list.Insert(0, item);
-                return 0;
-            }
-            if (exeCompareKey(searchKey, getCompareKeyFromValue(_list[listCount - 1])) >= 0)
-            {
-                _list.Add(item);
-                return listCount;
-            }
-
-            int start = 0;
-            int end = listCount - 1;
-            int mid;
-            int midplus1;
-            int compareValue;
-            int compareValue1;
-
-            while (start < end)
-            {
-                mid = (start + end) >> 1;
-                midplus1 = mid + 1;
-                compareValue = exeCompareKey(searchKey, getCompareKeyFromValue(_list[mid]));
-                switch (compareValue)
-                {
-                    case 0:
-                        _list.Insert(midplus1, item);
-                        return midplus1;
-                    case 1:
-                        compareValue1 = exeCompareKey(searchKey, getCompareKeyFromValue(_list[midplus1]));
-                        switch (compareValue1)
-                        {
-                            case 0:
-                            case -1:
-                                _list.Insert(midplus1, item);
-                                return midplus1;
-                            default:
-                                start = midplus1;
-                                break;
-                        }
-                        break;
-                    default:
-                        end = mid;
-                        break;
-                }
-            }
-
-            _list.Insert(start + 1, item);
-            return start + 1;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void addRange(ICollection<V> collection)
-        {
-            _list.AddRange(collection);
-        }
-        public void addRangeAndSort(ICollection<V> collection)
-        {
-            addRange(collection);
-            sort();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void clear()
-        {
-            _list.Clear();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void copyTo(V[] array, int arrayIndex)
-        {
-            _list.CopyTo(array, arrayIndex);
-        }
-        public bool remove(K key)
+        public bool removeKey(TCompareKey key)
         {
             var index = bFindIndex(key);
             if (index >= 0)
@@ -313,110 +325,311 @@ namespace Nextension
             }
             return false;
         }
-        public int removeAll(K key)
+        public int removeAllKey(TCompareKey key)
         {
             var indices = bFindIndices(key);
             for (int i = indices.Length - 1; i >= 0; i--)
             {
-                _list.RemoveAt(i);
+                _list.RemoveAt(indices[i]);
             }
             return indices.Length;
         }
-        public void removeRange(int index, int count)
+
+        #endregion
+
+        #region Query from TValue
+
+        /// <summary>
+        /// Return true if item already exists, otherwise return false
+        /// </summary>
+        public bool bFindInsertIndex(TValue value, out int insertIndex)
         {
-            _list.RemoveRange(index, count);
-        }
-        public bool remove(V item)
-        {
-            var indices = bFindIndices(getCompareKeyFromValue(item));
-            for (int i = indices.Length - 1; i >= 0; i--)
+            int listCount = _list.Count;
+            var span = _list.asSpan();
+            var searchKey = getCompareKeyFromValue(value);
+            switch (listCount)
             {
-                if (item.Equals(_list[i]))
+                case 0:
+                    insertIndex = 0;
+                    return false;
+                case 1:
+                    var compareFist = exeCompareKey(searchKey, getCompareKeyFromValue(span[0]));
+                    if (compareFist >= 0)
+                    {
+                        insertIndex = listCount;
+                        return equalValue(span[0], value);
+                    }
+                    else
+                    {
+                        insertIndex = 0;
+                        return false;
+                    }
+            }
+
+            if (exeCompareKey(searchKey, getCompareKeyFromValue(span[0])) < 0)
+            {
+                insertIndex = 0;
+                return false;
+            }
+            if (exeCompareKey(searchKey, getCompareKeyFromValue(span[^1])) >= 0)
+            {
+                insertIndex = listCount;
+                return equalValue(span[^1], value);
+            }
+
+            int startIndex = 0;
+            int endIndex = listCount - 1;
+            int midIndex;
+            int midIndexPlus1;
+            int compareResult0;
+            int compareResult1;
+
+            while (startIndex < endIndex)
+            {
+                midIndex = (startIndex + endIndex) >> 1;
+                midIndexPlus1 = midIndex + 1;
+                compareResult0 = exeCompareKey(searchKey, getCompareKeyFromValue(span[midIndex]));
+                switch (compareResult0)
                 {
-                    _list.RemoveAt(i);
-                    return true;
+                    case 0:
+                        insertIndex = midIndexPlus1;
+                        return exeFindIndexOf(value, midIndexPlus1) >= 0;
+                    case 1:
+                        compareResult1 = exeCompareKey(searchKey, getCompareKeyFromValue(span[midIndexPlus1]));
+                        switch (compareResult1)
+                        {
+                            case 0:
+                                insertIndex = midIndexPlus1;
+                                return exeFindIndexOf(value, midIndexPlus1) >= 0;
+                            case -1:
+                                insertIndex = midIndexPlus1;
+                                return false;
+                            default:
+                                startIndex = midIndexPlus1;
+                                break;
+                        }
+                        break;
+                    default:
+                        endIndex = midIndex;
+                        break;
                 }
+            }
+            insertIndex = ++startIndex;
+            return false;
+        }
+        public int bIndexOf(TValue item)
+        {
+            var index = bFindIndex(getCompareKeyFromValue(item));
+            if (index >= 0)
+            {
+                return exeFindIndexOf(item, index);
+            }
+            return -1;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool bContains(TValue item)
+        {
+            return bIndexOf(item) >= 0;
+        }
+
+        /// <summary>
+        /// Returns sorted index list
+        /// </summary>
+        public int findIndex(Predicate<TValue> predicate)
+        {
+            return _list.FindIndex(predicate);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void add(TValue item)
+        {
+            _list.Add(item);
+        }
+        /// <summary>
+        /// return false if item already exists in the list, otherwise return true
+        /// </summary>
+        public bool addAndSortIfNotExist(TValue item)
+        {
+            if (bFindInsertIndex(item, out var insertIndex))
+            {
+                _list.Insert(insertIndex, item);
+            }
+            return true;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void insert(int index, TValue item)
+        {
+            _list.Insert(index, item);
+        }
+        public int addAndSort(TValue item)
+        {
+            var insertIndex = bFindInsertIndex(getCompareKeyFromValue(item));
+            _list.Insert(insertIndex, item);
+            return insertIndex;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void addRange(ICollection<TValue> collection)
+        {
+            _list.AddRange(collection);
+        }
+        public void addRangeAndSort(ICollection<TValue> collection)
+        {
+            addRange(collection);
+            sort();
+        }
+
+        public bool removeValue(TValue item)
+        {
+            var index = bIndexOf(item);
+            if (index >= 0)
+            {
+                _list.RemoveAt(index);
+                return true;
             }
             return false;
         }
+        public int removeAllValue(TValue item)
+        {
+            int count = 0;
+            var indices = bFindIndices(getCompareKeyFromValue(item));
+            var span = _list.asSpan();
+            for (int i = indices.Length - 1; i >= 0; i--)
+            {
+                var index = indices[i];
+                if (equalValue(item, span[index]))
+                {
+                    _list.RemoveAt(index);
+                    ++count;
+                }
+            }
+            return count;
+        }
+        #endregion
+
+        #region Others
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void sort()
+        {
+            _list.Sort(exeCompareValue);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IEnumerable<TValue> asEnumerable()
+        {
+            return _list;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public List<TValue> toList()
+        {
+            return new List<TValue>(_list);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TValue[] toArray()
+        {
+            return _list.ToArray();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Span<TValue> asSpan()
+        {
+            return _list.asSpan();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void copyTo(TValue[] array, int arrayIndex)
+        {
+            _list.CopyTo(array, arrayIndex);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeAt(int index)
         {
             _list.RemoveAt(index);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public List<V> toList()
+        public void removeRange(int index, int count)
         {
-            return new List<V>(_list);
+            _list.RemoveRange(index, count);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public V[] toArray()
+        public void clear()
         {
-            return _list.ToArray();
+            _list.Clear();
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerable<V> asEnumerable()
-        {
-            return _list.AsEnumerable();
-        }
+
+        #endregion
     }
     /// <summary>
     /// 
     /// </summary>
-    /// <typeparam name="V">Value Type of List</typeparam>
-    /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBListCompareableK<V, K> : AbsBList<V, K> where K : IComparable<K>
+    /// <typeparam name="TValue">Value Type of List</typeparam>
+    /// <typeparam name="TCompareKey">Key Type to compare Value in List</typeparam>
+    public abstract class AbsBListGenericComparable<TValue, TCompareKey> : AbsBList<TValue, TCompareKey> where TCompareKey : IComparable<TCompareKey>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected sealed override int compareKey(K k1, K k2)
+        protected sealed override int compareKey(TCompareKey k1, TCompareKey k2)
         {
             return k1.CompareTo(k2);
         }
-        public AbsBListCompareableK() : base() { }
-        public AbsBListCompareableK(IEnumerable<V> collection) : base(collection) { }
+        public AbsBListGenericComparable() : base() { }
+        public AbsBListGenericComparable(int capacity) : base(capacity) { }
+        public AbsBListGenericComparable(IEnumerable<TValue> collection) : base(collection) { }
     }
     /// <summary>
     /// 
     /// </summary>
-    /// <typeparam name="V">Value Type of List</typeparam>
+    /// <typeparam name="TValue">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBListCompareable<V, K> : AbsBList<V, K> where K : IComparable
+    public abstract class AbsBListComparable<TValue, TCompareKey> : AbsBList<TValue, TCompareKey> where TCompareKey : IComparable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected sealed override int compareKey(K k1, K k2)
+        protected sealed override int compareKey(TCompareKey k1, TCompareKey k2)
         {
-            return k1.CompareTo(k2);
+            return k1.compareTo(k2);
         }
-        public AbsBListCompareable() : base() { }
-        public AbsBListCompareable(IEnumerable<V> collection) : base(collection) { }
+        public AbsBListComparable() : base() { }
+        public AbsBListComparable(int capacity) : base(capacity) { }
+        public AbsBListComparable(IEnumerable<TValue> collection) : base(collection) { }
     }
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="V">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
-    public sealed class NBList<V, K> : AbsBListCompareableK<V, K> where K : IComparable<K>
+    public sealed class NBList<TValue, TCompareKey> : AbsBList<TValue, TCompareKey>
     {
-        private Func<V, K> _getCompareKeyFromValueFunc;
-        protected override K getCompareKeyFromValue(V item)
+        private Func<TValue, TCompareKey> _getCompareKeyFromValueFunc;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected override TCompareKey getCompareKeyFromValue(TValue item)
         {
             return _getCompareKeyFromValueFunc(item);
         }
 
-        public NBList(Func<V, K> getCompareKeyFromValueFunc) : base()
+        protected override int compareKey(TCompareKey k1, TCompareKey k2)
+        {
+            return k1.compareTo(k2);
+        }
+
+        public NBList(Func<TValue, TCompareKey> getCompareKeyFromValueFunc) : base()
         {
             _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
         }
-        public NBList(IEnumerable<V> collection, Func<V, K> getCompareKeyFromValueFunc) : base(collection)
+        public NBList(int capacity, Func<TValue, TCompareKey> getCompareKeyFromValueFunc) : base(capacity)
+        {
+            _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
+        }
+        public NBList(IEnumerable<TValue> collection, Func<TValue, TCompareKey> getCompareKeyFromValueFunc) : base(collection)
         {
             _getCompareKeyFromValueFunc = getCompareKeyFromValueFunc;
         }
     }
 
     [Serializable]
-    public sealed class NBListUseHashCode<V> : AbsBListCompareableK<V, int>
+    public sealed class NBListCompareHashCode<TValue> : AbsBListGenericComparable<TValue, int>
     {
-        protected override int getCompareKeyFromValue(V item)
+        public NBListCompareHashCode() : base() { }
+        public NBListCompareHashCode(int capacity) : base(capacity) { }
+        protected override int getCompareKeyFromValue(TValue item)
         {
             return item.GetHashCode();
         }

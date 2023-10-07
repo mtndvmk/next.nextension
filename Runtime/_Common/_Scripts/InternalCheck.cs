@@ -8,7 +8,7 @@ namespace Nextension
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         internal static void checkEditorMode(string note = null)
         {
-            if (!Application.isPlaying)
+            if (!NStartRunner.IsPlaying)
             {
                 var err = "Not support editor mode";
                 if (!string.IsNullOrEmpty(note))
@@ -56,9 +56,9 @@ namespace Nextension
 
     internal static class NThrowHelper
     {
-        public static void throwException(Exception exception)
+        public static void throwKeepStackTraceException(Exception exception)
         {
-            throw exception;
+            throw new KeepStackTraceException(exception);
         }
         public static void throwArgNullException(string name)
         {

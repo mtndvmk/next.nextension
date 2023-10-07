@@ -1,5 +1,3 @@
-using System;
-
 namespace Nextension
 {
     public interface IErrorCheckable
@@ -17,6 +15,10 @@ namespace Nextension
         {
             // Put method in implement class (optional)
             // throw Exception to exit playmode and prevent enter playmode
+        }
+        static void onLoadOrRecompiled()
+        {
+            // Put method in implement class (optional)
         }
     }
 }

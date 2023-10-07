@@ -7,9 +7,16 @@ namespace Nextension
         public CompleteState state;
         public KeepStackTraceException exception;
 
-        public static NWaitableResult None = new NWaitableResult() { state = CompleteState.None };
-        public static NWaitableResult Cancelled = new NWaitableResult() { state = CompleteState.Cancelled };
-        public static NWaitableResult Completed = new NWaitableResult() { state = CompleteState.Completed };
-        public static NWaitableResult Exception(Exception exception) => new NWaitableResult() { state = CompleteState.Exception, exception = new KeepStackTraceException(exception) };
+        public readonly static NWaitableResult None = new() { state = CompleteState.None };
+        public readonly static NWaitableResult Canceled = new() { state = CompleteState.Canceled };
+        public readonly static NWaitableResult Completed = new() { state = CompleteState.Completed };
+        
+        public static NWaitableResult Exception(Exception exception) => new()
+        {
+            state = CompleteState.Exception,
+            exception = new KeepStackTraceException(exception)
+        };
+
+        public readonly static Func<NWaitableResult> CompletedFunc = () => Completed;
     }
 }

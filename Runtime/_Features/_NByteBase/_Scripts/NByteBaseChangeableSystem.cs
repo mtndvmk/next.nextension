@@ -42,7 +42,7 @@ namespace Nextension.NByteBase
 
         public void setValue(T value)
         {
-            if (CurrentValue == null || !CurrentValue.Equals(value))
+            if (CurrentValue == null || !CurrentValue.equals(value))
             {
                 OldValue = CurrentValue;
                 CurrentValue = value;

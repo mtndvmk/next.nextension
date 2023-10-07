@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using UnityEngine;
 
 namespace Nextension
 {
@@ -9,32 +8,42 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class Walue<T> : AbsNNotify
+        where T : IEquatable<T>
     {
-        public Walue(T value = default)
+        public Walue()
+        {
+
+        }
+        public Walue(T value)
         {
             setValueWithoutNotify(value);
         }
-        private T value;
+        public Walue(T value, Action<T> onValueChangedEvent) 
+        {
+            setValueWithoutNotify(value);
+            this.onValueChangedEvent.add(onValueChangedEvent);
+        }
+        private T _value;
 
-        public readonly NCallback<Walue<T>> onValueChangedEvent = new NCallback<Walue<T>>();
-        public readonly NCallback<Walue<T>> onValueChangedOnceTimeEvent = new NCallback<Walue<T>>();
+        public readonly NCallback<T> onValueChangedEvent = new ();
+        public readonly NCallback<T> onValueChangedOnceTimeEvent = new ();
 
         protected override void onNotified()
         {
-            onValueChangedEvent.tryInvoke(this, Debug.LogException);
-            if (onValueChangedOnceTimeEvent.ListenerCount > 0)
+            onValueChangedEvent.tryInvoke(_value);
+            if (onValueChangedOnceTimeEvent.Count > 0)
             {
-                onValueChangedOnceTimeEvent.tryInvoke(this, Debug.LogException);
+                onValueChangedOnceTimeEvent.tryInvoke(_value);
                 onValueChangedOnceTimeEvent.clear();
             }
         }
 
         public T Value
         {
-            get => value;
+            get => _value;
             set
             {
-                if (object.Equals(this.value, value)) return;
+                if (_value.Equals(value)) return;
                 setValueWithoutNotify(value);
                 notify();
             }
@@ -42,13 +51,13 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void setValueWithoutNotify(T value)
         {
-            this.value = value;
+            this._value = value;
         }
         public void removeAllListeners()
         {
             onValueChangedEvent.clear();
             onValueChangedOnceTimeEvent.clear();
         }
-        public static explicit operator T(Walue<T> walue) => walue.value;
+        public static implicit operator T(Walue<T> walue) => walue._value;
     }
 }

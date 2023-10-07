@@ -20,7 +20,7 @@ namespace Nextension
             SessionId = DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode();
             IsPlaying = true;
 
-            runStartupMethods();
+            runStaticMethods<StartupMethodAttribute>();
 
             Debug.Log("[NStartRunner] Initialized");
         }
@@ -29,32 +29,58 @@ namespace Nextension
         {
             IsPlaying = false;
             SessionId = DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode();
+#if UNITY_EDITOR
+            runStaticMethods<EditorQuittingMethodAttribute>();
+#endif
+            runStaticMethods<QuittingMethodAttribute>();
         }
-        private static void runStartupMethods()
+        private static void runStaticMethods<T>() where T : AbsStaticMethodAttribute
         {
             var types = NUtils.getCustomTypes();
-
-            List<(MethodInfo, int)> list = new List<(MethodInfo, int)>();
+            var bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+            List<(MethodInfo, int)> list = new();
 
             foreach (var type in types)
             {
-                var methods = type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                if (type.ContainsGenericParameters)
+                {
+                    continue;
+                }
+                var methods = type.GetMethods(bindingFlags);
                 foreach (var method in methods)
                 {
-                    var attr = method.GetCustomAttribute(typeof(StartupMethodAttribute)) as StartupMethodAttribute;
+                    var attr = method.GetCustomAttribute<T>();
                     if (attr != null)
                     {
+                        if (method.GetParameters().Length > 0)
+                        {
+                            Debug.LogWarning($"[{type.Name}.{method.Name}]: `{nameof(T)}` requires parameterless");
+                            continue;
+                        }
                         list.Add((method, attr.priority));
                     }
                 }
             }
 
-            list.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+            int listCount = list.Count;
 
-            for (int i = list.Count - 1; i >= 0; --i)
+            if (listCount > 0)
             {
-                var method = list[i].Item1;
-                method.Invoke(null, null);
+                list.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+                var span = list.asSpan();
+
+                for (int i = listCount - 1; i >= 0; --i)
+                {
+                    var method = span[i].Item1;
+                    try
+                    {
+                        method.Invoke(null, null);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
+                }
             }
         }
 
@@ -77,15 +103,5 @@ namespace Nextension
         [RuntimeInitializeOnLoadMethod] static void DefaultLog() => Debug.Log(LOG_PREFIX + "Default is AfterSceneLoad"); // 5
         static class StaticContructor { static StaticContructor() => Debug.Log(LOG_PREFIX + "Static Constructor"); } // ???
 #endif
-    }
-
-    [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-    public class StartupMethodAttribute : Attribute
-    {
-        /// <summary>
-        /// Callbacks with higher values are called before ones with lower values.
-        /// </summary>
-        internal int priority;
-        public StartupMethodAttribute(int priority = 0) { this.priority = priority; }
     }
 }

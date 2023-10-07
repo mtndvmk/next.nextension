@@ -90,7 +90,7 @@ namespace Nextension
             {
                 if (IsPlaying)
                 {
-                    if (!_isDestroyFromInternal)
+                    if (!_isDestroyedFromInternal)
                     {
                         Debug.LogWarning($"[SKIP] [NSingleton] Should call {getSingletonName()}.Instance.destroy()");
                     }
@@ -105,8 +105,8 @@ namespace Nextension
         }
         #endregion
 
-        private bool _isDestroyFromInternal;
-        private bool _isLocalInitialized;
+        private bool _isDestroyedFromInternal;
+        private bool _isLocallyInitialized;
         private void localInitialize()
         {
             if (IsDestroyedAndUnused)
@@ -115,9 +115,9 @@ namespace Nextension
             }
             else if (IsPlaying)
             {
-                if (!_isLocalInitialized)
+                if (!_isLocallyInitialized)
                 {
-                    _isLocalInitialized = true;
+                    _isLocallyInitialized = true;
                     s_Instance = GetComponent<T>();
                     onInitialized();
                     if (m_DontDestroyOnLoad)
@@ -137,7 +137,7 @@ namespace Nextension
 
         public void destroy(bool markUnused = true)
         {
-            _isDestroyFromInternal = true;
+            _isDestroyedFromInternal = true;
             IsDestroyedAndUnused |= markUnused;
             Destroy(gameObject);
         }
@@ -152,17 +152,17 @@ namespace Nextension
                     {
                         if (!IsPlaying)
                         {
-                            throw new Exception("Application is quitting");
+                            throw new Exception("Application isn't playing");
                         }
                         if (IsDestroyedAndUnused)
                         {
-                            throw new Exception("NSingleton has been destroyd and marked as unused");
+                            throw new Exception("NSingleton has been destroyed and marked as unused");
                         }
                         initialize();
                     }
                     catch (Exception e)
                     {
-                        if (e.Message == "Application is quitting")
+                        if (e.Message == "Application isn't playing")
                         {
                             Debug.LogWarning($"Failed to initialize NSingleton<{typeof(T)}>: " + e.Message);
                         }
@@ -197,7 +197,7 @@ namespace Nextension
                     {
                         singleton = s_Instance.GetComponent<NSingleton<T>>();
                     }
-                    if (!singleton._isLocalInitialized)
+                    if (!singleton._isLocallyInitialized)
                     {
                         singleton.localInitialize();
                     }

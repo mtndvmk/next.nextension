@@ -28,7 +28,7 @@ namespace Nextension
                 onInnerCompleted();
             }
         }
-        internal virtual void invokeException(Exception ex) 
+        internal virtual void invokeException(Exception ex)
         {
             if (!IsCompleted)
             {
@@ -39,7 +39,7 @@ namespace Nextension
 
         protected virtual void onInnerGetResult()
         {
-            if (exception != null) 
+            if (exception != null)
             {
                 throw exception;
             }

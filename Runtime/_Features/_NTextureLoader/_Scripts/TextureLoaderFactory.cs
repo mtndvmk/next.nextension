@@ -9,46 +9,37 @@ namespace Nextension.TextureLoader
             if (!isForceUseFallback)
             {
 #if UNITY_ANDROID && !UNITY_EDITOR
-                return new Texture2DLoader<AndroidProcessor>();
+                return new Texture2DLoader<AndroidProcessTask>();
 #elif UNITY_WEBGL && !UNITY_EDITOR
-                return new Texture2DLoader<WebGLProcessor>();
+                return new Texture2DLoader<WebGLProcessTask>();
 #elif (UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN) && NET_4_6
-                return new Texture2DLoader<WinProcessor>();
+                return new Texture2DLoader<WinProcessTask>();
 #endif
             }
-            return new Texture2DLoader<FallbackProcessor>();
+            return new Texture2DLoader<FallbackProcessTask>();
         }
     }
-    internal class Texture2DLoader<T> : ITexture2DLoader where T : AbsProcessor, new()
+    internal class Texture2DLoader<T> : ITexture2DLoader where T : AbsProcessTask, new()
     {
-        public Texture2DLoaderOperation startLoad(byte[] inData, TextureSetting setting)
+        public AbsProcessTask createProcessTask(byte[] imageData, TextureSetting setting)
         {
             var processor = new T();
-            processor.initialize(setting);
-            try
-            {
-                processor.process(inData);
-            }
-            catch (Exception e)
-            {
-                processor.Operation.setError(e);
-            }
-            return processor.Operation;
+            processor.initialize(imageData, setting);
+            return processor;
         }
 
-        public Texture2DLoaderOperation startLoad(Uri uri, TextureSetting setting)
+        public AbsProcessTask createProcessTask(Uri uri, TextureSetting setting)
         {
             var processor = new T();
-            processor.initialize(setting);
-            try
-            {
-                processor.process(uri);
-            }
-            catch (Exception e)
-            {
-                processor.Operation.setError(e);
-            }
-            return processor.Operation;
+            processor.initialize(uri, setting);
+            return processor;
+        }
+
+        public AbsProcessTask createProcessTask(string url, TextureSetting setting)
+        {
+            var processor = new T();
+            processor.initialize(url, setting);
+            return processor;
         }
     }
 }

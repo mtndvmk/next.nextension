@@ -1,7 +1,6 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
-using System;
-using Unity.Burst;
 
 namespace Nextension
 {
@@ -195,8 +194,8 @@ namespace Nextension
                 return a;
             }
             var t1 = -2 * t + 2;
-            return t < 0.5f ? 
-                a + (b - a) * (2 * t * t) : 
+            return t < 0.5f ?
+                a + (b - a) * (2 * t * t) :
                 a + (b - a) * (1 - t1 * t1 / 2);
         }
         public static float cubicIn(float a, float b, float t)
@@ -235,8 +234,8 @@ namespace Nextension
                 return a;
             }
             var t1 = -2 * t + 2;
-            return (t < 0.5f) ? 
-                a + (b - a) * (4 * t * t * t) : 
+            return (t < 0.5f) ?
+                a + (b - a) * (4 * t * t * t) :
                 a + (b - a) * (1 - t1 * t1 * t1 / 2);
         }
         public static float quartIn(float a, float b, float t)
@@ -275,8 +274,8 @@ namespace Nextension
                 return a;
             }
             var t1 = -2 * t + 2;
-            return t < 0.5f ? 
-                a + (b - a) * (8 * t * t * t * t) : 
+            return t < 0.5f ?
+                a + (b - a) * (8 * t * t * t * t) :
                 a + (b - a) * (1 - t1 * t1 * t1 * t1 / 2);
         }
         public static float quintIn(float a, float b, float t)
@@ -315,8 +314,8 @@ namespace Nextension
                 return a;
             }
             var t1 = -2 * t + 2;
-            return t < 0.5f ? 
-                a + (b - a) * 16 * t * t * t * t * t : 
+            return t < 0.5f ?
+                a + (b - a) * 16 * t * t * t * t * t :
                 a + (b - a) * (1 - t1 * t1 * t1 * t1 * t1 / 2);
         }
         public static float expoIn(float a, float b, float t)
@@ -353,8 +352,8 @@ namespace Nextension
             {
                 return a;
             }
-            return t < 0.5f ? 
-                a + (b - a) * (float)Math.Pow(2, 20 * t - 10) / 2 : 
+            return t < 0.5f ?
+                a + (b - a) * (float)Math.Pow(2, 20 * t - 10) / 2 :
                 a + (b - a) * (2 - (float)Math.Pow(2, -20 * t + 10)) / 2;
         }
         public static float circIn(float a, float b, float t)

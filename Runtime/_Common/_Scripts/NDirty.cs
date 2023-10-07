@@ -1,6 +1,5 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension
@@ -14,26 +13,31 @@ namespace Nextension
             setDirty();
         }
         public bool IsDirty => _IsNeedNotify;
-        public readonly NCallback onDirtyCleanedEvent = new NCallback();
+        public readonly NCallback onDirtyCleanedEvent = new();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void setDirty()
         {
             notify();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void cleanImmediate()
         {
             checkNeedNotify();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void cleanWithoutNotify()
         {
             _IsNeedNotify = false;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeAllListeners()
         {
             onDirtyCleanedEvent.clear();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override void onNotified()
         {
-            onDirtyCleanedEvent.tryInvoke(Debug.LogException);
+            onDirtyCleanedEvent.tryInvoke();
         }
     }
 }

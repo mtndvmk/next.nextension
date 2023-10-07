@@ -5,23 +5,19 @@ using UnityEngine;
 
 namespace Nextension
 {
-    internal class NWaitableHandle : ICancellable, IPoolable
+    internal class NWaitableHandle : ICancelable, IPoolable
     {
-        internal static NWaitableHandle NonWaitHandle = new NWaitableHandle() { Status = RunState.Completed };
-        private const WaiterLoopType DEFAULT_LOOP_TYPE = WaiterLoopType.Update;
+        internal readonly static NWaitableHandle CompletedHandle = new() { Status = RunState.Completed };
+        private const NLoopType DEFAULT_LOOP_TYPE = NLoopType.Update;
 
         internal static class Factory
         {
-            private static NPool<NWaitableHandle> pool;
+            private static NPool<NWaitableHandle> pool = new();
 
-            [StartupMethod]
-            private static void init()
+            [EditorQuittingMethod]
+            private static void clearPool()
             {
-                pool = new NPool<NWaitableHandle>();
-            }
-            private static NWaitableHandle get()
-            {
-                return pool.get();
+                pool.clear();
             }
             public static void release(NWaitableHandle handle)
             {
@@ -51,13 +47,13 @@ namespace Nextension
 #endif
             public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, IWaitable waitable)
             {
-                var handle = get();
+                var handle = pool.get();
                 handle.setup(awaiter, waitable);
                 return handle;
             }
-            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, IWaitableFromCancellable waitable)
+            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, IWaitableFromCancelable waitable)
             {
-                var handle = get();
+                var handle = pool.get();
                 handle.setup(awaiter, waitable);
                 return handle;
             }
@@ -68,12 +64,8 @@ namespace Nextension
         private void setup(AbsNWaitableAwaiter awaiter, IWaitable_Editor waitable)
         {
             var predicateFunc = waitable.buildCompleteFunc();
-            if (predicateFunc == null)
-            {
-                throw new ArgumentNullException(nameof(predicateFunc));
-            }
-            this.predicateFunc = predicateFunc;
-            this.awaiter = awaiter;
+            this._predicateFunc = predicateFunc ?? throw new ArgumentNullException(nameof(predicateFunc));
+            this._awaiter = awaiter;
             isEditorWaitable = true;
         }
 #endif
@@ -81,54 +73,40 @@ namespace Nextension
         private void setup(AbsNWaitableAwaiter awaiter, IWaitable waitable)
         {
             InternalCheck.checkEditorMode();
-            var predicateFunc = waitable.buildCompleteFunc();
-            if (predicateFunc == null)
-            {
-                throw new ArgumentNullException(nameof(predicateFunc));
-            }
-            this.predicateFunc = predicateFunc;
-            this.awaiter = awaiter;
+            this._predicateFunc = waitable.buildCompleteFunc() ?? throw new ArgumentNullException(nameof(_predicateFunc));
+            this._awaiter = awaiter;
             this.loopType = waitable.LoopType;
         }
-        private void setup(AbsNWaitableAwaiter awaiter, IWaitableFromCancellable waitable)
+        private void setup(AbsNWaitableAwaiter awaiter, IWaitableFromCancelable waitable)
         {
             InternalCheck.checkEditorMode();
             var (predicateFunc, cancelable) = waitable.buildCompleteFunc();
-            if (predicateFunc == null)
-            {
-                throw new ArgumentNullException(nameof(predicateFunc));
-            }
-            this.predicateFunc = predicateFunc;
-            this.awaiter = awaiter;
+            this._predicateFunc = predicateFunc ?? throw new ArgumentNullException(nameof(predicateFunc));
+            this._awaiter = awaiter;
             this.loopType = waitable.LoopType;
-            addCancelleable(cancelable);
+            addCancelable(cancelable);
         }
 
-        private NWaitableHandle() { }
-        private void reseState()
+        public NWaitableHandle() { }
+        private void resetState()
         {
-            cancellables?.Clear();
-            cancellables = null;
+            _cancelables?.Clear();
             Status = default;
             loopType = DEFAULT_LOOP_TYPE;
-            awaiter = null;
-            predicateFunc = null;
+            _awaiter = null;
+            _predicateFunc = null;
 #if UNITY_EDITOR
             isEditorWaitable = false;
 #endif
         }
 
-        private Func<NWaitableResult> predicateFunc;
-        private List<ICancellable> cancellables;
-        private AbsNWaitableAwaiter awaiter;
+        private Func<NWaitableResult> _predicateFunc;
+        private List<ICancelable> _cancelables;
+        private AbsNWaitableAwaiter _awaiter;
 
-        internal void addCancelleable(ICancellable cancellable)
+        internal void addCancelable(ICancelable cancellable)
         {
-            if (cancellables == null)
-            {
-                cancellables = new List<ICancellable>();
-            }
-            cancellables.Add(cancellable);
+            (_cancelables ??= new(1)).Add(cancellable);
         }
 
         internal RunState checkComplete()
@@ -137,10 +115,10 @@ namespace Nextension
             {
                 return Status;
             }
-            var result = predicateFunc();
+            var result = _predicateFunc();
             switch (result.state)
             {
-                case CompleteState.Cancelled:
+                case CompleteState.Canceled:
                     {
                         cancel();
                         return Status;
@@ -148,13 +126,13 @@ namespace Nextension
                 case CompleteState.Completed:
                     {
                         Status = RunState.Completed;
-                        awaiter.invokeComplete();
+                        _awaiter.invokeComplete();
                         return Status;
                     }
                 case CompleteState.Exception:
                     {
-                        awaiter.invokeException(result.exception);
                         Status = RunState.Exception;
+                        _awaiter.invokeException(result.exception);
                         return Status;
                     }
                 case CompleteState.None:
@@ -172,7 +150,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFinished() => Status.isFinished();
         public RunState Status { get; internal set; }
-        public WaiterLoopType loopType = DEFAULT_LOOP_TYPE;
+        public NLoopType loopType = DEFAULT_LOOP_TYPE;
 
         public void cancel()
         {
@@ -180,10 +158,10 @@ namespace Nextension
             {
                 return;
             }
-            Status = RunState.Cancelled;
-            if (cancellables != null)
+            Status = RunState.Canceled;
+            if (_cancelables != null)
             {
-                foreach (var c in cancellables)
+                foreach (var c in _cancelables)
                 {
                     c.cancel();
                 }
@@ -191,7 +169,7 @@ namespace Nextension
         }
         void IPoolable.onDespawned()
         {
-            reseState();
+            resetState();
         }
     }
 }

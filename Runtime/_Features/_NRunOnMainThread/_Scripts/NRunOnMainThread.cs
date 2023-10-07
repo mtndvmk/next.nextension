@@ -1,54 +1,91 @@
-﻿//#define DEBUG_LOG
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nextension
 {
     public static class NRunOnMainThread
     {
-        private static Queue<ActionData> m_ActionQueue = new Queue<ActionData>();
-        [StartupMethod]
+        private static List<ActionData> _actions = new();
+        private static bool _isInitialized;
+        [EditorQuittingMethod]
+        private static void reset()
+        {
+            if (_isInitialized)
+            {
+                _isInitialized = false;
+                NUpdater.onEndOfFrameEvent.remove(invokeAction);
+                SceneManager.sceneUnloaded -= onSceneUnloaded;
+            }
+            _actions.Clear();
+        }
         private static void initialize()
         {
-            NUpdater.onEndOfFrameEvent.add(executeAction);
-        }
-        public static void run(Action action, bool isClearOnLoadScene = true)
-        {
-            m_ActionQueue.Enqueue(new ActionData()
+            if (!_isInitialized)
             {
-                unityAction = () => action?.Invoke(),
-                isClearOnLoadScene = isClearOnLoadScene
-            });
-        }
-        public static void clearQueue()
-        {
-            m_ActionQueue.Clear();
-        }
-        public static int clearActionOnLoadScene()
-        {
-            var queues = new Queue<ActionData>();
-            var clearCount = queues.Count;
-            while (m_ActionQueue.Count > 0)
-            {
-                var actionData = m_ActionQueue.Dequeue();
-                if (!actionData.isClearOnLoadScene)
-                {
-                    queues.Enqueue(actionData);
-                }
+                _isInitialized = true;
+                NUpdater.onEndOfFrameEvent.add(invokeAction);
+                SceneManager.sceneUnloaded += onSceneUnloaded;
             }
-            m_ActionQueue = queues;
-            return clearCount - m_ActionQueue.Count;
         }
 
-        private static void executeAction()
+        private static void onSceneUnloaded(Scene scene)
         {
-            while (m_ActionQueue.Count > 0)
+#if UNITY_EDITOR
+            if (!NStartRunner.IsPlaying)
+            {
+                return;
+            }
+#endif
+            int clearCount = 0;
+            var span = _actions.asSpan();
+            for (int i = _actions.Count - 1; i >= 0; i--)
+            {
+                var v = span[i];
+                if (v.inScene.HasValue && v.inScene.Value == scene)
+                {
+                    _actions.removeAtSwapBack(i);
+                    clearCount++;
+                }
+            }
+            if (clearCount > 0)
+            {
+                Debug.Log($"[{nameof(NRunOnMainThread)}] Clear data on load scene: {clearCount} actions");
+            }
+        }
+
+        public static void run(Action action, bool isClearOnLoadScene = false)
+        {
+            if (isClearOnLoadScene)
+            {
+                run(action, SceneManager.GetActiveScene());
+            }
+            else
+            {
+                run(action, null);
+            }
+        }
+        public static void run(Action action, Scene? inScene)
+        {
+            initialize();
+            _actions.Add(new ActionData()
+            {
+                action = action,
+                inScene = inScene,
+            });
+        }
+        public static void clear()
+        {
+            _actions.Clear();
+        }
+        private static void invokeAction()
+        {
+            while (_actions.Count > 0)
             {
                 try
                 {
-                    m_ActionQueue.Dequeue()?.unityAction?.Invoke();
+                    _actions.takeAndRemoveLast().action?.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -56,20 +93,10 @@ namespace Nextension
                 }
             }
         }
-
-        [StartupMethod]
-        private static void clearDataOnLoadScene()
-        {
-            var clearCount = clearActionOnLoadScene();
-            if (clearCount > 0)
-            {
-                Debug.Log("[NRunOnMainThread] Clear data on load scene: " + clearCount);
-            }
-        }
         private class ActionData
         {
-            public Action unityAction;
-            public bool isClearOnLoadScene;
+            public Action action;
+            internal Scene? inScene;
         }
     }
 }

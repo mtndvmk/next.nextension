@@ -12,12 +12,8 @@ namespace Nextension
     {
         public static unsafe byte[] getBytes<T>(T t1) where T : unmanaged
         {
-            var sizeOfT = NUtils.sizeOf<T>();
-            byte[] array = new byte[sizeOfT];
-            fixed (byte* ptr = array)
-            {
-                *(T*)ptr = t1;
-            }
+            byte[] array = new byte[NUtils.sizeOf<T>()];
+            writeBytesWithoutChecks(array, t1);
             return array;
         }
         public static unsafe byte[] getBytes<T>(T t1, T t2) where T : unmanaged
@@ -62,11 +58,12 @@ namespace Nextension
         public static unsafe byte[] getBytes<T>(params T[] inData) where T : unmanaged
         {
             var sizeOfT = NUtils.sizeOf<T>();
-            byte[] array = new byte[inData.Length * sizeOfT];
+            int length = inData.Length;
+            byte[] array = new byte[length * sizeOfT];
             fixed (byte* ptr = array)
             {
                 T* ptrOfT = (T*)ptr;
-                for (int i = 0; i < inData.Length; ++i)
+                for (int i = 0; i < length; ++i)
                 {
                     *ptrOfT++ = inData[i];
                 }
@@ -80,7 +77,7 @@ namespace Nextension
             writeBytesWithoutChecks(inData, t1, startIndex);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void writeBytesWithoutChecks<T>(byte[] inData, T t1, int startIndex) where T : unmanaged
+        public static unsafe void writeBytesWithoutChecks<T>(byte[] inData, T t1, int startIndex = 0) where T : unmanaged
         {
             fixed (byte* ptr = &inData[startIndex])
             {
@@ -207,30 +204,28 @@ namespace Nextension
         {
             var tSize = NUtils.sizeOf<T>();
             var dstLength = bytesLength / tSize;
-            NativeArray<T> arr = new NativeArray<T>(dstLength, allocator, NativeArrayOptions.UninitializedMemory);
+            NativeArray<T> arr = new(dstLength, allocator, NativeArrayOptions.UninitializedMemory);
             void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(arr);
 
             Buffer.MemoryCopy((void*)src, dst, bytesLength, bytesLength);
             return arr;
         }
-        public static TOut[] convertArray<TIn, TOut>(TIn[] from) where TIn : unmanaged where TOut : unmanaged
+        public unsafe static TOut[] convertArray<TIn, TOut>(TIn[] from) where TIn : unmanaged where TOut : unmanaged
         {
-            if (typeof(TIn) == typeof(byte))
-            {
-                return convert<TOut>(from as byte[]);
-            }
-            var t1Size = NUtils.sizeOf<TIn>();
-            var bytes = new byte[from.Length * t1Size];
-            GCHandle handle = GCHandle.Alloc(from, GCHandleType.Pinned);
-            Marshal.Copy(handle.AddrOfPinnedObject(), bytes, 0, bytes.Length);
-            handle.Free();
+            int sizeOfTIn = NUtils.sizeOf<TIn>();
+            int sizeOfTOut = NUtils.sizeOf<TOut>();
+            int fromSize = sizeOfTIn * from.Length;
 
-            if (typeof(TOut) == typeof(byte))
-            {
-                return bytes as TOut[];
-            }
+            TOut[] result = new TOut[fromSize / sizeOfTOut];
+            GCHandle inHandle = GCHandle.Alloc(from, GCHandleType.Pinned);
+            GCHandle outHandle = GCHandle.Alloc(result, GCHandleType.Pinned);
 
-            return convert<TOut>(bytes);
+            Buffer.MemoryCopy((void*)inHandle.AddrOfPinnedObject(), (void*)outHandle.AddrOfPinnedObject(), fromSize, fromSize);
+
+            inHandle.Free();
+            outHandle.Free();
+
+            return result;
         }
         /// <summary>
         /// Convert src array to result array using binary of src array

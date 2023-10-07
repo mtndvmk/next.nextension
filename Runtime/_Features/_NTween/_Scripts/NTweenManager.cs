@@ -2,130 +2,113 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace Nextension.Tween
 {
-    public static class NTweenManager
+    internal static class NTweenManager
     {
-        private static List<NTweener> _inQueueTweeners;
-        private static Dictionary<TweenType, AbsTweenRunner> _runners;
+        private static List<NRunnableTweener> _inQueueRunnableTweeners;
+        private static List<CombinedNTweener> _inCombinedTweeners;
+
+        private static Dictionary<uint, AbsTweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;
-
-        [StartupMethod]
-        private static void initialize()
+        private static bool _isInitialized;
+        private static void initalize()
         {
-            _inQueueTweeners = new List<NTweener>();
-            _runners = new Dictionary<TweenType, AbsTweenRunner>();
-            _cancelControlManager = new CancelControlManager();
+            if (!_isInitialized)
+            {
+                _isInitialized = true;
+                _inQueueRunnableTweeners = new List<NRunnableTweener>();
+                _inCombinedTweeners = new List<CombinedNTweener>();
+                _runners = new Dictionary<uint, AbsTweenRunner>();
+                _cancelControlManager = new CancelControlManager();
 
-            NUpdater.onUpdateEvent.add(update);
-            Application.quitting -= onApplicationQuit;
-            Application.quitting += onApplicationQuit;
+                NUpdater.onUpdateEvent.add(update);
+            }
         }
+        [EditorQuittingMethod]
         private static void onApplicationQuit()
         {
-            foreach (var runner in _runners.Values)
+            if (_isInitialized)
             {
-                runner.dispose();
+                _isInitialized = false;
+                foreach (var runner in _runners.Values)
+                {
+                    runner.dispose();
+                }
+                _runners = null;
+                _cancelControlManager = null;
+                _inQueueRunnableTweeners = null;
+                _inCombinedTweeners = null;
             }
-            _runners.Clear();
         }
         static void update()
         {
+            var currentTime = TweenStaticManager.currentTime = TweenStaticManager.currentTimeInJob.Data = Time.time;
+            
             _cancelControlManager.cancelInvalid();
 
-            var currentTime = Time.time;
-            TweenStaticManager.currentTimeInJob.Data = currentTime;
-            TweenStaticManager.currentTime = currentTime;
-
-            if (_inQueueTweeners.Count > 0)
+            int combinedCount = _inCombinedTweeners.Count;
+            if (combinedCount > 0)
             {
-                for (int i = 0; i < _inQueueTweeners.Count; ++i)
+                var inCombinedSpan = _inCombinedTweeners.asSpan();
+                for (int i = combinedCount - 1; i >= 0; i--)
                 {
-                    startTweener(_inQueueTweeners[i]);
+                    var tweener = inCombinedSpan[i];
+                    if (tweener.startTime <= currentTime)
+                    {
+                        tweener.invokeOnStart();
+                        _inCombinedTweeners.removeAtSwapBack(i);
+                    }
                 }
-                _inQueueTweeners.Clear();
             }
 
-            var capacity = AbsTweenChunk.ChunkCount;
-            NativeList<JobHandle> jobHandles = new NativeList<JobHandle>(capacity, AllocatorManager.Temp);
-            List<AbsTweenChunk> runningChunks = new List<AbsTweenChunk>(capacity);
-
-            foreach (var runner in _runners.Values)
+            int runnableCount = _inQueueRunnableTweeners.Count;
+            if (runnableCount > 0)
             {
-                runner.runTweenJob(jobHandles, runningChunks);
+                var runnableSpan = _inQueueRunnableTweeners.asSpan();
+                for (int i = 0; i < runnableCount; ++i)
+                {
+                    startRunnableTweener(runnableSpan[i]);
+                }
+                _inQueueRunnableTweeners.Clear();
             }
 
-            if (runningChunks.Count == 0)
+            if (TweenStaticManager.runningTweenerCount > 0)
             {
-                return;
-            }
+                NativeList<JobHandle> jobHandles = new(TweenChunk.ChunkCount, AllocatorManager.Temp);
+                NativeList<(uint runnerId, uint chunkId)> runningChunks = new(TweenChunk.ChunkCount, AllocatorManager.Temp);
 
-            JobHandle.CompleteAll(jobHandles);
+                foreach (var runner in _runners.Values)
+                {
+                    runner.runTweenJob(jobHandles, runningChunks);
+                }
 
-            for (int i = 0; i < runningChunks.Count; ++i)
-            {
-                runningChunks[i].invokeJobComplete();
+                int runningChunkCount = runningChunks.Length;
+                if (runningChunkCount > 0)
+                {
+                    JobHandle.CompleteAll(jobHandles);
+                    for (int i = 0; i < runningChunkCount; ++i)
+                    {
+                        var (runnerId, chunkId) = runningChunks[i];
+                        _runners[runnerId].getChunk(chunkId).invokeJobComplete();
+                    }
+                }
             }
         }
-        private static AbsTweenRunner getOrCreateRunner(TweenType tweenType)
+        private static AbsTweenRunner getOrCreateRunner(NRunnableTweener tweener)
         {
-            AbsTweenRunner runner;
-            switch (tweenType)
+            var runnerId = tweener.createRunnerId();
+            if (_runners.TryGetValue(runnerId, out var runner))
             {
-                case TweenType.Transform_Local_Move:
-                case TweenType.Transform_World_Move:
-                case TweenType.Transform_Local_Scale:
-                    if (!_runners.TryGetValue(TweenType.Transform_Local_Move, out runner))
-                    {
-                        runner = new TransformFloat3Runner();
-                        _runners.Add(TweenType.Transform_Local_Move, runner);
-                    }
-                    return runner;
-                case TweenType.Transform_Local_Rotate:
-                case TweenType.Transform_World_Rotate:
-                    if (!_runners.TryGetValue(TweenType.Transform_Local_Rotate, out runner))
-                    {
-                        runner = new TransformFloat4Runner();
-                        _runners.Add(TweenType.Transform_Local_Rotate, runner);
-                    }
-                    return runner;
-                case TweenType.Basic_Float_Tween:
-                    if (!_runners.TryGetValue(tweenType, out runner))
-                    {
-                        runner = new BasicFloatTweenRunner();
-                        _runners.Add(tweenType, runner);
-                    }
-                    return runner;
-                case TweenType.Basic_Float2_Tween:
-                    if (!_runners.TryGetValue(tweenType, out runner))
-                    {
-                        runner = new BasicFloat2TweenRunner();
-                        _runners.Add(tweenType, runner);
-                    }
-                    return runner;
-                case TweenType.Basic_Float3_Tween:
-                    if (!_runners.TryGetValue(tweenType, out runner))
-                    {
-                        runner = new BasicFloat3TweenRunner();
-                        _runners.Add(tweenType, runner);
-                    }
-                    return runner;
-                case TweenType.Basic_Float4_Tween:
-                    if (!_runners.TryGetValue(tweenType, out runner))
-                    {
-                        runner = new BasicFloat4TweenRunner();
-                        _runners.Add(tweenType, runner);
-                    }
-                    return runner;
-                default:
-                    throw new NotImplementedException(tweenType.ToString());
-
+                return runner;
             }
+            runner = tweener.createRunner();
+            runner.runnerId = runnerId;
+            return _runners[runnerId] = runner;
         }
-        private static void startTweener(NTweener tweener)
+        private static void startRunnableTweener(NRunnableTweener tweener)
         {
             if (tweener.chunkIndex.chunkId != 0 || tweener.Status != RunState.None)
             {
@@ -147,201 +130,76 @@ namespace Nextension.Tween
             if (isCompletedTweener)
             {
                 tweener.invokeOnStart();
-                tweener.doCompleteOnStart();
+                tweener.forceComplete();
                 tweener.invokeOnComplete();
             }
             else
             {
-                AbsTweenRunner runner = getOrCreateRunner(tweener.tweenType);
+                AbsTweenRunner runner = getOrCreateRunner(tweener);
                 runner.addTweener(tweener);
             }
         }
 
-        public static NTweener moveTo(Transform target, Vector3 destination, float duration, bool isLocalSpace = true)
+        internal static void run(NTweener tweener)
         {
-            if (isLocalSpace)
+            initalize();
+            if (tweener is NRunnableTweener runnableTweener)
             {
-                return createTransform3Tweener(target, destination, duration, TweenType.Transform_Local_Move, TweenLoopType.Normal);
+                startRunnableTweener(runnableTweener);
+            }
+            else if (tweener is CombinedNTweener combinedTweener)
+            {
+                _inCombinedTweeners.Add(combinedTweener);
             }
             else
             {
-                return createTransform3Tweener(target, destination, duration, TweenType.Transform_World_Move, TweenLoopType.Normal);
+                throw new NotImplementedException();
             }
         }
-        public static NTweener rotateTo(Transform target, Vector3 destination, float duration, bool isLocalSpace = true)
+        internal static void schedule(NTweener tweener)
         {
-            var f4Destination = Quaternion.Euler(destination).toFloat4();
-            if (isLocalSpace)
+            initalize();
+            if (tweener is NRunnableTweener runnableTweener)
             {
-                return createTransform4Tweener(target, f4Destination, duration, TweenType.Transform_Local_Rotate, TweenLoopType.Normal);
+                _inQueueRunnableTweeners.Add(runnableTweener);
+            }
+            else if (tweener is CombinedNTweener combinedTweener)
+            {
+                _inCombinedTweeners.Add(combinedTweener);
             }
             else
             {
-                return createTransform4Tweener(target, f4Destination, duration, TweenType.Transform_World_Rotate, TweenLoopType.Normal);
-            }
-        }
-        public static NTweener rotateTo(Transform target, Quaternion destination, float duration, bool isLocalSpace = true)
-        {
-            if (isLocalSpace)
-            {
-                return createTransform4Tweener(target, destination.toFloat4(), duration, TweenType.Transform_Local_Rotate, TweenLoopType.Normal);
-            }
-            else
-            {
-                return createTransform4Tweener(target, destination.toFloat4(), duration, TweenType.Transform_World_Rotate, TweenLoopType.Normal);
-            }
-        }
-        public static NTweener scaleTo(Transform target, Vector3 destination, float duration)
-        {
-            return createTransform3Tweener(target, destination, duration, TweenType.Transform_Local_Scale, TweenLoopType.Normal);
-        }
-
-
-        public static NTweener punchMove(Transform target, Vector3 punchDestination, float duration, bool isLocalSpace = true)
-        {
-            if (isLocalSpace)
-            {
-                return createTransform3Tweener(target, punchDestination, duration, TweenType.Transform_Local_Move, TweenLoopType.Punch);
-            }
-            else
-            {
-                return createTransform3Tweener(target, punchDestination, duration, TweenType.Transform_World_Move, TweenLoopType.Punch);
-            }
-        }
-        public static NTweener punchRotate(Transform target, Vector3 destination, float duration, bool isLocalSpace = true)
-        {
-            var f4Destination = Quaternion.Euler(destination).toFloat4();
-            if (isLocalSpace)
-            {
-                return createTransform4Tweener(target, f4Destination, duration, TweenType.Transform_Local_Rotate, TweenLoopType.Punch);
-            }
-            else
-            {
-                return createTransform4Tweener(target, f4Destination, duration, TweenType.Transform_World_Rotate, TweenLoopType.Punch);
-            }
-        }
-        public static NTweener punchRotate(Transform target, Quaternion punchDestination, float duration, bool isLocalSpace = true)
-        {
-            if (isLocalSpace)
-            {
-                return createTransform4Tweener(target, punchDestination.toFloat4(), duration, TweenType.Transform_Local_Rotate, TweenLoopType.Punch);
-            }
-            else
-            {
-                return createTransform4Tweener(target, punchDestination.toFloat4(), duration, TweenType.Transform_World_Rotate, TweenLoopType.Punch);
-            }
-        }
-        public static NTweener punchScale(Transform target, Vector3 punchDestination, float duration)
-        {
-            return createTransform3Tweener(target, punchDestination, duration, TweenType.Transform_Local_Scale, TweenLoopType.Punch);
-        }
-
-        public static NTweener shakePosition(Transform target, float distance, float duration, bool isLocalSpace = true)
-        {
-            if (isLocalSpace)
-            {
-                return createTransform3Tweener(target, new float3(distance, 0, 0), duration, TweenType.Transform_Local_Move, TweenLoopType.Shake);
-            }
-            else
-            {
-                return createTransform3Tweener(target, new float3(distance, 0, 0), duration, TweenType.Transform_World_Move, TweenLoopType.Shake);
+                throw new NotImplementedException();
             }
         }
 
-        public static NTweener fromTo(float from, float destination, Action<float> onChanged, float duration)
+        internal static void cancelFromTweener(NRunnableTweener tweener)
         {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float_Tween, TweenLoopType.Normal);
-        }
-        public static NTweener fromTo(float2 from, float2 destination, Action<float2> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float2_Tween, TweenLoopType.Normal);
-        }
-        public static NTweener fromTo(float3 from, float3 destination, Action<float3> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float3_Tween, TweenLoopType.Normal);
-        }
-        public static NTweener fromTo(float4 from, float4 destination, Action<float4> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float4_Tween, TweenLoopType.Normal);
-        }
-        public static NTweener fromTo(Vector3 from, Vector3 destination, Action<float3> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float3_Tween, TweenLoopType.Normal);
-        }
-        public static NTweener fromTo(Quaternion from, Quaternion destination, Action<Quaternion> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from.toFloat4(), destination.toFloat4(), (result) => onChanged(result.toQuaternion()), duration, TweenType.Basic_Float4_Tween, TweenLoopType.Normal);
-        }
-
-        public static NTweener punchValue(float from, float destination, Action<float> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float_Tween, TweenLoopType.Punch);
-        }
-        public static NTweener punchValue(float2 from, float2 destination, Action<float2> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float2_Tween, TweenLoopType.Punch);
-        }
-        public static NTweener punchValue(float3 from, float3 destination, Action<float3> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float3_Tween, TweenLoopType.Punch);
-        }
-        public static NTweener punchValue(float4 from, float4 destination, Action<float4> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float4_Tween, TweenLoopType.Punch);
-        }
-        public static NTweener punchValue(Vector3 from, Vector3 destination, Action<float3> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from, destination, onChanged, duration, TweenType.Basic_Float3_Tween, TweenLoopType.Punch);
-        }
-        public static NTweener punchValue(Quaternion from, Quaternion destination, Action<Quaternion> onChanged, float duration)
-        {
-            return createBasicFromToTweener(from.toFloat4(), destination.toFloat4(), (result) => onChanged(result.toQuaternion()), duration, TweenType.Basic_Float4_Tween, TweenLoopType.Punch);
-        }
-
-        private static NTweener createTransform3Tweener(Transform target, float3 destination, float duration, TweenType tweenType, TweenLoopType tweenLoopType)
-        {
-            var tweener = new TransformFloat3Tweener(target, destination, tweenType);
-            tweener.duration = duration;
-            tweener.startTime = Time.time;
-            tweener.tweenLoopType = tweenLoopType;
-            _inQueueTweeners.Add(tweener);
-            return tweener;
-        }
-        private static NTweener createTransform4Tweener(Transform target, float4 destination, float duration, TweenType tweenType, TweenLoopType tweenLoopType)
-        {
-            var tweener = new TransformFloat4Tweener(target, destination, tweenType);
-            tweener.duration = duration;
-            tweener.startTime = Time.time;
-            tweener.tweenLoopType = tweenLoopType;
-            _inQueueTweeners.Add(tweener);
-            return tweener;
-        }
-        private static NTweener createBasicFromToTweener<T>(T from, T destination, Action<T> onChanged, float duration, TweenType tweenType, TweenLoopType tweenLoopType) where T : struct
-        {
-            NTweener tweener;
-            tweener = new BasicTweener<T>(from, destination, onChanged, tweenType);
-            tweener.duration = duration;
-            tweener.startTime = Time.time;
-            tweener.tweenLoopType = tweenLoopType;
-            _inQueueTweeners.Add(tweener);
-            return tweener;
-        }
-
-        internal static void cancelFromTweener(ChunkIndex chunkIndex)
-        {
-            getOrCreateRunner(chunkIndex.type).cancelTween(chunkIndex);
+            if (_isInitialized)
+            {
+                getOrCreateRunner(tweener).getChunk(tweener.chunkIndex.chunkId).cancelTween(tweener.chunkIndex.maskIndex);
+            }
         }
         internal static void cancelFromControlledTweener(AbsCancelControlKey controlKey)
         {
-            _cancelControlManager.cancel(controlKey);
+            if (_isInitialized)
+            {
+                _cancelControlManager.cancel(controlKey);
+            }
         }
         internal static void addCancelControlledTweener(NTweener tweener)
         {
-            _cancelControlManager.addControlledTweener(tweener);
+            if (_isInitialized)
+            {
+                _cancelControlManager.addControlledTweener(tweener);
+            }
         }
         internal static void removeControlledTweener(NTweener tweener)
         {
-            _cancelControlManager.removeControlledTweener(tweener);
+            if (_isInitialized)
+            {
+                _cancelControlManager.removeControlledTweener(tweener);
+            }
         }
     }
 }

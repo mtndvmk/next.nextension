@@ -6,8 +6,11 @@ namespace Nextension
 {
     public class NAction
     {
-        private List<Action> _actions = new List<Action>();
-        public int ListenerCount => _actions.Count;
+        public static readonly Action<Exception> UnityLogException = UnityEngine.Debug.LogException;
+
+        private readonly List<Action> _actions = new();
+        public int Count => _actions.Count;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void add(Action callback)
         {
             if (callback != null)
@@ -15,60 +18,93 @@ namespace Nextension
                 _actions.Add(callback);
             }
         }
+        public void addIfNotExists(Action callback)
+        {
+            if (callback != null)
+            {
+                _actions.add(callback);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void remove(Action callback)
         {
             _actions.removeSwapBack(callback);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void clear()
         {
             _actions.Clear();
         }
         public void invoke()
         {
-            if (_actions.Count <= 0)
+            int count = _actions.Count;
+            if (count <= 0)
             {
                 return;
             }
-            for (int i = _actions.Count - 1; i >= 0; i--)
+            var span = _actions.asSpan();
+            for (int i = 0; i < count; i++)
             {
-                _actions[i].Invoke();
+                span[i].Invoke();
             }
         }
-        public void tryInvoke(Action<Exception> onExceptionCallback = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void tryInvoke()
         {
-            if (_actions.Count <= 0)
+            tryInvoke(UnityLogException);
+        }
+        public void tryInvoke(Action<Exception> onExceptionCallback)
+        {
+            int count = _actions.Count;
+            if (count <= 0)
             {
                 return;
             }
-            for (int i = _actions.Count - 1; i >= 0; i--)
+            var span = _actions.asSpan();
+            if (onExceptionCallback != null)
             {
-                try
+                for (int i = 0; i < count; i++)
                 {
-                    _actions[i].Invoke();
+                    try
+                    {
+                        span[i].Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        onExceptionCallback.Invoke(e);
+                    }
                 }
-                catch (Exception e)
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
                 {
-                    onExceptionCallback?.Invoke(e);
+                    try
+                    {
+                        span[i].Invoke();
+                    }
+                    catch { }
                 }
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NAction operator +(NAction nAction, Action callback)
         {
-            nAction.add(callback);
+            (nAction ??= new()).add(callback);
             return nAction;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NAction operator -(NAction nAction, Action callback)
         {
-            nAction.remove(callback);
+            nAction?.remove(callback);
             return nAction;
         }
     }
     public class NAction<T>
     {
-        private List<Action<T>> _actions = new List<Action<T>>();
-        public int ListenerCount => _actions.Count;
+        private readonly List<Action<T>> _actions = new();
+        public int Count => _actions.Count;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void add(Action<T> callback)
         {
             if (callback != null)
@@ -76,78 +112,120 @@ namespace Nextension
                 _actions.Add(callback);
             }
         }
+        public void addIfNotExists(Action<T> callback)
+        {
+            if (callback != null)
+            {
+                _actions.add(callback);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void remove(Action<T> callback)
         {
             _actions.removeSwapBack(callback);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void clear()
         {
             _actions.Clear();
         }
         public void invoke(T result)
         {
-            if (_actions.Count <= 0)
+            int count = _actions.Count;
+            if (count <= 0)
             {
                 return;
             }
-            for (int i = _actions.Count - 1; i >= 0; i--)
+            var span = _actions.asSpan();
+            for (int i = 0; i < count; i++)
             {
-                _actions[i].Invoke(result);
+                span[i].Invoke(result);
             }
         }
-        public void tryInvoke(T result, Action<Exception> onExceptionCallback = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void tryInvoke(T result)
         {
-            if (_actions.Count <= 0)
+            tryInvoke(result, NAction.UnityLogException);
+        }
+        public void tryInvoke(T result, Action<Exception> onExceptionCallback)
+        {
+            int count = _actions.Count;
+            if (count <= 0)
             {
                 return;
             }
-            for (int i = _actions.Count - 1; i >= 0; i--)
+            var span = _actions.asSpan();
+            if (onExceptionCallback != null)
             {
-                try
+                for (int i = 0; i < count; i++)
                 {
-                    _actions[i].Invoke(result);
+                    try
+                    {
+                        span[i].Invoke(result);
+                    }
+                    catch (Exception e)
+                    {
+                        onExceptionCallback.Invoke(e);
+                    }
                 }
-                catch (Exception e)
+            }
+            else
+            {
+                for (int i = 0; i < count; i++)
                 {
-                    onExceptionCallback?.Invoke(e);
+                    try
+                    {
+                        span[i].Invoke(result);
+                    }
+                    catch { }
                 }
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NAction<T> operator +(NAction<T> nAction, Action<T> callback)
         {
-            nAction.add(callback);
+            (nAction ??= new()).add(callback);
             return nAction;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NAction<T> operator -(NAction<T> nAction, Action<T> callback)
         {
-            nAction.remove(callback);
+            nAction?.remove(callback);
             return nAction;
         }
     }
 
     public class NCallback
     {
-        private NAction _nAction = new NAction();
-        public int ListenerCount => _nAction.ListenerCount;
+        private readonly NAction _nAction = new();
+        public int Count => _nAction.Count;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void add(Action callback)
         {
             _nAction.add(callback);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void remove(Action callback)
         {
             _nAction.remove(callback);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void clear()
         {
             _nAction.clear();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void invoke()
         {
             _nAction.invoke();
         }
-        internal void tryInvoke(Action<Exception> onExceptionCallback = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void tryInvoke()
+        {
+            _nAction.tryInvoke();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void tryInvoke(Action<Exception> onExceptionCallback)
         {
             _nAction.tryInvoke(onExceptionCallback);
         }
@@ -155,37 +233,47 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NCallback operator +(NCallback nCallback, Action callback)
         {
-            nCallback.add(callback);
+            (nCallback ??= new()).add(callback);
             return nCallback;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NCallback operator -(NCallback nCallback, Action callback)
         {
-            nCallback.remove(callback);
+            nCallback?.remove(callback);
             return nCallback;
         }
     }
     public class NCallback<T>
     {
-        private NAction<T> _nAction = new NAction<T>();
-        public int ListenerCount => _nAction.ListenerCount;
+        private readonly NAction<T> _nAction = new();
+        public int Count => _nAction.Count;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void add(Action<T> callback)
         {
             _nAction.add(callback);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void remove(Action<T> callback)
         {
             _nAction.remove(callback);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void clear()
         {
             _nAction.clear();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void invoke(T result)
         {
             _nAction.invoke(result);
         }
-        internal void tryInvoke(T result, Action<Exception> onExceptionCallback = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void tryInvoke(T result)
+        {
+            _nAction.tryInvoke(result);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void tryInvoke(T result, Action<Exception> onExceptionCallback)
         {
             _nAction.tryInvoke(result, onExceptionCallback);
         }
@@ -193,13 +281,13 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NCallback<T> operator +(NCallback<T> nCallback, Action<T> callback)
         {
-            nCallback.add(callback);
+            (nCallback ??= new()).add(callback);
             return nCallback;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NCallback<T> operator -(NCallback<T> nCallback, Action<T> callback)
         {
-            nCallback.remove(callback);
+            nCallback?.remove(callback);
             return nCallback;
         }
     }
