@@ -7,6 +7,13 @@ namespace Nextension.UI.NEditor
     public class NButtonEditor : Editor
     {
         private static bool _isShowEvent;
+        private bool _isInteractable;
+        private NButton _button;
+        private void OnEnable()
+        {
+            _button = serializedObject.targetObject as NButton;
+            _isInteractable = serializedObject.FindProperty("_isInteractable").boolValue;
+        }
         public override void OnInspectorGUI()
         {
             EditorGUI.BeginDisabledGroup(true);
@@ -16,6 +23,13 @@ namespace Nextension.UI.NEditor
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_betweenClickIntervalTime"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_delayInvokeTime"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_isInteractable"));
+
+            if (_isInteractable != _button.IsInteractable)
+            {
+                var isInteractable = _button.IsInteractable;
+                _button.setInteractableWithoutNotify(!isInteractable);
+                _button.IsInteractable = _isInteractable = isInteractable;
+            }
 
             _isShowEvent = EditorGUILayout.Foldout(_isShowEvent, " Events", true);
             if (_isShowEvent)

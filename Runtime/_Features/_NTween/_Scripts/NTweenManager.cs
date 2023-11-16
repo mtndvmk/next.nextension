@@ -46,7 +46,7 @@ namespace Nextension.Tween
         static void update()
         {
             var currentTime = TweenStaticManager.currentTime = TweenStaticManager.currentTimeInJob.Data = Time.time;
-            
+
             _cancelControlManager.cancelInvalid();
 
             int combinedCount = _inCombinedTweeners.Count;

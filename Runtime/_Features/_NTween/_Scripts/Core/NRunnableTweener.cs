@@ -6,8 +6,8 @@ namespace Nextension.Tween
     public abstract class NRunnableTweener : GenericNTweener<NRunnableTweener>
     {
         internal ChunkIndex chunkIndex;
-        internal EaseType easeType;
         internal float duration;
+        internal EaseType easeType;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal uint createRunnerId() => NConverter.bitConvert<int, uint>(getRunnerType().GetHashCode());
@@ -23,6 +23,20 @@ namespace Nextension.Tween
         {
             this.easeType = easeType;
             return this;
+        }
+
+        protected override void onInnerCanceled()
+        {
+            base.onInnerCanceled();
+            if (isScheduled)
+            {
+                NTweenManager.cancelFromTweener(this);
+            }
+        }
+        protected override void onResetState()
+        {
+            base.onResetState();
+            chunkIndex = default;
         }
 
         internal CommonJobData getCommonJobData()

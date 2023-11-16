@@ -25,7 +25,7 @@ namespace Nextension
         }
         public void cancelPending()
         {
-            foreach (var schedule in _pending.asEnumerable())
+            foreach (var schedule in _pending.asSpan())
             {
                 schedule.onCanceled();
             }

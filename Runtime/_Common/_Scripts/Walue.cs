@@ -18,15 +18,15 @@ namespace Nextension
         {
             setValueWithoutNotify(value);
         }
-        public Walue(T value, Action<T> onValueChangedEvent) 
+        public Walue(T value, Action<T> onValueChangedEvent)
         {
             setValueWithoutNotify(value);
             this.onValueChangedEvent.add(onValueChangedEvent);
         }
         private T _value;
 
-        public readonly NCallback<T> onValueChangedEvent = new ();
-        public readonly NCallback<T> onValueChangedOnceTimeEvent = new ();
+        public readonly NCallback<T> onValueChangedEvent = new();
+        public readonly NCallback<T> onValueChangedOnceTimeEvent = new();
 
         protected override void onNotified()
         {

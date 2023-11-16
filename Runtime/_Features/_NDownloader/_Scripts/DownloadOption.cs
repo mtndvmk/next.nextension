@@ -1,6 +1,6 @@
 ﻿namespace Nextension
 {
-    public enum DownloadOption
+    public enum DownloadOption : byte
     {
         None = 0,
         NotLoadOnDisk = 1,

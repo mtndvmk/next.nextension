@@ -30,10 +30,10 @@ namespace Nextension.Tween
         public const float NotAccessTimeLimit = 10;
         #endregion
 
-        protected float _lastEmptyTime;    
         protected NativeArray<byte> _mask;
         protected readonly NativeList<short> _emptyIndices;
-        
+        protected float _lastEmptyTime;
+
         public readonly uint chunkId;
         public Action onChunkBecomeNotFull;
 
@@ -45,7 +45,7 @@ namespace Nextension.Tween
             _emptyIndices = new(ChunkSize, AllocatorManager.Persistent);
             fixed (void* ptr = &_defaultEmptyIndices[0])
             {
-                _emptyIndices.AddRangeNoResize(ptr, ChunkCount);
+                _emptyIndices.AddRangeNoResize(ptr, ChunkSize);
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,9 +87,9 @@ namespace Nextension.Tween
         where TJob : struct
         where TJobData : struct
     {
-        protected readonly TNTweener[] _tweeners;
         protected bool _hasJob;
         protected TJob _job;
+        protected readonly TNTweener[] _tweeners;
         protected NativeArray<TJobData> _jobDataNativeArr;
 
         public GenericTweenChunk() : base()

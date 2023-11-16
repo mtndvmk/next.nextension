@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -7,7 +8,7 @@ namespace Nextension
 {
     public class NDownloadTask : NProgressOperation, ISchedulable
     {
-        private const string TMP_DOWNLOAD_PATH_SUFFIX = ".tmp";
+        private const string TMP_DOWNLOAD_PATH_SUFFIX = ".dtmp";
         internal static NDownloadTask createErrorTask(string url, string errorMsg)
         {
             var operation = new NDownloadTask(url, false);
@@ -16,8 +17,7 @@ namespace Nextension
         }
         internal static NDownloadTask createLocalFileTask(string url, string filePath)
         {
-            var operation = new NDownloadTask(url, true);
-            operation._downloadedPath = Path.GetFullPath(filePath);
+            var operation = new NDownloadTask(url, true, filePath);
             operation.innerFinalize();
             return operation;
         }
@@ -25,8 +25,8 @@ namespace Nextension
         internal NDownloadTask(string url, bool isStoreDisk, string storePath = null)
         {
             this.url = url;
-            this.isStoreOnDisk = isStoreDisk;
-            this._storePath = storePath;
+            this.isStoreOnDisk = isStoreDisk && !string.IsNullOrEmpty(_storePath);
+            this._storePath = Path.GetFullPath(storePath);
         }
         internal void updateProgress()
         {
@@ -40,9 +40,8 @@ namespace Nextension
         public readonly string url;
         public readonly bool isStoreOnDisk;
 
-        private byte[] _downloadedData;
-        private string _downloadedPath;
         private bool _isStarted;
+        private byte[] _downloadedData;
         private string _storePath;
 
         internal int priority;
@@ -59,13 +58,23 @@ namespace Nextension
         {
             get
             {
-                if (string.IsNullOrEmpty(_downloadedPath))
+                if (!IsFinalized)
+                {
+                    var err = $"Download task is not complete: Url={url}";
+                    throw new Exception(err);
+                }
+                if (IsError)
+                {
+                    var err = $"Download task is error: Url={url}, Error={Error}";
+                    throw new Exception(err);
+                }
+                if (string.IsNullOrEmpty(_storePath))
                 {
                     throw new Exception($"DownloadedPath is null, isStoreOnDisk: {isStoreOnDisk}");
                 }
                 else
                 {
-                    return _downloadedPath;
+                    return _storePath;
                 }
             }
         }
@@ -73,25 +82,48 @@ namespace Nextension
         {
             get
             {
-                if (IsFinalized)
+                if (!IsFinalized)
                 {
                     var err = $"Download task is not complete: Url={url}";
                     throw new Exception(err);
                 }
-                if (!IsError)
+                if (IsError)
                 {
                     var err = $"Download task is error: Url={url}, Error={Error}";
                     throw new Exception(err);
                 }
                 try
                 {
-                    return _downloadedData ??= File.ReadAllBytes(DownloadedPath);
+                    return _downloadedData ??= File.ReadAllBytes(_storePath);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Failed to read data at {DownloadedPath}, Url={url}: " + e);
+                    Debug.LogError($"Failed to read data at {_storePath}, Url={url}: " + e);
                     throw e;
                 }
+            }
+        }
+
+        public async Task<byte[]> getDownloadedDataAsync()
+        {
+            if (!IsFinalized)
+            {
+                var err = $"Download task is not complete: Url={url}";
+                throw new Exception(err);
+            }
+            if (IsError)
+            {
+                var err = $"Download task is error: Url={url}, Error={Error}";
+                throw new Exception(err);
+            }
+            try
+            {
+                return _downloadedData ??= await File.ReadAllBytesAsync(_storePath);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to read data at {_storePath}, Url={url}: " + e);
+                throw e;
             }
         }
 
@@ -106,14 +138,13 @@ namespace Nextension
             try
             {
                 var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbGET);
-                if (isStoreOnDisk && !string.IsNullOrEmpty(_storePath))
+                if (isStoreOnDisk)
                 {
                     var tmpPath = _storePath + TMP_DOWNLOAD_PATH_SUFFIX;
                     if (File.Exists(tmpPath))
                     {
                         File.Delete(tmpPath);
                     }
-                    _downloadedPath = Path.GetFullPath(_storePath);
                     var downloadHandler = new DownloadHandlerFile(tmpPath);
                     downloadHandler.removeFileOnAbort = true;
                     request.downloadHandler = downloadHandler;
@@ -165,12 +196,12 @@ namespace Nextension
         }
         private void moveTmpPathToDownloadedPath()
         {
-            var tmpPath = DownloadedPath + TMP_DOWNLOAD_PATH_SUFFIX;
-            if (File.Exists(DownloadedPath))
+            var tmpPath = _storePath + TMP_DOWNLOAD_PATH_SUFFIX;
+            if (File.Exists(_storePath))
             {
-                File.Delete(DownloadedPath);
+                File.Delete(_storePath);
             }
-            File.Move(tmpPath, DownloadedPath);
+            File.Move(tmpPath, _storePath);
         }
         private void dispose()
         {

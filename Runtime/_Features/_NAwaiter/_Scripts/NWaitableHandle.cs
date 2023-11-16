@@ -87,7 +87,7 @@ namespace Nextension
             addCancelable(cancelable);
         }
 
-        public NWaitableHandle() { }
+        private NWaitableHandle() { }
         private void resetState()
         {
             _cancelables?.Clear();
@@ -161,7 +161,7 @@ namespace Nextension
             Status = RunState.Canceled;
             if (_cancelables != null)
             {
-                foreach (var c in _cancelables)
+                foreach (var c in _cancelables.asSpan())
                 {
                     c.cancel();
                 }

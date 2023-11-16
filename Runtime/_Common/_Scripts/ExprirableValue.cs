@@ -28,7 +28,9 @@ namespace Nextension
             else
             {
                 ExpirationTime = expirationTimeInSecond;
+#if UNITY_EDITOR
                 if (NStartRunner.IsPlaying)
+#endif
                 {
                     checkExpiration();
                 }

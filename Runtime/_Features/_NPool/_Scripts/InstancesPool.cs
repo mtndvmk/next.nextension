@@ -61,18 +61,22 @@ namespace Nextension
 
         private OriginInstance _origin;
         [NonSerialized] private InstancesPool<GameObject> _sharedPool;
-        [NonSerialized] private NBListCompareHashCode<T> _instancePool;
+        [NonSerialized] private HashSet<T> _instancePool;
 
         private void requireCall()
         {
             InternalCheck.checkEditorMode();
-            _instancePool ??= new NBListCompareHashCode<T>(_startupInstanceCount);
+            if (_instancePool == null)
+            {
+                _instancePool = new HashSet<T>(_startupInstanceCount);
+                Id = getGameObject(_prefab).GetInstanceID();
+            }
         }
 
         private readonly static bool IS_GENERIC_OF_GAMEOBJECT = typeof(T).Equals(typeof(GameObject));
 
         public uint MaxPoolInstanceCount { get; set; }
-        public int Id => getGameObject(_prefab).GetInstanceID();
+        public int Id {get; private set;}
 
 #if UNITY_EDITOR
         private T _copiedPrefabInEditor;
@@ -138,19 +142,18 @@ namespace Nextension
         {
             while (_instancePool.Count < _startupInstanceCount)
             {
-                _instancePool.add(createNewInstance());
+                _instancePool.Add(createNewInstance());
             }
-            _instancePool.sort();
         }
         private static GameObject getGameObject(T prefab)
         {
-            if (prefab is GameObject)
+            if (prefab is GameObject go)
             {
-                return prefab as GameObject;
+                return go;
             }
-            else if (prefab is Component)
+            else if (prefab is Component com)
             {
-                return (prefab as Component).gameObject;
+                return com.gameObject;
             }
             else
             {
@@ -190,7 +193,7 @@ namespace Nextension
                 T ins;
                 if (_instancePool.Count > 0)
                 {
-                    ins = _instancePool.takeAndRemoveLast();
+                    ins = _instancePool.takeAndRemoveFirst();
                 }
                 else
                 {
@@ -234,10 +237,6 @@ namespace Nextension
         public void release(T instance, bool invokeIPoolableEvent = false)
         {
             InternalCheck.checkEditorMode();
-            if (instance == null)
-            {
-                return;
-            }
             if (_isUniquePool)
             {
                 if (_origin == null)
@@ -246,7 +245,7 @@ namespace Nextension
                     return;
                 }
 
-                var isExist = _instancePool.bFindInsertIndex(instance, out var insertIndex);
+                var isExist = _instancePool.Contains(instance);
                 if (isExist)
                 {
                     Debug.LogWarning($"Instance has been in pool", instance);
@@ -278,15 +277,22 @@ namespace Nextension
                 if (_instancePool.Count >= MaxPoolInstanceCount)
                 {
                     NUtils.destroy(go);
+                    if (invokeIPoolableEvent)
+                    {
+                        foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
+                        {
+                            poolable.onDestroyed();
+                        }
+                    }
                     return;
                 }
 
                 go.transform.setParent(InstancesPoolContainer.Container);
-                _instancePool.insert(insertIndex, instance);
+                _instancePool.Add(instance);
             }
             else
             {
-                SharedPool.release(getGameObject(instance));
+                SharedPool.release(getGameObject(instance), invokeIPoolableEvent);
             }
         }
         public void clearPool(bool isClearSharedPool = true)
@@ -305,11 +311,11 @@ namespace Nextension
             }
             if (_instancePool != null && _instancePool.Count > 0)
             {
-                foreach (var item in _instancePool.asEnumerable())
+                foreach (var item in _instancePool)
                 {
                     NUtils.destroyObject(item);
                 }
-                _instancePool.clear();
+                _instancePool.Clear();
             }
 #if UNITY_EDITOR
             if (_copiedPrefabInEditor)
@@ -337,6 +343,10 @@ namespace Nextension
         [EditorQuittingMethod]
         static void reset()
         {
+            foreach (var sharedPool in _sharedPools.Values)
+            {
+                sharedPool.clearPool();
+            }
             _sharedPools.Clear();
         }
         private static Dictionary<int, InstancesPool<GameObject>> _sharedPools = new();

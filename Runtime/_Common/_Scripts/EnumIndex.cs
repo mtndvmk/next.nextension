@@ -32,15 +32,10 @@ namespace Nextension
         }
         private static void createTable()
         {
-            var enumArr = Enum.GetValues(typeof(T));
-            var list = new List<T>(enumArr.Length);
-            for (int i = 0; i < enumArr.Length; ++i)
-            {
-                var enumType = (T)enumArr.GetValue(i);
-                list.Add(enumType);
-            }
-            list.Sort();
-            _indexToEnumTable = list.ToArray();
+            _indexToEnumTable = Enum.GetValues(typeof(T)) as T[];
+
+            Array.Sort(_indexToEnumTable);
+
             _enumToIndexTable = new Dictionary<T, int>(_indexToEnumTable.Length);
             for (int i = 0; i < _indexToEnumTable.Length; ++i)
             {
@@ -73,7 +68,7 @@ namespace Nextension
             return IndexToEnumTable.randItem();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IEnumerable<T> asEnumerable()
+        public static ReadOnlySpan<T> asReadOnlySpan()
         {
             return IndexToEnumTable;
         }

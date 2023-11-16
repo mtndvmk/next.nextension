@@ -107,7 +107,8 @@ namespace Nextension
         }
         public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
         {
-            for (int i = 0; i < enumValues.Length; ++i)
+            int length = enumValues.Length;
+            for (int i = 0; i < length; ++i)
             {
                 yield return (EnumIndex<TEnum>.getEnum(i), enumValues[i]);
             }
@@ -137,7 +138,10 @@ namespace Nextension
         {
             return enumValues.ToArray();
         }
-
+        public Span<TValue> asSpan()
+        {
+            return enumValues.AsSpan();
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type getTypeOfEnum()
         {
@@ -197,7 +201,7 @@ namespace Nextension
 
         public void OnBeforeSerialize()
         {
-            
+
         }
 
         public void OnAfterDeserialize()

@@ -22,7 +22,7 @@ namespace Nextension
             public RunState Status { get; private set; }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool isFinished() => Status >= RunState.Canceled;
+            public bool isFinished() => Status.isFinished();
 
             public Data(IEnumerator func, int groupId)
             {
@@ -33,18 +33,18 @@ namespace Nextension
                     Status = RunState.Running;
                     yield return func;
                     Status = RunState.Completed;
-                    runningCoroutines[groupId].Remove(this);
+                    _runningCoroutines[groupId].Remove(this);
                 }
                 this.coroutine = _runner.StartCoroutine(innerRoutine());
                 HashSet<Data> hashset;
-                if (runningCoroutines.ContainsKey(groupId))
+                if (_runningCoroutines.ContainsKey(groupId))
                 {
-                    hashset = runningCoroutines[groupId];
+                    hashset = _runningCoroutines[groupId];
                 }
                 else
                 {
                     hashset = new HashSet<Data>(1);
-                    runningCoroutines.Add(groupId, hashset);
+                    _runningCoroutines.Add(groupId, hashset);
                 }
                 hashset.Add(this);
             }
@@ -53,7 +53,7 @@ namespace Nextension
                 if (Status <= RunState.Running)
                 {
                     _runner.StopCoroutine(this.coroutine);
-                    runningCoroutines[groupId].Remove(this);
+                    _runningCoroutines[groupId].Remove(this);
                     Status = RunState.Canceled;
                     this.onCanceled?.Invoke();
                     this.onCanceled = null;
@@ -93,24 +93,26 @@ namespace Nextension
         }
         public enum StopType
         {
-            None = 0,
             SameGroup,
             AllGroup,
         }
 
         private static Runner _runner;
-        private static Dictionary<int, HashSet<Data>> runningCoroutines = new Dictionary<int, HashSet<Data>>();
+        private static Dictionary<int, HashSet<Data>> _runningCoroutines = new Dictionary<int, HashSet<Data>>();
         private const int DEFAULT_GROUP_ID = 0;
 
-        public static Data startCoroutine(IEnumerator func, StopType stopType = StopType.None)
+        public static Data startCoroutine(IEnumerator func, StopType? stopType = null)
         {
             InternalCheck.checkEditorMode();
             return startCoroutine(func, DEFAULT_GROUP_ID, stopType);
         }
-        public static Data startCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.None)
+        public static Data startCoroutine(IEnumerator func, int groupId, StopType? stopType = null)
         {
             InternalCheck.checkEditorMode();
-            stopCoroutine(func, groupId, stopType);
+            if (stopType.HasValue)
+            {
+                stopCoroutine(func, groupId, stopType.Value);
+            }
             var data = new Data(func, groupId);
             return data;
         }
@@ -121,23 +123,14 @@ namespace Nextension
         }
         public static void stopCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.SameGroup)
         {
-#if UNITY_EDITOR
-            if (!NStartRunner.IsPlaying)
-            {
-                return;
-            }
-#endif
-            if (stopType == StopType.None)
-            {
-                return;
-            }
+            InternalCheck.checkEditorMode();
             var funcName = func.ToString();
             switch (stopType)
             {
                 case StopType.SameGroup:
-                    if (runningCoroutines.ContainsKey(groupId))
+                    if (_runningCoroutines.ContainsKey(groupId))
                     {
-                        var arr = runningCoroutines[groupId].ToArray();
+                        var arr = _runningCoroutines[groupId].ToArray();
                         foreach (var d in arr)
                         {
                             if (d.name == funcName)
@@ -148,7 +141,7 @@ namespace Nextension
                     }
                     break;
                 case StopType.AllGroup:
-                    foreach (var v in runningCoroutines.Values)
+                    foreach (var v in _runningCoroutines.Values)
                     {
                         var arr = v.ToArray();
                         foreach (var d in arr)
@@ -171,7 +164,7 @@ namespace Nextension
                 return;
             }
 #endif
-            if (runningCoroutines.TryGetValue(groupId, out var hs))
+            if (_runningCoroutines.TryGetValue(groupId, out var hs))
             {
                 var arr = hs.ToArray();
                 foreach (var d in arr)
@@ -182,7 +175,7 @@ namespace Nextension
         }
         public static void stopAllCoroutines()
         {
-            foreach (var v in runningCoroutines.Values)
+            foreach (var v in _runningCoroutines.Values)
             {
                 var arr = v.ToArray();
                 foreach (var d in arr)
@@ -190,7 +183,7 @@ namespace Nextension
                     d.cancel();
                 }
             }
-            runningCoroutines.Clear();
+            _runningCoroutines.Clear();
         }
 
         public static Data runDelay(float time, Action delayCallback, int groupId = 0)
@@ -232,7 +225,7 @@ namespace Nextension
         static void reset()
         {
             NUtils.destroyObject(_runner);
-            runningCoroutines.Clear();
+            _runningCoroutines.Clear();
             SceneManager.sceneUnloaded -= onSceneUnloaded;
             SceneManager.sceneUnloaded += onSceneUnloaded;
             _runner = new GameObject("NCoroutineRunner").AddComponent<Runner>();
@@ -248,7 +241,7 @@ namespace Nextension
             }
 #endif
             int clearCount = 0;
-            foreach (var v in runningCoroutines.Values)
+            foreach (var v in _runningCoroutines.Values)
             {
                 var arr = v.ToArray();
                 foreach (var d in arr)

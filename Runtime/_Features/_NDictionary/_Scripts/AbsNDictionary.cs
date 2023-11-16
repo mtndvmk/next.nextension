@@ -15,7 +15,7 @@ namespace Nextension
     public abstract class AbsNDictionary<K, V> : NDictionary
     {
         [Serializable]
-        internal class DItem
+        internal struct DItem
         {
             public K key;
             public V value;
@@ -24,7 +24,7 @@ namespace Nextension
                 this.key = key;
                 this.value = value;
             }
-            internal (K key, V value) asTuple()
+            internal readonly (K key, V value) asTuple()
             {
                 return (key, value);
             }
@@ -39,7 +39,7 @@ namespace Nextension
         public Dictionary<K, V> toDictionary()
         {
             var dict = new Dictionary<K, V>();
-            foreach (var i in enumerateDItems())
+            foreach (var i in asSpan())
             {
                 dict.TryAdd(i.key, i.value);
             }
@@ -50,7 +50,7 @@ namespace Nextension
         public sealed override Type ValueType => typeof(V);
         public override bool isHasInvalidKeys()
         {
-            var items = enumerateDItems();
+            var items = asSpan();
             HashSet<K> existKeys = new();
             foreach (var item in items)
             {
@@ -76,24 +76,20 @@ namespace Nextension
         }
         public override void removeInvalidItems()
         {
-            HashSet<K> existKeys = new HashSet<K>();
-            var items = enumerateDItems().ToArray();
+            HashSet<K> existKeys = new();
+            var items = asSpan().ToArray();
             for (int i = items.Length - 1; i >= 0; i--)
             {
                 var k = items[i].key;
                 if (k == null || k.Equals(null))
                 {
-                    removeDItemAt(i);
+                    removeDItemAtSwapBack(i);
                 }
                 else
                 {
-                    if (existKeys.Contains(k))
+                    if (!existKeys.Add(k))
                     {
-                        removeDItemAt(i);
-                    }
-                    else
-                    {
-                        existKeys.Add(k);
+                        removeDItemAtSwapBack(i);
                     }
                 }
             }
@@ -137,7 +133,7 @@ namespace Nextension
 
         public virtual bool containValue(V value)
         {
-            foreach (var item in enumerateDItems())
+            foreach (var item in asSpan())
             {
                 if (item.value.equals(value))
                 {
@@ -148,7 +144,7 @@ namespace Nextension
         }
         public virtual bool containKey(K key)
         {
-            foreach (var item in enumerateDItems())
+            foreach (var item in asSpan())
             {
                 if (item.key.equals(key))
                 {
@@ -161,6 +157,7 @@ namespace Nextension
         public abstract void set(K key, V value);
         public abstract V get(K key);
         internal abstract IEnumerable<DItem> enumerateDItems();
-        protected abstract void removeDItemAt(int index);
+        internal abstract Span<DItem> asSpan();
+        protected abstract void removeDItemAtSwapBack(int index);
     }
 }

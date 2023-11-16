@@ -7,5 +7,6 @@ namespace Nextension.UI
         void onButtonClick() { }
         void onButtonEnter() { }
         void onButtonExit() { }
+        void onInteractableChanged(bool isInteractable) { }
     }
 }

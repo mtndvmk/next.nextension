@@ -118,14 +118,20 @@ namespace Nextension
         {
             InternalCheck.checkEditorMode();
             _stopwatch = Stopwatch.StartNew();
+            findStaticEvents();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void createInternalObject()
+        {
             var go = new GameObject("[NUpdater]");
             go.AddComponent<InternalObject>();
             Object.DontDestroyOnLoad(go);
 #if UNITY_EDITOR
             go.hideFlags = HideFlags.HideAndDontSave | HideFlags.HideInInspector;
 #endif
-            findStaticEvents();
         }
+
         private static void findStaticEvents()
         {
             var types = NUtils.getCustomTypes();

@@ -117,7 +117,7 @@ namespace Nextension
             {
                 return;
             }
-            foreach (var dependedOperation in _dependedOperations)
+            foreach (var dependedOperation in _dependedOperations.asSpan())
             {
                 dependedOperation.innerFinalize(ErrorException);
             }
@@ -171,7 +171,7 @@ namespace Nextension
             {
                 return;
             }
-            foreach (var dependedOperation in _dependedOperations)
+            foreach (var dependedOperation in _dependedOperations.asSpan())
             {
                 if (dependedOperation is NProgressOperation)
                 {

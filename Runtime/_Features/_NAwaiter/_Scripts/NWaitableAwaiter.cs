@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension
@@ -45,6 +46,7 @@ namespace Nextension
 #endif
             NAwaiterLoop.addAwaitable(handle);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void cancel()
         {
             handle?.cancel();
@@ -52,12 +54,12 @@ namespace Nextension
     }
     public sealed class NWaitableAwaiter : AbsNWaitableAwaiter, IPoolable
     {
-        [StartupMethod]
-        private static void init()
+        [EditorQuittingMethod]
+        private static void clearPool()
         {
-            _pool = new NPool<NWaitableAwaiter>();
+            _pool?.clear();
         }
-        private static NPool<NWaitableAwaiter> _pool;
+        private static NPool<NWaitableAwaiter> _pool = new NPool<NWaitableAwaiter>();
 
         public static NWaitableAwaiter create(IWaitable waitable)
         {
@@ -89,20 +91,23 @@ namespace Nextension
             return awaiter;
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override void cancel()
         {
             base.cancel();
             releaseToPool();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override void onInnerCompleted()
         {
             releaseToPool();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void IPoolable.onDespawned()
         {
             reset();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void releaseToPool()
         {
 #if UNITY_EDITOR
@@ -124,6 +129,7 @@ namespace Nextension
             this.waitable = waitable;
             setupFrom(waitable);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public new T GetResult() => waitable.Result;
     }
 }

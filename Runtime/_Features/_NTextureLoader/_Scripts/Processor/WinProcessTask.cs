@@ -106,7 +106,7 @@ namespace Nextension.TextureLoader
                         bitmapData = resizedBitmap.LockBits(new Rectangle(0, 0, resizeWidth, resizeHeight), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
                         outData = new byte[resizeWidth * resizedBitmap.Height * 3];
                         Marshal.Copy(bitmapData.Scan0, outData, 0, outData.Length);
-                        outData = outData.Reverse().ToArray();
+                        Array.Reverse(outData);
                     }
                     else
                     {

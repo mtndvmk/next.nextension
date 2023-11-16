@@ -27,7 +27,7 @@ namespace Nextension.Tween
 
         private List<Func<bool>> cancelWhenFuncList;
 
-        public async NWaitable wait()
+        public async NWaitable waitFinalized()
         {
             await new NWaitUntil(() => isFinalized);
         }
@@ -199,7 +199,7 @@ namespace Nextension.Tween
             {
                 return false;
             }
-            foreach (var condition in cancelWhenFuncList)
+            foreach (var condition in cancelWhenFuncList.asSpan())
             {
                 if (condition())
                 {
@@ -225,6 +225,22 @@ namespace Nextension.Tween
                 scheduledTime = Time.time;
                 NTweenManager.schedule(this);
             }
+        }
+        internal void resetState()
+        {
+            Status = RunState.None;
+            scheduledTime = 0;
+            onResetState();
+        }
+        public void stopAndResetState()
+        {
+            cancel();
+            resetState();
+        }
+        public void restart()
+        {
+            stopAndResetState();
+            run();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -305,14 +321,16 @@ namespace Nextension.Tween
         protected virtual void onInnerStarted() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onInnerCanceled() { }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual void onResetState() { }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal virtual void forceComplete() { }
     }
     public abstract class GenericNTweener<T> : NTweener where T : NTweener
     {
         private readonly T _tweener;
-        
+
         internal float delayTime;
         internal float startTime => scheduledTime + delayTime;
 
@@ -402,6 +420,14 @@ namespace Nextension.Tween
             foreach (var tweener in _tweeners)
             {
                 tweener.cancel();
+            }
+        }
+        protected override void onResetState()
+        {
+            base.onResetState();
+            foreach (var tweener in _tweeners)
+            {
+                tweener.resetState();
             }
         }
 

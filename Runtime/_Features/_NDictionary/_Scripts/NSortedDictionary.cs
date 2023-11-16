@@ -104,7 +104,7 @@ namespace Nextension
             }
             else
             {
-                items[index].value = value;
+                items[index] = new DItem(key, value);
             }
         }
         public override V get(K key)
@@ -142,7 +142,12 @@ namespace Nextension
             return items.asEnumerable();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void removeDItemAt(int index)
+        internal override Span<DItem> asSpan()
+        {
+            return items.asSpan();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected override void removeDItemAtSwapBack(int index)
         {
             items.removeAt(index);
         }

@@ -9,12 +9,6 @@ namespace Nextension.NEditor
 {
     public static class NEditorHelper
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BindingFlags getAllBindingFlags()
-        {
-            return (BindingFlags)(-1);
-        }
-
         public static object getValue(SerializedProperty property)
         {
             var fieldInfo = getFieldInfo(property, out var value);
@@ -53,12 +47,12 @@ namespace Nextension.NEditor
                         var index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
 
                         var qType = qObject.GetType();
-                        fieldInfo = qType.getField(elementName, getAllBindingFlags());
+                        fieldInfo = qType.getField(elementName, NUtils.getAllBindingFlags());
                         qObject = (fieldInfo.GetValue(qObject) as IList)[index];
                     }
                     else
                     {
-                        fieldInfo = qObject.GetType().getField(element, getAllBindingFlags());
+                        fieldInfo = qObject.GetType().getField(element, NUtils.getAllBindingFlags());
                         qObject = fieldInfo.GetValue(qObject);
                     }
                 }

@@ -1134,6 +1134,32 @@ namespace Nextension
             }
             throw new Exception("Error to parse html color");
         }
+        /// <summary>
+        /// hex format: #RRGGBB, #RRGGBBAA, RRGGBB, RRGGBBAA
+        /// </summary>
+        /// <param name="hex"></param>
+        /// <returns></returns>
+        public static Color hexColor(this string hex)
+        {
+            int startIndex;
+            if (hex[0] == '#')
+            {
+                startIndex = 1;
+            }
+            else
+            {
+                startIndex = 0;
+            }
+            var binary = hexToBytes(hex, startIndex);
+            if (binary.Length == 3)
+            {
+                return new Color(binary[0] / 255f, binary[1] / 255f, binary[2] / 255f);
+            }
+            else
+            {
+                return new Color(binary[0] / 255f, binary[1] / 255f, binary[2] / 255f, binary[3] / 255f);
+            }
+        }
         public static byte[] to4Bytes(this Color color)
         {
             return NConverter.getBytes(color.toInt32());
@@ -1207,7 +1233,7 @@ namespace Nextension
         {
             int inDataLength = inData.Length;
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
-            StringBuilder sb = new (hexLength);
+            StringBuilder sb = new(hexLength);
             if (include0xPrefix)
             {
                 sb.Append("0x");
@@ -1226,20 +1252,20 @@ namespace Nextension
         /// <param name="hex"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static byte[] hexToBytes(string hex)
+        public static byte[] hexToBytes(string hex, int startIndex = 0)
         {
-            if (hex.Length >> 1 != 0)
+            if (((hex.Length - startIndex) & 1) != 0)
             {
                 throw new Exception("Invalid hex: " + hex);
             }
             ReadOnlySpan<char> hexSpan;
-            if (hex[1] == 'x' || hex[1] == 'X')
+            if (hex[startIndex + 1] == 'x' || hex[startIndex + 1] == 'X')
             {
-                hexSpan = hex.AsSpan(2);
+                hexSpan = hex.AsSpan(startIndex + 2);
             }
             else
             {
-                hexSpan = hex.AsSpan();
+                hexSpan = hex.AsSpan(startIndex);
             }
             if (_hexTable == null)
             {
@@ -1495,6 +1521,12 @@ namespace Nextension
             self.RemoveAtSwapBack(index);
             return item;
         }
+        public static T takeAndRemoveFirst<T>(this HashSet<T> self)
+        {
+            var item = self.First();
+            self.Remove(item);
+            return item;
+        }
         public static T[] add<T>(this T[] arrays, params T[] items)
         {
             var srcLength = arrays.Length;
@@ -1571,6 +1603,10 @@ namespace Nextension
             T[] b = new T[count];
             Array.Copy(src, startIndex, b, 0, count);
             return b;
+        }
+        public static void clear<T>(this Array array)
+        {
+            Array.Clear(array, 0, array.Length);
         }
         #endregion
 
@@ -2110,13 +2146,18 @@ namespace Nextension
         {
             return BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static BindingFlags getAllBindingFlags()
+        {
+            return (BindingFlags)(-1);
+        }
         public static bool isInherited(this Type type, Type parent)
         {
             return type.IsSubclassOf(parent) || type == parent;
         }
         public static object createInstance(this Type type)
         {
-            var constructors = type.GetConstructors();
+            var constructors = type.GetConstructors(getAllBindingFlags());
             if (constructors.Length > 0)
             {
                 var c = constructors[0];
@@ -2175,7 +2216,7 @@ namespace Nextension
 
                     typeList.AddRange(assembly.GetTypes());
                 }
-                _customTypeCached = new(typeList.ToArray(), 10, () =>
+                _customTypeCached = new(typeList.ToArray(), 5, () =>
                 {
                     _customTypeCached = null;
                 });

@@ -17,7 +17,7 @@ namespace Nextension
         private void loadNonPreloadScriptablePaths()
         {
             _nonPreloadScriptablePaths = new(_nonPreloadScriptables.Count);
-            foreach (var nonPreloadScriptable in _nonPreloadScriptables)
+            foreach (var nonPreloadScriptable in _nonPreloadScriptables.asSpan())
             {
                 _nonPreloadScriptablePaths[nonPreloadScriptable.getScriptableType()] = nonPreloadScriptable.PathInResource;
             }
@@ -26,7 +26,7 @@ namespace Nextension
         internal T get<T>() where T : ScriptableObject
         {
             var typeOfT = typeof(T);
-            foreach (var scriptableObject in _preloadScriptables)
+            foreach (var scriptableObject in _preloadScriptables.asSpan())
             {
                 if (scriptableObject.GetType() == typeOfT)
                 {

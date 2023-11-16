@@ -61,16 +61,13 @@ namespace Nextension.Tween
             {
                 var chunkId = chunkIds[i];
                 var chunk = _chunks[chunkId];
-                if (chunk.isEmpty())
+                if (chunk.isUnused())
                 {
                     if (chunksCount > MIN_COUNT_OF_CHUNK)
                     {
-                        if (chunk.isUnused())
-                        {
-                            chunk.dispose();
-                            _chunks.Remove(chunkId);
-                            chunksCount--;
-                        }
+                        chunk.dispose();
+                        _chunks.Remove(chunkId);
+                        chunksCount--;
                     }
                     continue;
                 }

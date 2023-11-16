@@ -119,7 +119,11 @@ namespace Nextension
             {
                 return _list[index];
             }
-            return default;
+            throw new KeyNotFoundException();
+        }
+        public bool bContains(TCompareKey searchKey)
+        {
+            return bFindIndex(searchKey) >= 0;
         }
         public int bFindIndex(TCompareKey searchKey)
         {
@@ -514,6 +518,10 @@ namespace Nextension
             _list.Sort(exeCompareValue);
         }
 
+        /// <summary>
+        /// Use asSpan() to better performance
+        /// </summary>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<TValue> asEnumerable()
         {

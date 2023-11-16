@@ -16,7 +16,7 @@ namespace Nextension
         private static List<NWaitableHandle> _updateWaitableHandles;
         private static List<NWaitableHandle> _lateUpdateWaitableHandles;
         private static List<NWaitableHandle> _endOfFrameWaitableHandles;
-        
+
         public static void addAwaitable(NWaitableHandle waitable)
         {
             switch (waitable.loopType)
@@ -62,7 +62,7 @@ namespace Nextension
                 }
             }
         }
-        
+
         [LoopMethod(NLoopType.Update)]
         private static void onUpdate()
         {

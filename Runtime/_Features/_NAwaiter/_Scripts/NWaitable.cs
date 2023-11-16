@@ -209,6 +209,12 @@ namespace Nextension
     {
         private static NWaitable _completedWaitable;
         public static NWaitable CompletedWaitable => _completedWaitable ??= new NWaitable() { Status = RunState.Completed };
+        public static NWaitable run(Action action)
+        {
+            var waitable = new NWaitMainThread().startWaitable();
+            waitable.addCompletedEvent(action);
+            return waitable;
+        }
     }
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder<>))]
     public class NWaitable<T> : AbsNWaitable

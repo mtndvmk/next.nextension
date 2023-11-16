@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Nextension
@@ -12,51 +14,51 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         void onDestroyed() { }
     }
-    public class NPool<T> where T : class, IPoolable, new()
+    public class NPool<T> where T : class, IPoolable
     {
-        private readonly NBListCompareHashCode<T> _pool;
+        private readonly HashSet<T> _pool;
+        private int _countAll;
 
-        public int CountAll { get; private set; }
+        [NonSerialized] public uint maxPoolItemCount;
+
+        public int CountAll => _countAll;
         public int PoolCount => _pool.Count;
-        public uint MaxPoolItemCount { get; set; }
+        
         public NPool()
         {
-            _pool = new NBListCompareHashCode<T>();
-            MaxPoolItemCount = IPoolable.DEFAULT_MAX_POOL_ITEM_COUNT;
+            _pool = new();
+            maxPoolItemCount = IPoolable.DEFAULT_MAX_POOL_ITEM_COUNT;
         }
         public T get()
         {
             T item;
             if (_pool.Count > 0)
             {
-                item = _pool.takeAndRemoveLast();
+                item = _pool.takeAndRemoveFirst();
             }
             else
             {
-                item = new();
-                CountAll++;
+                item = NUtils.createInstance<T>();
+                _countAll++;
             }
             item.onSpawned();
             return item;
         }
         public bool release(T item)
         {
-            var isExist = _pool.bFindInsertIndex(item, out var insertIndex);
-            if (isExist)
-            {
-                return false;
-            }
-
-            if (_pool.Count >= MaxPoolItemCount)
+            if (_pool.Count >= maxPoolItemCount)
             {
                 item.onDestroyed();
                 return true;
             }
             else
             {
-                item.onDespawned();
-                _pool.insert(insertIndex, item);
-                return true;
+                if (_pool.Add(item))
+                {
+                    item.onDespawned();
+                    return true;
+                }
+                return false;
             }
         }
         public T getAndRelease(IWaitable releaseWaitable)
@@ -78,12 +80,12 @@ namespace Nextension
         {
             if (_pool.Count > 0)
             {
-                CountAll -= _pool.Count;
-                foreach (var item in _pool.asEnumerable())
+                _countAll -= _pool.Count;
+                foreach (var item in _pool)
                 {
                     item.onDestroyed();
                 }
-                _pool.clear();
+                _pool.Clear();
             }
         }
     }

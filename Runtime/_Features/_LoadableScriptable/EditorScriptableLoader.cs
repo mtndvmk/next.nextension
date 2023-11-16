@@ -53,7 +53,7 @@ namespace Nextension.NEditor
             {
                 var container = getOrCreateEditorContainer();
                 bool isAdded = false;
-                foreach (var scriptableObject in validScriptables)
+                foreach (var scriptableObject in validScriptables.asSpan())
                 {
                     isAdded |= container.add(scriptableObject);
                 }
@@ -81,7 +81,7 @@ namespace Nextension.NEditor
             {
                 var container = getOrCreateEditorContainer();
                 bool isAdded = false;
-                foreach (var scriptableObject in validScriptables)
+                foreach (var scriptableObject in validScriptables.asSpan())
                 {
                     isAdded |= container.add(scriptableObject);
                 }

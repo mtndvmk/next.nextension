@@ -31,6 +31,20 @@ namespace Nextension.UI
                 if (_isInteractable != value)
                 {
                     _isInteractable = value;
+                    if (_listeners != null)
+                    {
+                        foreach (var listener in _listeners)
+                        {
+                            try
+                            {
+                                listener?.onInteractableChanged(_isInteractable);
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogException(e);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -136,7 +150,7 @@ namespace Nextension.UI
                 return;
             }
 
-            if (_listeners != null) 
+            if (_listeners != null)
             {
                 foreach (var listener in _listeners)
                 {
@@ -202,6 +216,10 @@ namespace Nextension.UI
                 }
             }
             invokeEvent(onButtonClickEvent);
+        }
+        public void setInteractableWithoutNotify(bool isInteractable)
+        {
+            _isInteractable = isInteractable;
         }
     }
 }
