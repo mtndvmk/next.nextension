@@ -80,13 +80,38 @@ namespace Nextension.NEditor
             if (validScriptables.Count > 0)
             {
                 var container = getOrCreateEditorContainer();
-                bool isAdded = false;
+                int addCount = 0;
                 foreach (var scriptableObject in validScriptables.asSpan())
                 {
-                    isAdded |= container.add(scriptableObject);
+                    if (container.add(scriptableObject))
+                    {
+                        Debug.Log($"Added [{scriptableObject}] to LoadableScriptableContainer", scriptableObject);
+                        addCount++;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[{scriptableObject}] is added or is not LoadableScriptable", scriptableObject);
+                    }
+                   
                 }
-                if (isAdded) container.reload();
+
+                Debug.Log($"Added {addCount} LoadableScriptables", container);
+                if (addCount > 0) container.reload();
             }
+        }
+        [MenuItem("Assets/Nextension/Add to LoadableScriptableContainer", true)]
+        private static bool validateManualImport()
+        {
+            if (Selection.objects == null || Selection.objects.Length == 0) return false;
+            List<ScriptableObject> validScriptables = new List<ScriptableObject>();
+            foreach (var item in Selection.objects)
+            {
+                if (ScriptableLoader.isLoadable(item))
+                {
+                    validScriptables.Add(item as ScriptableObject);
+                }
+            }
+            return validScriptables.Count > 0;
         }
 
         public class OnLoadOrRecompiled : IErrorCheckable, IAssetImportedCallback

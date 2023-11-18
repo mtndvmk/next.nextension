@@ -1576,18 +1576,18 @@ namespace Nextension
                     totalLength += arrays[i].Length;
                 }
             }
-            var data = new T[totalLength];
+            var result = new T[totalLength];
             int pointer = 0;
             for (int i = 0; i < arrLength; ++i)
             {
                 var item = arrays[i];
                 if (item != null)
                 {
-                    Array.Copy(item, 0, data, pointer, item.Length);
+                    Array.Copy(item, 0, result, pointer, item.Length);
                     pointer += item.Length;
                 }
             }
-            return data;
+            return result;
         }
         public static T[] mergeWith<T>(this T[] a, T[] b)
         {
@@ -1596,13 +1596,17 @@ namespace Nextension
             var result = new T[aLength + bLength];
             Array.Copy(a, 0, result, 0, aLength);
             Array.Copy(b, 0, result, aLength, bLength);
-            return a;
+            return result;
         }
         public static T[] getBlock<T>(T[] src, int startIndex, int count)
         {
-            T[] b = new T[count];
-            Array.Copy(src, startIndex, b, 0, count);
-            return b;
+            T[] result = new T[count];
+            Array.Copy(src, startIndex, result, 0, count);
+            return result;
+        }
+        public static T[] getBlockToEnd<T>(T[] src, int startIndex)
+        {
+            return getBlock(src, startIndex, src.Length - startIndex);
         }
         public static void clear<T>(this Array array)
         {

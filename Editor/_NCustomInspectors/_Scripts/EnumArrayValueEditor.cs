@@ -9,10 +9,17 @@ namespace Nextension.NEditor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+
+#if UNITY_2022_3_OR_NEWER
+            EditorGUI.indentLevel--;
+#endif
             Rect contentPosition = position;
             var headerSize = position;
             headerSize.height = EditorGUIUtility.singleLineHeight;
             property.isExpanded = EditorGUI.Foldout(headerSize, property.isExpanded, label, true);
+#if UNITY_2022_3_OR_NEWER
+            EditorGUI.indentLevel++;
+#endif
             EditorGUI.indentLevel++;
             var arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
             if (property.isExpanded)
