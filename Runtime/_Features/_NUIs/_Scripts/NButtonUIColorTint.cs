@@ -4,8 +4,8 @@ using UnityEngine.UI;
 
 namespace Nextension.UI
 {
-    [RequireComponent(typeof(NButton)), DisallowMultipleComponent]
-    public class NButtonColorTint : MonoBehaviour, INButtonListener
+    [DisallowMultipleComponent]
+    public class NButtonUIColorTint : MonoBehaviour, INButtonListener
     {
         [SerializeField] private Graphic _target;
         [SerializeField] private Color _normalColor = Color.white;
@@ -68,7 +68,7 @@ namespace Nextension.UI
             }
             else
             {
-                _colorTweener = NTween.fromTo<Color>(_target.color, color, (resultColor) =>
+                _colorTweener = NTween.fromTo(_target.color, color, (resultColor) =>
                 {
                     _target.color = resultColor;
                 }, _duration);

@@ -28,7 +28,7 @@ namespace Nextension.Tween
         protected override void onInnerCanceled()
         {
             base.onInnerCanceled();
-            if (isScheduled)
+            if (chunkIndex.chunkId != 0)
             {
                 NTweenManager.cancelFromTweener(this);
             }

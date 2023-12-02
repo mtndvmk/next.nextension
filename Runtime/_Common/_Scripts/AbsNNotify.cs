@@ -39,7 +39,7 @@ namespace Nextension
         }
 
         protected abstract void onNotified();
-        protected void notify()
+        public void notify()
         {
             if (_NotificationType == NotificationType.IMMEDIATE)
             {

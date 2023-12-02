@@ -84,7 +84,11 @@ namespace Nextension
 
         public void beginGetInstance()
         {
-            _activatedCount = 0;
+            beginGetInstanceAt(0);
+        }
+        public void beginGetInstanceAt(int index)
+        {
+            _activatedCount = index;
         }
         public void endGetInstance()
         {

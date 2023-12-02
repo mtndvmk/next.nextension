@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -953,7 +952,7 @@ namespace Nextension
         public static bool hasChild(this Transform self, Transform other)
         {
             var children = self.GetComponentsInChildren<Transform>();
-            return children.Contains(other);
+            return children.contains(other);
         }
         public static Vector3 getBotomLeft(this RectTransform self, bool isWorldSpace = true)
         {
@@ -989,7 +988,6 @@ namespace Nextension
             if (isWorldSpace)
             {
                 self.GetWorldCorners(poses);
-                Debug.Log(poses[2]);
                 return poses[2];
             }
             else
@@ -1198,13 +1196,13 @@ namespace Nextension
         #endregion
 
         #region String
-        public static string formatToMMSS(int totalSeconds)
+        public static string formatToMMSS(this int totalSeconds)
         {
             var m = totalSeconds / 60;
             var s = totalSeconds % 60;
             return $"{m:0#}:{s:0#}";
         }
-        public static bool isHex(in string str)
+        public static bool isHex(this string str)
         {
             int offset;
             var span = str.AsSpan();
@@ -1229,7 +1227,7 @@ namespace Nextension
             }
             return true;
         }
-        public static string bytesToHex(byte[] inData, bool include0xPrefix = false)
+        public static string bytesToHex(this byte[] inData, bool include0xPrefix = false)
         {
             int inDataLength = inData.Length;
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
@@ -1252,7 +1250,7 @@ namespace Nextension
         /// <param name="hex"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static byte[] hexToBytes(string hex, int startIndex = 0)
+        public static byte[] hexToBytes(this string hex, int startIndex = 0)
         {
             if (((hex.Length - startIndex) & 1) != 0)
             {
@@ -1294,7 +1292,7 @@ namespace Nextension
 
             return bytes;
         }
-        public static bool isEqualHex(string hex0, string hex1)
+        public static bool isEqualHex(this string hex0, string hex1)
         {
             ReadOnlySpan<char> hexSpan0;
             ReadOnlySpan<char> hexSpan1;
@@ -1317,7 +1315,7 @@ namespace Nextension
             }
             return hexSpan0.Equals(hexSpan1, StringComparison.OrdinalIgnoreCase);
         }
-        public static string computeMD5(string s)
+        public static string computeMD5(this string s)
         {
             using var provider = System.Security.Cryptography.MD5.Create();
             var hash = provider.ComputeHash(NConverter.getBytes(s));
@@ -1327,9 +1325,17 @@ namespace Nextension
 
         #region Collection
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> asSpan<T>(this List<T> list)
+        public static Span<T> asSpan<T>(this List<T> self)
         {
-            return list.AsSpan();
+            return self.AsSpan();
+        }
+        public static NPArray<T> toNPArray<T>(this IEnumerable<T> colletion)
+        {
+            return NPArray<T>.get(colletion);
+        }
+        public static NPHSet<T> toNPHSet<T>(this IEnumerable<T> colletion)
+        {
+            return NPHSet<T>.get(colletion);
         }
         public static void add<T>(this ICollection<T> self, T item, bool ignoreIfExist = true)
         {
@@ -1366,6 +1372,15 @@ namespace Nextension
             self.Add(item);
             self.Sort(comparison);
         }
+        public static T first<T>(this HashSet<T> self)
+        {
+            var enumerator = self.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+                return enumerator.Current;
+            }
+            throw new Exception("HashSet is empty");
+        }
 
         public static bool isSameItem<T>(this T[] a, T[] b) where T : IEquatable<T>
         {
@@ -1394,6 +1409,17 @@ namespace Nextension
             }
 
             return a.asSpan().SequenceEqual(b.asSpan());
+        }
+        public static bool contains<T>(this T[] self, T value)
+        {
+            for (int i = self.Length - 1; i >= 0; i--)
+            {
+                if (equals(self[i], value))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
         public static bool contains<T>(this ICollection<T> self, ICollection<T> b)
         {
@@ -1431,17 +1457,17 @@ namespace Nextension
                 self.RemoveAt(indices[i]);
             }
         }
-        public static void removeLast<T>(this List<T> list)
+        public static void removeLast<T>(this List<T> self)
         {
-            list.RemoveAt(list.Count - 1);
+            self.RemoveAt(self.Count - 1);
         }
-        public static void removeLast(this IBList list)
+        public static void removeLast(this IBList self)
         {
-            list.removeAt(list.Count - 1);
+            self.removeAt(self.Count - 1);
         }
-        public static void removeLast<T>(this NativeList<T> list) where T : unmanaged
+        public static void removeLast<T>(this NativeList<T> self) where T : unmanaged
         {
-            list.RemoveAt(list.Length - 1);
+            self.RemoveAt(self.Length - 1);
         }
         public static T takeAndRemoveAt<T>(this List<T> self, int index)
         {
@@ -1523,28 +1549,28 @@ namespace Nextension
         }
         public static T takeAndRemoveFirst<T>(this HashSet<T> self)
         {
-            var item = self.First();
+            var item = self.first();
             self.Remove(item);
             return item;
         }
-        public static T[] add<T>(this T[] arrays, params T[] items)
+        public static T[] add<T>(this T[] self, params T[] items)
         {
-            var srcLength = arrays.Length;
+            var srcLength = self.Length;
             var itemsLength = items.Length;
             var result = new T[srcLength + itemsLength];
-            Array.Copy(arrays, 0, result, 0, srcLength);
+            Array.Copy(self, 0, result, 0, srcLength);
             Array.Copy(items, 0, result, srcLength, itemsLength);
             return result;
         }
-        public static T[] createOrAdd<T>(this T[] arrays, params T[] items)
+        public static T[] createOrAdd<T>(this T[] self, params T[] items)
         {
-            if (arrays == null)
+            if (self == null)
             {
                 return items;
             }
             else
             {
-                return add(arrays, items);
+                return add(self, items);
             }
         }
         public static T[] merge<T>(params T[][] arrays)
@@ -1608,76 +1634,126 @@ namespace Nextension
         {
             return getBlock(src, startIndex, src.Length - startIndex);
         }
-        public static void clear<T>(this Array array)
+        public static void clear(this Array self)
         {
-            Array.Clear(array, 0, array.Length);
+            Array.Clear(self, 0, self.Length);
+        }
+        public static T[] clone<T>(this T[] self)
+        {
+            return clone(self, 0, self.Length);
+        }
+        public static T[] clone<T>(this T[] self, int startIndex, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(self, startIndex, result, 0, length);
+            return result;
         }
         #endregion
 
         #region Random
-        public static Unity.Mathematics.Random newRandom(uint seed = 0)
+        private static Unity.Mathematics.Random s_random = initRandom();
+        private static Unity.Mathematics.Random initRandom()
+        {
+            uint seed = NConverter.bitConvert<int, uint>(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().GetHashCode()) ^ 0x6E624EB7u;
+            if (seed == 0) new Unity.Mathematics.Random(0x6E624EB7u);
+            return new Unity.Mathematics.Random(seed);
+        }
+        public static Unity.Mathematics.Random getRandom(uint seed = 0)
         {
             if (seed == 0)
             {
-                return new Unity.Mathematics.Random(NConverter.bitConvert<float, uint>(Time.realtimeSinceStartup) ^ 0x6E624EB7u);
+                s_random.NextUInt();
+                return s_random;
             }
             return new Unity.Mathematics.Random(seed);
         }
-        public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers)
+        public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers, uint seed = 0)
         {
             if (exclusiveNumbers == null || exclusiveNumbers.Count == 0)
             {
-                return newRandom().NextInt(min, max);
+                return getRandom(seed).NextInt(min, max);
             }
-            return Enumerable.Range(min, max).Except(exclusiveNumbers).ToArray().randItem();
+
+            Span<int> nums = stackalloc int[max - min];
+            int count = 0;
+            for (int i = min; i < max; i++)
+            {
+                if (!exclusiveNumbers.Contains(i))
+                {
+                    nums[count++] = i;
+                }
+            }
+            return nums[getRandom(seed).NextInt(count)];
         }
         /// <summary>
         /// return random int array
         /// </summary>
-        public static int[] createRandomIntArray(int arrayLength, int fillCount)
+        public static int[] createRandomIntArray(int arrayLength, int fillCount, uint seed = 0)
         {
             int[] array = new int[arrayLength];
             for (int i = 1; i < fillCount; i++)
             {
                 array[i] = i;
             }
-            array.shuffle(fillCount);
+            array.shuffle(fillCount, seed);
             return array;
         }
 
-        public static int[] getRandomIndices(int maxIndex, int count, int startIndex = 0)
+        public static int[] getRandomIndices(int maxIndex, int count, int minIndex = 0, uint seed = 0)
         {
-            var arr = Enumerable.Range(startIndex, maxIndex).Take(count).ToArray();
-            arr.shuffle();
-            return arr;
+            Span<int> nums = stackalloc int[maxIndex - minIndex];
+            int itemCount = 0;
+            for (int i = minIndex; i < maxIndex; i++)
+            {
+                nums[itemCount++] = i;
+            }
+            shuffle(nums, seed);
+            return nums[..(itemCount < count ? itemCount : count)].ToArray();
         }
-        public static T randItem<T>(this IList<T> list, out int randIndex)
+        public static T randItem<T>(this IList<T> list, out int randIndex, uint seed = 0)
         {
             if (list.Count == 0)
             {
                 throw new Exception("List is empty");
             }
-            randIndex = newRandom().NextInt(list.Count);
+            randIndex = getRandom(seed).NextInt(list.Count);
             return list[randIndex];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T randItem<T>(this IList<T> list)
+        public static T randItem<T>(this IList<T> list, uint seed = 0)
         {
-            return list.randItem(out _);
+            return list.randItem(out _, seed);
+        }
+        /// <summary>
+        /// get a random item in contain list, return default if self is empty
+        /// </summary>
+        /// <typeparam name="T">is a built-in type, struct or class</typeparam>
+        /// <param name="self">is contain list</param>
+        /// <param name="index">index of returned item</param>
+        /// <param name="exclusiveIndices">exclude indices if you didn't want it is returned</param>
+        /// <returns></returns>
+        public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices, uint seed = 0)
+        {
+            if (self.Count == 0)
+            {
+                throw new Exception("List is empty");
+            }
+            index = randInt32(0, self.Count, exclusiveIndices, seed);
+            return self[index];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list)
+        public static void shuffle<T>(this IList<T> list, uint seed = 0)
         {
-            shuffle(list, list.Count);
+            shuffle(list, list.Count, seed);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, int count)
+        public static void shuffle<T>(this IList<T> list, int count, uint seed = 0)
         {
-            shuffle(list, 0, count);
+            shuffle(list, 0, count, seed);
         }
-        public static void shuffle<T>(this IList<T> list, int startIndex, int count)
+        public static void shuffle<T>(this IList<T> list, int startIndex, int count, uint seed = 0)
         {
-            var rnd = newRandom();
+            var rnd = getRandom(seed);
             int n = startIndex + count;
 
             if (n > list.Count) n = list.Count;
@@ -1689,23 +1765,15 @@ namespace Nextension
                 (list[n], list[k]) = (list[k], list[n]);
             }
         }
-
-        /// <summary>
-        /// get a random item in contain list, return default if self is empty
-        /// </summary>
-        /// <typeparam name="T">is a built-in type, struct or class</typeparam>
-        /// <param name="self">is contain list</param>
-        /// <param name="index">index of returned item</param>
-        /// <param name="exclusiveIndices">exclude indices if you didn't want it is returned</param>
-        /// <returns></returns>
-        public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices = null)
+        public static void shuffle<T>(Span<T> list, uint seed = 0)
         {
-            if (self.Count == 0)
+            var rnd = getRandom(seed);
+            int n = list.Length;
+            while (n > 1)
             {
-                throw new Exception("List is empty");
+                int k = rnd.NextInt(n--);
+                (list[n], list[k]) = (list[k], list[n]);
             }
-            index = randInt32(0, self.Count, exclusiveIndices);
-            return self[index];
         }
         #endregion
 
@@ -2304,7 +2372,7 @@ namespace Nextension
         public static PlayerLoopSystem addPlayerLoopSystem<TLoopSystemType>(PlayerLoopSystem defaultPlayerLoop, PlayerLoopSystem sys) where TLoopSystemType : struct
         {
             var loopSystemType = typeof(TLoopSystemType);
-            var subSystemList = defaultPlayerLoop.subSystemList.ToArray();
+            var subSystemList = defaultPlayerLoop.subSystemList.clone();
             bool added = false;
 
             for (int i = 0; i < subSystemList.Length; ++i)

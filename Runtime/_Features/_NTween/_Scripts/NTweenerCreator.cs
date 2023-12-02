@@ -13,9 +13,9 @@ namespace Nextension.Tween
             };
             return tweener;
         }
-        public static NRunnableTweener createTransformPunchTweener<T>(Transform target, T punchValue, float duration, TransformTweenType transformTweenType) where T : unmanaged
+        public static NRunnableTweener createTransformPunchTweener<T>(Transform target, T punchDestination, float duration, TransformTweenType transformTweenType) where T : unmanaged
         {
-            var tweener = new TransformPunchTween<T>.Tweener(target, punchValue, transformTweenType)
+            var tweener = new TransformPunchTween<T>.Tweener(target, punchDestination, transformTweenType)
             {
                 duration = duration,
             };
@@ -39,10 +39,10 @@ namespace Nextension.Tween
             };
             return tweener;
         }
-        public static NRunnableTweener createPunchValueTweener<T>(T origin, T punchValue, Action<T> onChanged, float duration) where T : unmanaged
+        public static NRunnableTweener createPunchValueTweener<T>(T origin, T punchDestination, Action<T> onChanged, float duration) where T : unmanaged
         {
             NRunnableTweener tweener;
-            tweener = new PunchValueTween<T>.Tweener(origin, punchValue, onChanged)
+            tweener = new PunchValueTween<T>.Tweener(origin, punchDestination, onChanged)
             {
                 duration = duration,
             };

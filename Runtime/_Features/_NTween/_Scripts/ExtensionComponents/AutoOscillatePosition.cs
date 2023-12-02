@@ -21,6 +21,23 @@ namespace Nextension
                 start();
             }
         }
+        private void OnDisable()
+        {
+            stop();
+        }
+
+        [ContextMenu("Caputure FromPosition")]
+        private void caputureFromPosition()
+        {
+            _fromPosition = _isLocalSpace ? transform.localPosition : transform.position;
+            NAssetUtils.setDirty(this);
+        }
+        [ContextMenu("Caputure ToPosition")]
+        private void caputureToPosition()
+        {
+            _toPosition = _isLocalSpace ? transform.localPosition : transform.position; 
+            NAssetUtils.setDirty(this);
+        }
 
         public void start()
         {

@@ -14,6 +14,7 @@ namespace Nextension.Tween
         private static Dictionary<uint, AbsTweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;
         private static bool _isInitialized;
+
         private static void initalize()
         {
             if (!_isInitialized)
@@ -180,25 +181,50 @@ namespace Nextension.Tween
                 getOrCreateRunner(tweener).getChunk(tweener.chunkIndex.chunkId).cancelTween(tweener.chunkIndex.maskIndex);
             }
         }
-        internal static void cancelFromControlledTweener(AbsCancelControlKey controlKey)
+        internal static void cancelFromUintControlKey(uint uintKey)
         {
             if (_isInitialized)
             {
-                _cancelControlManager.cancel(controlKey);
+                _cancelControlManager.cancel(CancelControlKey.getLongKey(uintKey));
             }
+        }
+        internal static void cancelFromObjectControlKey(UnityEngine.Object objectKey)
+        {
+            if (_isInitialized)
+            {
+                _cancelControlManager.cancel(CancelControlKey.getLongKey(objectKey));
+            }
+        }
+        internal static bool isInvalidKey(CancelControlKey controlKey)
+        {
+            if (_isInitialized)
+            {
+                _cancelControlManager.isInvalid(controlKey);
+            }
+            return false;
+        }
+        internal static CancelControlKey createKey(UnityEngine.Object objectKey)
+        {
+            initalize();
+            return _cancelControlManager.createKey(objectKey);
+        }
+        internal static CancelControlKey createKey(uint uintKey)
+        {
+            initalize();
+            return _cancelControlManager.createKey(uintKey);
         }
         internal static void addCancelControlledTweener(NTweener tweener)
         {
             if (_isInitialized)
             {
-                _cancelControlManager.addControlledTweener(tweener);
+                _cancelControlManager.addTweener(tweener);
             }
         }
         internal static void removeControlledTweener(NTweener tweener)
         {
             if (_isInitialized)
             {
-                _cancelControlManager.removeControlledTweener(tweener);
+                _cancelControlManager.removeTweener(tweener);
             }
         }
     }

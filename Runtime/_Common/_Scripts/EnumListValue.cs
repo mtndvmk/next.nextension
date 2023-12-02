@@ -90,7 +90,7 @@ namespace Nextension
         }
         public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
         {
-            foreach (var e in _enumValueList.asEnumerable())
+            foreach (var e in _enumValueList)
             {
                 yield return (e.enumType, e.value);
             }

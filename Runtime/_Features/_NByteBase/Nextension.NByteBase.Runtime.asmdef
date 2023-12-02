@@ -11,7 +11,7 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [
-        "ENABLE_NBYTEBASE"
+        "NNEXT_ENABLE_NBYTEBASE"
     ],
     "versionDefines": [],
     "noEngineReferences": false

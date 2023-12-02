@@ -11,7 +11,7 @@ namespace Nextension
         /// <summary>
         /// Release the game object to the pool if gameObject was spawned by the shared pool, otherwise destroy it
         /// </summary>
-        public static void releaseOrDestroy(GameObject gameObject)
+        public static void releaseOrDestroy(GameObject gameObject, bool invokeIPoolableEvent = false)
         {
             var origin = gameObject.GetComponent<OriginInstance>();
             if (origin == null)
@@ -26,7 +26,7 @@ namespace Nextension
                     var pool = SharedInstancesPool.getPool(origin.Id);
                     if (pool != null)
                     {
-                        pool.release(gameObject);
+                        pool.release(gameObject, gameObject, origin, invokeIPoolableEvent);
                     }
                     else
                     {
@@ -35,14 +35,14 @@ namespace Nextension
                 }
                 else
                 {
-                    Debug.LogWarning("Not support unique pool, destroy gameObject");
+                    Debug.LogWarning("Only support unique pool, destroy gameObject");
                     NUtils.destroy(gameObject);
                 }
             }
         }
-        public static void releaseOrDestroy(Component component)
+        public static void releaseOrDestroy(Component component, bool invokeIPoolableEvent = false)
         {
-            releaseOrDestroy(component.gameObject);
+            releaseOrDestroy(component.gameObject, invokeIPoolableEvent);
         }
     }
 
@@ -127,8 +127,8 @@ namespace Nextension
                 else
                 {
                     _origin = go.AddComponent<OriginInstance>();
+                    _origin.setPoolId(_prefab.GetInstanceID(), _isUniquePool);
                 }
-                _origin.setPoolId(_prefab.GetInstanceID(), _isUniquePool);
                 if (MaxPoolInstanceCount == 0)
                 {
                     MaxPoolInstanceCount = IPoolable.DEFAULT_MAX_POOL_ITEM_COUNT;
@@ -234,6 +234,44 @@ namespace Nextension
                 yield return get(parent, worldPositionStays, invokeIPoolableEvent);
             }
         }
+        internal void release(T instance, GameObject go, OriginInstance origin, bool invokeIPoolableEvent = false)
+        {
+            if (_isUniquePool)
+            {
+                if (origin.Id != _origin.Id)
+                {
+                    Debug.LogWarning($"OriginId [{origin.Id}], [{_origin.Id}] not match, try release by SharedInstancesPool", go);
+                    SharedInstancesPool.getPool(origin.Id)?.release(go);
+                    return;
+                }
+                if (invokeIPoolableEvent)
+                {
+                    foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
+                    {
+                        poolable.onDespawned();
+                    }
+                }
+                if (_instancePool.Count >= MaxPoolInstanceCount)
+                {
+                    NUtils.destroy(go);
+                    if (invokeIPoolableEvent)
+                    {
+                        foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
+                        {
+                            poolable.onDestroyed();
+                        }
+                    }
+                    return;
+                }
+
+                go.transform.setParent(InstancesPoolContainer.Container);
+                _instancePool.Add(instance);
+            }
+            else
+            {
+                SharedPool.release(getGameObject(instance), go, origin, invokeIPoolableEvent);
+            }
+        }
         public void release(T instance, bool invokeIPoolableEvent = false)
         {
             InternalCheck.checkEditorMode();
@@ -261,7 +299,7 @@ namespace Nextension
 
                 if (origin.Id != _origin.Id)
                 {
-                    Debug.LogWarning($"OriginId [{origin.Id}] not match, try release by SharedInstancesPool", instance);
+                    Debug.LogWarning($"OriginId [{origin.Id}], [{_origin.Id}] not match, try release by SharedInstancesPool", instance);
                     SharedInstancesPool.getPool(origin.Id)?.release(go);
                     return;
                 }

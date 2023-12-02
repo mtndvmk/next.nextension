@@ -16,7 +16,7 @@ namespace Nextension.Tween
         public abstract void dispose();
         public abstract TweenChunk getChunk(uint chunkId);
     }
-    internal sealed class TweenRunner<TChunk> : AbsTweenRunner where TChunk : TweenChunk, new()
+    internal sealed class TweenRunner<TChunk> : AbsTweenRunner where TChunk : TweenChunk
     {
         private readonly Dictionary<uint, TChunk> _chunks = new(1);
         private readonly List<TChunk> _notFullChunks = new(1);
@@ -29,7 +29,7 @@ namespace Nextension.Tween
             int lastIndex = _notFullChunks.Count - 1;
             if (lastIndex < 0)
             {
-                chunk = new();
+                chunk = NUtils.createInstance<TChunk>();
                 chunk.onChunkBecomeNotFull = () => _notFullChunks.Add(chunk);
                 _chunks.Add(chunk.chunkId, chunk);
                 _notFullChunks.Add(chunk);
@@ -49,17 +49,10 @@ namespace Nextension.Tween
         public sealed override void runTweenJob(NativeList<JobHandle> jobHandles, NativeList<(uint runnerId, uint chunkId)> runningChunks)
         {
             int chunksCount = _chunks.Count;
-            NativeArray<uint> chunkIds = new(chunksCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            int count = 0;
+            using var chunkIds = _chunks.Keys.toNPArray();
 
-            foreach (var k in _chunks.Keys)
+            foreach (var chunkId in chunkIds.asSpan())
             {
-                chunkIds[count++] = k;
-            }
-
-            for (int i = count - 1; i >= 0; i--)
-            {
-                var chunkId = chunkIds[i];
                 var chunk = _chunks[chunkId];
                 if (chunk.isUnused())
                 {
@@ -83,9 +76,10 @@ namespace Nextension.Tween
         }
         public sealed override void dispose()
         {
-            foreach (var chunk in _chunks.Values)
+            using var chunkIds = _chunks.Keys.toNPArray();
+            foreach (var chunkId in chunkIds.asSpan())
             {
-                chunk.dispose();
+                _chunks[chunkId].dispose();
             }
             _chunks.Clear();
             _notFullChunks.Clear();

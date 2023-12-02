@@ -8,9 +8,14 @@ namespace Nextension.Tween
     public static class NTween
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void cancelAllTweeners(AbsCancelControlKey controlKey)
+        public static void cancelAllTweeners(uint key)
         {
-            NTweenManager.cancelFromControlledTweener(controlKey);
+            NTweenManager.cancelFromUintControlKey(key);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void cancelAllTweeners(UnityEngine.Object key)
+        {
+            NTweenManager.cancelFromObjectControlKey(key);
         }
         #region Transform Tween
         public static NRunnableTweener moveTo(Transform target, float3 destination, float duration, bool isLocalSpace = true)
@@ -49,37 +54,37 @@ namespace Nextension.Tween
         }
 
 
-        public static NRunnableTweener punchPosition(Transform target, float3 punchValue, float duration, bool isLocalSpace = true)
+        public static NRunnableTweener punchPosition(Transform target, float3 punchDestination, float duration, bool isLocalSpace = true)
         {
             NRunnableTweener tweener;
             if (isLocalSpace)
             {
-                tweener = NTweenerCreator.createTransformPunchTweener(target, punchValue, duration, TransformTweenType.Local_Position);
+                tweener = NTweenerCreator.createTransformPunchTweener(target, punchDestination, duration, TransformTweenType.Local_Position);
             }
             else
             {
-                tweener = NTweenerCreator.createTransformPunchTweener(target, punchValue, duration, TransformTweenType.World_Position);
+                tweener = NTweenerCreator.createTransformPunchTweener(target, punchDestination, duration, TransformTweenType.World_Position);
             }
             tweener.schedule();
             return tweener;
         }
-        public static NRunnableTweener punchRotation(Transform target, float4 punchValue, float duration, bool isLocalSpace = true)
+        public static NRunnableTweener punchRotation(Transform target, float4 punchDestination, float duration, bool isLocalSpace = true)
         {
             NRunnableTweener tweener;
             if (isLocalSpace)
             {
-                tweener = NTweenerCreator.createTransformPunchTweener(target, punchValue, duration, TransformTweenType.Local_Rotation);
+                tweener = NTweenerCreator.createTransformPunchTweener(target, punchDestination, duration, TransformTweenType.Local_Rotation);
             }
             else
             {
-                tweener = NTweenerCreator.createTransformPunchTweener(target, punchValue, duration, TransformTweenType.World_Rotation);
+                tweener = NTweenerCreator.createTransformPunchTweener(target, punchDestination, duration, TransformTweenType.World_Rotation);
             }
             tweener.schedule();
             return tweener;
         }
-        public static NRunnableTweener punchScale(Transform target, float3 punchValue, float duration)
+        public static NRunnableTweener punchScale(Transform target, float3 punchDestination, float duration)
         {
-            NRunnableTweener tweener = NTweenerCreator.createTransformPunchTweener(target, punchValue, duration, TransformTweenType.Local_Scale);
+            NRunnableTweener tweener = NTweenerCreator.createTransformPunchTweener(target, punchDestination, duration, TransformTweenType.Local_Scale);
             tweener.schedule();
             return tweener;
         }

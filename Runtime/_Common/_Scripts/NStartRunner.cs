@@ -14,7 +14,9 @@ namespace Nextension
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         private static void startRunner()
         {
+#if UNITY_EDITOR
             Application.quitting -= onAppQuitting;
+#endif
             Application.quitting += onAppQuitting;
 
             SessionId = DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode();
@@ -27,12 +29,12 @@ namespace Nextension
 
         private static void onAppQuitting()
         {
-            IsPlaying = false;
-            SessionId = DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode();
 #if UNITY_EDITOR
+            SessionId = DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode();
             runStaticMethods<EditorQuittingMethodAttribute>();
 #endif
             runStaticMethods<QuittingMethodAttribute>();
+            IsPlaying = false;
         }
         private static void runStaticMethods<T>() where T : AbsStaticMethodAttribute
         {

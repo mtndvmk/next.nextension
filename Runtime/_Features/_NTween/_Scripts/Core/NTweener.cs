@@ -17,19 +17,23 @@ namespace Nextension.Tween
         internal bool isFinalized;
         internal bool isScheduled => scheduledTime > 0;
         internal float scheduledTime;
+        internal CancelControlKey controlKey;
 
         private Action onStartedEvent;
         private Action onUpdatedEvent;
         private Action onCompletedEvent;
         private Action onCanceledEvent;
         private Action onFinalizedEvent;
-        internal AbsCancelControlKey controlKey;
 
         private List<Func<bool>> cancelWhenFuncList;
 
         public async NWaitable waitFinalized()
         {
             await new NWaitUntil(() => isFinalized);
+        }
+        public async NWaitable waitCompleted()
+        {
+            await new NWaitUntil(() => Status == RunState.Completed);
         }
 
         public RunState Status { get; private set; }
@@ -160,25 +164,25 @@ namespace Nextension.Tween
         {
             if (!target)
             {
-                Debug.LogError("Component target is null");
+                Debug.LogError("Object target is null");
                 return;
             }
-            setCancelControlKey(new ObjectCancelControlKey(target));
+            innerSetCancelControlKey(NTweenManager.createKey(target));
         }
-        public void setCancelControlKey(AbsCancelControlKey cancelControlKey)
+        public void setCancelControlKey(uint uintKey)
         {
-            if (cancelControlKey.isInvalid())
-            {
-                Debug.LogError("cancelControlKey is invalid");
-                return;
-            }
-            if (controlKey != null)
+            innerSetCancelControlKey(NTweenManager.createKey(uintKey));
+        }
+        private void innerSetCancelControlKey(CancelControlKey cancelControlKey)
+        {
+            if (!controlKey.isDefault())
             {
                 NTweenManager.removeControlledTweener(this);
             }
             controlKey = cancelControlKey;
             NTweenManager.addCancelControlledTweener(this);
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeCancelControlKey()
         {
@@ -187,10 +191,10 @@ namespace Nextension.Tween
 
         private void innerRemoveCancelControlKey()
         {
-            if (controlKey != null)
+            if (!controlKey.isDefault())
             {
                 NTweenManager.removeControlledTweener(this);
-                controlKey = null;
+                controlKey = default;
             }
         }
         internal bool checkCancelFromFunc()

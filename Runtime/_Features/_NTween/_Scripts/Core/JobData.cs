@@ -21,7 +21,7 @@ namespace Nextension.Tween
     {
         public CommonJobData common;
         public T origin;
-        public T punchValue;
+        public T punchDestination;
     }
     [BurstCompile]
     internal struct ShakeData<T> where T : unmanaged

@@ -14,7 +14,7 @@ namespace Nextension.Tween
             private readonly Transform _target;
             public Transform Target => _target;
             private readonly TransformTweenType _transformTweenType;
-            public Tweener(Transform target, TValue punchValue, TransformTweenType transformTweenType) : base(default, punchValue, null)
+            public Tweener(Transform target, TValue punchDestination, TransformTweenType transformTweenType) : base(default, punchDestination, null)
             {
                 this._target = target;
                 _transformTweenType = transformTweenType;
@@ -27,7 +27,7 @@ namespace Nextension.Tween
                     punchData = new PunchData<TValue>()
                     {
                         common = getCommonJobData(),
-                        punchValue = punchValue,
+                        punchDestination = punchDestination,
                     }
                 };
                 origin = _transformTweenType switch
@@ -91,7 +91,7 @@ namespace Nextension.Tween
                         {
                             t = (1 - t) / 0.5f;
                         }
-                        NTweenUtils.ease(data.origin, data.punchValue, t, common.easeType, out var result);
+                        NTweenUtils.ease(data.origin, data.punchDestination, t, common.easeType, out var result);
                         NTweenUtils.applyTransformAccessJobData(transformData.transformTweenType, transform, result);
                     }
                 }

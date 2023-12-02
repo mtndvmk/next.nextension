@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Nextension.UI
 {
-    [RequireComponent(typeof(NButton)), DisallowMultipleComponent]
+    [DisallowMultipleComponent]
     public class NButtonZoomEffect : MonoBehaviour, INButtonListener
     {
         [SerializeField] private Vector3 _originScale = Vector3.one;

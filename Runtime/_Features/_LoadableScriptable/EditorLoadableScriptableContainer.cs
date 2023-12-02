@@ -61,7 +61,7 @@ namespace Nextension.NEditor
                 if (isDeleteIfEmpty)
                 {
                     WarningTracker.trackWarning($"Delete... {this} and {ScriptableLoader.getContainer()}");
-                    NAssetUtils.delete(this);
+                    //NAssetUtils.delete(this);
                     NAssetUtils.delete(ScriptableLoader.getContainer());
                 }
             }

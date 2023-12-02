@@ -12,7 +12,7 @@ namespace Nextension
         
         public void setSpeed(float3 degreePerSecond)
         {
-            if (_degreePerSecond.Equals(degreePerSecond))
+            if (!_degreePerSecond.Equals(degreePerSecond))
             {
                 _degreePerSecond = degreePerSecond;
                 invokeAutoValueChanged();

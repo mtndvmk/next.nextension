@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Nextension
 {
@@ -51,7 +50,7 @@ namespace Nextension
         public override bool isHasInvalidKeys()
         {
             var items = asSpan();
-            HashSet<K> existKeys = new();
+            var existKeys = new HashSet<K>();
             foreach (var item in items)
             {
                 var k = item.key;
@@ -76,7 +75,7 @@ namespace Nextension
         }
         public override void removeInvalidItems()
         {
-            HashSet<K> existKeys = new();
+            var existKeys = new HashSet<K>();
             var items = asSpan().ToArray();
             for (int i = items.Length - 1; i >= 0; i--)
             {
@@ -131,7 +130,7 @@ namespace Nextension
             }
         }
 
-        public virtual bool containValue(V value)
+        public virtual bool containsValue(V value)
         {
             foreach (var item in asSpan())
             {
@@ -142,7 +141,7 @@ namespace Nextension
             }
             return false;
         }
-        public virtual bool containKey(K key)
+        public virtual bool containsKey(K key)
         {
             foreach (var item in asSpan())
             {

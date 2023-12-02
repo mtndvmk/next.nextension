@@ -6,7 +6,7 @@ namespace Nextension.Tween
 {
     public static class NTweenExtension
     {
-        public static void cancelAllTweeners(this GameObject target, bool includeChildren, bool includeInActive)
+        public static void cancelAllTweeners(this GameObject target, bool includeChildren = false, bool includeInActive = false)
         {
             if (target == null)
             {
@@ -21,10 +21,9 @@ namespace Nextension.Tween
             {
                 components = target.GetComponentsInChildren<Component>(includeInActive);
             }
-            NTween.cancelAllTweeners(new ObjectCancelControlKey(target));
             foreach (var com in components)
             {
-                NTween.cancelAllTweeners(new ObjectCancelControlKey(com));
+                NTween.cancelAllTweeners(com);
             }
         }
         public static void cancelAllTweeners(this UnityEngine.Object target)
@@ -33,8 +32,7 @@ namespace Nextension.Tween
             {
                 throw new NullReferenceException("cancelAllTweener.target");
             }
-            var controlKey = new ObjectCancelControlKey(target);
-            NTween.cancelAllTweeners(controlKey);
+            NTween.cancelAllTweeners(target);
         }
 
         public static NRunnableTweener moveTo(this Transform target, Vector3 destination, float duration, bool isLocalSpace = true)
@@ -59,12 +57,26 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
+        
+        public static NRunnableTweener punchPosition(this Transform target, Vector3 punchDestination, float duration, bool isLocalSpace = true)
+        {
+            var tweener = NTween.punchPosition(target, punchDestination, duration, isLocalSpace);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+        public static NRunnableTweener punchRotation(this Transform target, Quaternion punchDestination, float duration, bool isLocalSpace = true)
+        {
+            var tweener = NTween.punchRotation(target, punchDestination.toFloat4(), duration, isLocalSpace);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
         public static NRunnableTweener punchScale(this Transform target, Vector3 punchDestination, float duration)
         {
             var tweener = NTween.punchScale(target, punchDestination, duration);
             tweener.setCancelControlKey(target);
             return tweener;
         }
+        
         public static CombinedNTweener jumpTo(this Transform target, Vector3 destination, float jumpHeight, float duration, bool isLocalSpace = true)
         {
             var moveTweener = NTween.moveTo(target, destination, duration, isLocalSpace);

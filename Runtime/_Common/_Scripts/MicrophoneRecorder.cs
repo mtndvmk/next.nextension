@@ -122,7 +122,7 @@ namespace Nextension
         {
             if (_allCacheClips != null)
             {
-                foreach (var clip in _allCacheClips)
+                foreach (var clip in _allCacheClips.asSpan())
                 {
                     if (clip)
                     {

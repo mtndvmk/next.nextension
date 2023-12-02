@@ -43,6 +43,8 @@ namespace Nextension
             }
         }
 
+        public static int EnumCount => IndexToEnumTable.Length;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int getIndex(T enumType)
         {
@@ -63,9 +65,9 @@ namespace Nextension
             return IndexToEnumTable.Length;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T getRandomEnum()
+        public static T getRandomEnum(uint seed = 0)
         {
-            return IndexToEnumTable.randItem();
+            return IndexToEnumTable.randItem(seed);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<T> asReadOnlySpan()

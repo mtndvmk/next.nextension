@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -21,7 +22,7 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="TValue">Value Type of List</typeparam>
     /// <typeparam name="TCompareKey">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBList<TValue, TCompareKey> : IBList<TValue>
+    public abstract class AbsBList<TValue, TCompareKey> : IBList<TValue>, IEnumerable<TValue>
     {
         protected abstract int compareKey(TCompareKey k1, TCompareKey k2);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -518,16 +519,6 @@ namespace Nextension
             _list.Sort(exeCompareValue);
         }
 
-        /// <summary>
-        /// Use asSpan() to better performance
-        /// </summary>
-        /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerable<TValue> asEnumerable()
-        {
-            return _list;
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public List<TValue> toList()
         {
@@ -563,6 +554,21 @@ namespace Nextension
         public void clear()
         {
             _list.Clear();
+        }
+
+        public List<TValue>.Enumerator GetEnumerator()
+        {
+            return _list.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _list.GetEnumerator();
+        }
+
+        IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()
+        {
+            return _list.GetEnumerator();
         }
 
         #endregion

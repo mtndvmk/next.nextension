@@ -11,7 +11,7 @@ namespace Nextension.Tween
     {
         internal sealed class Tweener : AbsPunchTweener<TValue, PunchData<TValue>>
         {
-            public Tweener(TValue origin, TValue punchValue, Action<TValue> onValueChanged) : base(origin, punchValue, onValueChanged)
+            public Tweener(TValue origin, TValue punchDestination, Action<TValue> onValueChanged) : base(origin, punchDestination, onValueChanged)
             {
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -21,7 +21,7 @@ namespace Nextension.Tween
                 {
                     common = getCommonJobData(),
                     origin = this.origin,
-                    punchValue = this.punchValue,
+                    punchDestination = this.punchDestination,
                 };
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -75,7 +75,7 @@ namespace Nextension.Tween
                         {
                             t = (1 - t) / 0.5f;
                         }
-                        NTweenUtils.ease(data.origin, data.punchValue, t, common.easeType, out var result);
+                        NTweenUtils.ease(data.origin, data.punchDestination, t, common.easeType, out var result);
                         _results[index] = result;
                     }
                 }

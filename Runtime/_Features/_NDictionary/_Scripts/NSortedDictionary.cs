@@ -125,12 +125,12 @@ namespace Nextension
             }
         }
 
-        public override bool containKey(K key)
+        public override bool containsKey(K key)
         {
             var index = items.bFindIndex(key);
             return index >= 0;
         }
-        public override bool containValue(V value)
+        public override bool containsValue(V value)
         {
             var index = items.findIndex(item => item.value.equals(value));
             return index >= 0;
@@ -139,7 +139,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal override IEnumerable<DItem> enumerateDItems()
         {
-            return items.asEnumerable();
+            return items;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal override Span<DItem> asSpan()

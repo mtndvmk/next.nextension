@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -24,7 +25,7 @@ namespace Nextension
     }
 
     [Serializable]
-    public class EnumArrayValue<TEnum, TValue> : IEnumArrayValue, ISerializationCallbackReceiver where TEnum : unmanaged, Enum
+    public class EnumArrayValue<TEnum, TValue> : IEnumArrayValue, IEnumerable<TValue>, ISerializationCallbackReceiver where TEnum : unmanaged, Enum
     {
         [SerializeField] private TValue[] enumValues = new TValue[EnumIndex<TEnum>.getCount()];
 #pragma warning disable 0414
@@ -99,6 +100,19 @@ namespace Nextension
         {
             get => get(enumType);
             set => set(enumType, value);
+        }
+        public ArrayEnumerator<TValue> GetEnumerator()
+        {
+            return new ArrayEnumerator<TValue>(enumValues);
+        }
+        IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IEnumerable<TValue> enumerateValues()

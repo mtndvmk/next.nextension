@@ -7,12 +7,12 @@ namespace Nextension.Tween
         where TData : struct
     {
         public T origin;
-        public T punchValue;
+        public T punchDestination;
 
-        public AbsPunchTweener(T origin, T punchValue, Action<T> onValueChanged) : base(onValueChanged)
+        public AbsPunchTweener(T origin, T punchDestination, Action<T> onValueChanged) : base(onValueChanged)
         {
             this.origin = origin;
-            this.punchValue = punchValue;
+            this.punchDestination = punchDestination;
         }
     }
 }
