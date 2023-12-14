@@ -22,8 +22,7 @@ namespace Nextension
             private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
 #endif
             {
-                bool isDidDomainReload = EditorApplication.isCompiling | EditorApplication.isUpdating;
-                _isDomainReload = isDidDomainReload;
+                bool isDidDomainReload = EditorApplication.isCompiling || EditorApplication.isUpdating;
                 bool isNeedSave = false;
                 if (!isDidDomainReload)
                 {
@@ -36,20 +35,24 @@ namespace Nextension
                 {
                     isNeedSave = true;
                 }
-                if (!_isSaving && isNeedSave)
+                if (isNeedSave)
                 {
-                    _isSaving = true;
                     saveInNext();
                 }
             }
         }
 
         private static List<Object> _needSaves = new List<Object>();
-        private static bool _isDomainReload = false;
-        private static bool _isSaving = false;
+        private static bool _isWaitingForSave;
         private async static void saveInNext()
         {
-            await new NWaitUntil_Editor(() => _isDomainReload == false);
+            if (_isWaitingForSave)
+            {
+                return;
+            }
+            _isWaitingForSave = true;
+            await awaitImportWorkerProcess();
+            _isWaitingForSave = false;
             foreach (var s in _needSaves)
             {
                 if (s) EditorUtility.SetDirty(s);
@@ -57,26 +60,12 @@ namespace Nextension
 
             AssetDatabase.SaveAssets();
             _needSaves.Clear();
-            _isSaving = false;
         }
         internal static async Task awaitImportWorkerProcess()
         {
             await new NWaitUntil_Editor(() => !AssetDatabase.IsAssetImportWorkerProcess() && !EditorApplication.isUpdating && !EditorApplication.isCompiling);
         }
 
-        public static void saveAsset(Object @object)
-        {
-            if (!@object) return;
-
-            NAssetUtils.setDirty(@object);
-            _needSaves.add(@object);
-            saveAssets();
-        }
-        public static async void saveAssets()
-        {
-            await awaitImportWorkerProcess();
-            AssetDatabase.SaveAssets();
-        }
         public static bool delete(Object @object)
         {
             if (!@object || !isFile(@object)) return false;
@@ -119,7 +108,6 @@ namespace Nextension
         {
             return AssetDatabase.LoadAssetAtPath<T>(path);
         }
-
         public static T createOnResource<T>(string fileName = null) where T : ScriptableObject
         {
             return (T)createOnResource(typeof(T), fileName);
@@ -215,6 +203,34 @@ namespace Nextension
             var @object = Resources.Load<T>(fileName.removeExtension());
 #endif
             return @object;
+        }
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        public static void saveAsset(Object @object, bool isImmediate = false)
+        {
+#if UNITY_EDITOR
+            if (!@object) return;
+            NAssetUtils.setDirty(@object);
+            if (isImmediate)
+            {
+                AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                _needSaves.add(@object);
+                saveInNext();
+            }
+#endif
+        }
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        public static async void saveAssets(bool isImmediate = false)
+        {
+#if UNITY_EDITOR
+            if (!isImmediate)
+            {
+                await awaitImportWorkerProcess();
+            }
+            AssetDatabase.SaveAssets();
+#endif
         }
     }
 }

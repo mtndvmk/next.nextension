@@ -30,14 +30,14 @@ namespace Nextension.NEditor
 
         public static FieldInfo getFieldInfo(SerializedProperty property, out object qObject)
         {
-            var path = property.propertyPath.Replace(".Array.data[", "[");
-            var elements = path.Split('.');
-
-            qObject = property.serializedObject.targetObject;
-            FieldInfo fieldInfo = null;
-
             try
             {
+                var path = property.propertyPath.Replace(".Array.data[", "[");
+                var elements = path.Split('.');
+
+                qObject = property.serializedObject.targetObject;
+                FieldInfo fieldInfo = null;
+
                 for (int i = 0; i < elements.Length; ++i)
                 {
                     var element = elements[i];
@@ -62,6 +62,7 @@ namespace Nextension.NEditor
             catch (Exception e)
             {
                 Debug.LogException(e);
+                qObject = default;
                 return default;
             }
         }

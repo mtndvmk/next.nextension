@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -9,7 +10,6 @@ namespace Nextension
         protected AbsNWaitableAwaiter() { }
         protected void setupFrom(AbsNWaitable waitable)
         {
-            NWaitableHandle handle;
             switch (waitable.Status)
             {
                 case RunState.Exception:
@@ -21,19 +21,90 @@ namespace Nextension
                 case RunState.Canceled:
                     return;
                 case RunState.Running:
-                    handle = NWaitableHandle.Factory.create(this, new NWaitUntil(() => waitable.Status.isFinished()));
-                    setup(handle);
+                    setup(waitable);
                     return;
                 case RunState.None:
-                    handle = NWaitableHandle.Factory.create(this, waitable);
-                    setup(handle);
+                    setup(waitable);
                     return;
                 default:
                     Debug.LogWarning("Not implement staus: " + waitable.Status);
                     return;
             }
         }
-        internal void setup(NWaitableHandle handle)
+        protected void setup(IWaitable waitable)
+        {
+            var predicateFunc = waitable.buildCompleteFunc();
+            try
+            {
+                var result = predicateFunc();
+                switch (result.state)
+                {
+                    default:
+                    case CompleteState.None:
+                        {
+                            handle = NWaitableHandle.Factory.create(this, waitable.LoopType, predicateFunc);
+                            setup(handle, waitable.IsIgnoreFirstFrameCheck);
+                            return;
+                        }
+                    case CompleteState.Canceled:
+                        {
+                            return;
+                        }
+                    case CompleteState.Completed:
+                        {
+                            invokeComplete();
+                            return;
+                        }
+                    case CompleteState.Exception:
+                        {
+                            invokeException(result.exception);
+                            return;
+                        }
+                }
+            }
+            catch (Exception e)
+            {
+                invokeException(e);
+            }
+        }
+        protected void setup(IWaitableFromCancelable waitable)
+        {
+            (var predicateFunc, var cancelable) = waitable.buildCompleteFunc();
+            try
+            {
+                var result = predicateFunc();
+                switch (result.state)
+                {
+                    default:
+                    case CompleteState.None:
+                        {
+                            handle = NWaitableHandle.Factory.create(this, waitable.LoopType, predicateFunc, cancelable);
+                            setup(handle, waitable.IsIgnoreFirstFrameCheck);
+                            return;
+                        }
+                    case CompleteState.Canceled:
+                        {
+                            cancelable.cancel();
+                            return;
+                        }
+                    case CompleteState.Completed:
+                        {
+                            invokeComplete();
+                            return;
+                        }
+                    case CompleteState.Exception:
+                        {
+                            invokeException(result.exception);
+                            return;
+                        }
+                }
+            }
+            catch (Exception e)
+            {
+                invokeException(e);
+            }
+        }
+        internal void setup(NWaitableHandle handle, bool isIgnoreFisrtFrameCheck)
         {
             this.handle = handle;
             handle.Status = RunState.Running;
@@ -44,7 +115,7 @@ namespace Nextension
                 return;
             }
 #endif
-            NAwaiterLoop.addAwaitable(handle);
+            NAwaiterLoop.addAwaitable(handle, isIgnoreFisrtFrameCheck);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void cancel()
@@ -64,23 +135,53 @@ namespace Nextension
         public static NWaitableAwaiter create(IWaitable waitable)
         {
             var awaiter = _pool.get();
-            var handle = NWaitableHandle.Factory.create(awaiter, waitable);
-            awaiter.setup(handle);
+            awaiter.setup(waitable);
             return awaiter;
         }
         public static NWaitableAwaiter create(IWaitableFromCancelable waitable)
         {
             var awaiter = _pool.get();
-            var handle = NWaitableHandle.Factory.create(awaiter, waitable);
-            awaiter.setup(handle);
+            awaiter.setup(waitable);
             return awaiter;
         }
 #if UNITY_EDITOR
         public static NWaitableAwaiter create(IWaitable_Editor waitable)
         {
             var awaiter = new NWaitableAwaiter();
-            var handle = NWaitableHandle.Factory.create(awaiter, waitable);
-            awaiter.setup(handle);
+            var predicateFunc = waitable.buildCompleteFunc();
+
+            try
+            {
+                var result = predicateFunc();
+                switch (result.state)
+                {
+                    default:
+                    case CompleteState.None:
+                        {
+                            var handle = NWaitableHandle.Factory.createEditorHandle(awaiter, predicateFunc);
+                            awaiter.setup(handle, true);
+                            break;
+                        }
+                    case CompleteState.Canceled:
+                        {
+                            break;
+                        }
+                    case CompleteState.Completed:
+                        {
+                            awaiter.invokeComplete();
+                            break;
+                        }
+                    case CompleteState.Exception:
+                        {
+                            awaiter.invokeException(result.exception);
+                            break;
+                        }
+                }
+            }
+            catch (Exception e)
+            {
+                awaiter.invokeException(e);
+            }
             return awaiter;
         }
 #endif

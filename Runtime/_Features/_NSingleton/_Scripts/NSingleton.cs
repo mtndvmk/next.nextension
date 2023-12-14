@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nextension
 {
@@ -73,7 +74,7 @@ namespace Nextension
                         else
                         {
                             Destroy(gameObject);
-                            Debug.Log("---> Destroyed " + typeof(T).Name + "|" + IsInitialized);
+                            Debug.Log("Destroyed " + typeof(T).Name + ", IsInitialized: " + IsInitialized);
                             return;
                         }
                     }
@@ -92,9 +93,31 @@ namespace Nextension
                 {
                     if (!_isDestroyedFromInternal)
                     {
-                        Debug.LogWarning($"[SKIP] [NSingleton] Should call {getSingletonName()}.Instance.destroy()");
+                        if (!m_DontDestroyOnLoad)
+                        {
+                            int sceneHash = gameObject.scene.GetHashCode();
+                            new NWaitFrame(1).startWaitable().addCompletedEvent(() =>
+                            {
+                                int sceneCount = SceneManager.sceneCount;
+                                for (int i = 0; i < sceneCount; i++)
+                                {
+                                    if (SceneManager.GetSceneAt(i).GetHashCode() == sceneHash)
+                                    {
+                                        Debug.LogWarning($"[NSingleton] Should call {getSingletonName()}.Instance.destroy()");
+                                        return;
+                                    }
+                                }
+                            });
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[NSingleton] Should call {getSingletonName()}.Instance.destroy()");
+                        }
                     }
-                    Debug.Log($"[SKIP] {Instance.gameObject.name} was destroyed");
+                    else
+                    {
+                        Debug.Log($"{Instance.gameObject.name} was destroyed");
+                    }
                     onDestroy();
                 }
                 else
@@ -184,7 +207,7 @@ namespace Nextension
             {
                 if (s_Instance == null)
                 {
-                    s_Instance = FindObjectOfType<T>(true);
+                    s_Instance = FindFirstObjectByType<T>(FindObjectsInactive.Include);
                     NSingleton<T> singleton;
                     if (s_Instance == null)
                     {

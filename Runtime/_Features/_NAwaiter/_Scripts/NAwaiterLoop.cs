@@ -12,37 +12,57 @@ namespace Nextension
             _updateWaitableHandles?.Clear();
             _lateUpdateWaitableHandles?.Clear();
             _endOfFrameWaitableHandles?.Clear();
+
+            _updateHandleCount = 0;
+            _lateUpdateHandleCount = 0;
+            _eofFrameHandleCount = 0;
         }
         private static List<NWaitableHandle> _updateWaitableHandles;
         private static List<NWaitableHandle> _lateUpdateWaitableHandles;
         private static List<NWaitableHandle> _endOfFrameWaitableHandles;
 
-        public static void addAwaitable(NWaitableHandle waitable)
+        private static int _updateHandleCount;
+        private static int _lateUpdateHandleCount;
+        private static int _eofFrameHandleCount;
+
+        public static void addAwaitable(NWaitableHandle waitable, bool isIgnoreFirstFrameCheck)
         {
             switch (waitable.loopType)
             {
                 case NLoopType.Update:
                     {
                         (_updateWaitableHandles ??= new(1)).Add(waitable);
+                        if (!isIgnoreFirstFrameCheck)
+                        {
+                            _updateHandleCount++;
+                        }
                         break;
                     }
                 case NLoopType.LateUpdate:
                     {
-                        (_lateUpdateWaitableHandles ??= new(1)).Add(waitable);
+                        (_lateUpdateWaitableHandles ??= new(1)).Add(waitable); 
+                        if (!isIgnoreFirstFrameCheck)
+                        {
+                            _lateUpdateHandleCount++;
+                        }
                         break;
                     }
                 case NLoopType.EndOfFrameUpdate:
                     {
                         (_endOfFrameWaitableHandles ??= new(1)).Add(waitable);
+                        if (!isIgnoreFirstFrameCheck)
+                        {
+                            _eofFrameHandleCount++;
+                        }
                         break;
                     }
             }
         }
 
-        private static void update(List<NWaitableHandle> handleList)
+        private static void update(List<NWaitableHandle> handleList, int endIndex)
         {
             var handleSpan = handleList.asSpan();
-            for (int i = handleSpan.Length - 1; i >= 0; i--)
+            for (int i = endIndex; i >= 0; i--)
             {
                 var handle = handleSpan[i];
                 try
@@ -68,7 +88,8 @@ namespace Nextension
         {
             if (_updateWaitableHandles?.Count > 0)
             {
-                update(_updateWaitableHandles);
+                update(_updateWaitableHandles, _updateHandleCount - 1);
+                _updateHandleCount = _updateWaitableHandles.Count;
             }
         }
         [LoopMethod(NLoopType.LateUpdate)]
@@ -76,7 +97,8 @@ namespace Nextension
         {
             if (_lateUpdateWaitableHandles?.Count > 0)
             {
-                update(_lateUpdateWaitableHandles);
+                update(_lateUpdateWaitableHandles, _lateUpdateHandleCount - 1);
+                _lateUpdateHandleCount = _lateUpdateWaitableHandles.Count;
             }
         }
         [LoopMethod(NLoopType.EndOfFrameUpdate)]
@@ -84,7 +106,8 @@ namespace Nextension
         {
             if (_endOfFrameWaitableHandles?.Count > 0)
             {
-                update(_endOfFrameWaitableHandles);
+                update(_endOfFrameWaitableHandles, _eofFrameHandleCount - 1);
+                _eofFrameHandleCount = _endOfFrameWaitableHandles.Count;
             }
         }
     }

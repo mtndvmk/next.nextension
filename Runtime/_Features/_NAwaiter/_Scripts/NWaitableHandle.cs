@@ -38,59 +38,57 @@ namespace Nextension
             }
 
 #if UNITY_EDITOR
-            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, IWaitable_Editor waitable)
+            public static NWaitableHandle createEditorHandle(AbsNWaitableAwaiter awaiter, Func<NWaitableResult> predicateFunc)
             {
                 var handle = new NWaitableHandle();
-                handle.setup(awaiter, waitable);
+                handle.setupEditor(awaiter, predicateFunc);
                 return handle;
             }
 #endif
-            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, IWaitable waitable)
+            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, NLoopType loopType, Func<NWaitableResult> predicateFunc)
             {
                 var handle = pool.get();
-                handle.setup(awaiter, waitable);
+                handle.setup(awaiter, loopType, predicateFunc);
                 return handle;
             }
-            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, IWaitableFromCancelable waitable)
+            public static NWaitableHandle create(AbsNWaitableAwaiter awaiter, NLoopType loopType, Func<NWaitableResult> predicateFunc, ICancelable cancelable)
             {
                 var handle = pool.get();
-                handle.setup(awaiter, waitable);
+                handle.setup(awaiter, loopType, predicateFunc, cancelable);
                 return handle;
             }
         }
 
 #if UNITY_EDITOR
         internal bool isEditorWaitable;
-        private void setup(AbsNWaitableAwaiter awaiter, IWaitable_Editor waitable)
+        private void setupEditor(AbsNWaitableAwaiter awaiter, Func<NWaitableResult> predicateFunc)
         {
-            var predicateFunc = waitable.buildCompleteFunc();
             this._predicateFunc = predicateFunc ?? throw new ArgumentNullException(nameof(predicateFunc));
             this._awaiter = awaiter;
             isEditorWaitable = true;
         }
 #endif
 
-        private void setup(AbsNWaitableAwaiter awaiter, IWaitable waitable)
+        private void setup(AbsNWaitableAwaiter awaiter, NLoopType loopType, Func<NWaitableResult> predicateFunc)
         {
             InternalCheck.checkEditorMode();
-            this._predicateFunc = waitable.buildCompleteFunc() ?? throw new ArgumentNullException(nameof(_predicateFunc));
+            this._predicateFunc = predicateFunc;
             this._awaiter = awaiter;
-            this.loopType = waitable.LoopType;
+            this.loopType = loopType;
         }
-        private void setup(AbsNWaitableAwaiter awaiter, IWaitableFromCancelable waitable)
+        private void setup(AbsNWaitableAwaiter awaiter, NLoopType loopType, Func<NWaitableResult> predicateFunc, ICancelable cancelable)
         {
             InternalCheck.checkEditorMode();
-            var (predicateFunc, cancelable) = waitable.buildCompleteFunc();
-            this._predicateFunc = predicateFunc ?? throw new ArgumentNullException(nameof(predicateFunc));
+            this._predicateFunc = predicateFunc;
             this._awaiter = awaiter;
-            this.loopType = waitable.LoopType;
-            addCancelable(cancelable);
+            this.loopType = loopType;
+            _cancelable = cancelable;
         }
 
         private NWaitableHandle() { }
         private void resetState()
         {
-            _cancelables?.Clear();
+            _cancelable = null;
             Status = default;
             loopType = DEFAULT_LOOP_TYPE;
             _awaiter = null;
@@ -101,13 +99,8 @@ namespace Nextension
         }
 
         private Func<NWaitableResult> _predicateFunc;
-        private List<ICancelable> _cancelables;
+        private ICancelable _cancelable;
         private AbsNWaitableAwaiter _awaiter;
-
-        internal void addCancelable(ICancelable cancellable)
-        {
-            (_cancelables ??= new(1)).Add(cancellable);
-        }
 
         internal RunState checkComplete()
         {
@@ -159,13 +152,7 @@ namespace Nextension
                 return;
             }
             Status = RunState.Canceled;
-            if (_cancelables != null)
-            {
-                foreach (var c in _cancelables.asSpan())
-                {
-                    c.cancel();
-                }
-            }
+            _cancelable?.cancel();
         }
         void IPoolable.onDespawned()
         {

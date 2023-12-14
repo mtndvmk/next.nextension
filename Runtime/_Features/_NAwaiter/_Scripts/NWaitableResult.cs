@@ -16,7 +16,5 @@ namespace Nextension
             state = CompleteState.Exception,
             exception = new KeepStackTraceException(exception)
         };
-
-        public readonly static Func<NWaitableResult> CompletedFunc = () => Completed;
     }
 }

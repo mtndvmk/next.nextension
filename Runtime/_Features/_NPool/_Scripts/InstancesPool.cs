@@ -76,7 +76,7 @@ namespace Nextension
         private readonly static bool IS_GENERIC_OF_GAMEOBJECT = typeof(T).Equals(typeof(GameObject));
 
         public uint MaxPoolInstanceCount { get; set; }
-        public int Id {get; private set;}
+        public int Id { get; private set; }
 
 #if UNITY_EDITOR
         private T _copiedPrefabInEditor;
@@ -372,7 +372,7 @@ namespace Nextension
         public void OnAfterDeserialize()
         {
 #if !UNITY_EDITOR
-            (new NWaitUntil(() => NStartRunner.IsPlaying)).startWaitable().addCompletedEvent(updateStartupInstances);
+            new NWaitFrame(1).startWaitable().addCompletedEvent(updateStartupInstances);
 #endif
         }
     }

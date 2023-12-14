@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,8 +24,16 @@ namespace Nextension.NEditor
         {
             EditorScriptableLoader.scanAndReload();
         }
+        private long _lastReloadTime;
         internal void reload(bool isDeleteIfEmpty = true)
         {
+            var current = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (current - _lastReloadTime < 300)
+            {
+                return;
+            }
+            _lastReloadTime = current;
+
             bool hasChanged = false;
             _editorLoadableScriptables ??= new List<ScriptableObject>();
             var span = _editorLoadableScriptables.asSpan();
@@ -60,9 +69,12 @@ namespace Nextension.NEditor
             {
                 if (isDeleteIfEmpty)
                 {
-                    WarningTracker.trackWarning($"Delete... {this} and {ScriptableLoader.getContainer()}");
-                    //NAssetUtils.delete(this);
-                    NAssetUtils.delete(ScriptableLoader.getContainer());
+                    if (ScriptableLoader.getContainer() != null)
+                    {
+                        WarningTracker.trackWarning($"Delete... {ScriptableLoader.getContainer().name}", 1);
+                        //NAssetUtils.delete(this);
+                        NAssetUtils.delete(ScriptableLoader.getContainer());
+                    }
                 }
             }
         }
@@ -71,6 +83,7 @@ namespace Nextension.NEditor
             _editorLoadableScriptables ??= new List<ScriptableObject>();
             if (_editorLoadableScriptables.Contains(scriptableObject))
             {
+                if (ScriptableLoader.contains(scriptableObject)) return false;
                 return false;
             }
             _editorLoadableScriptables.Add(scriptableObject);

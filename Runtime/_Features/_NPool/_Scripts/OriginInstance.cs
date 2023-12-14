@@ -1,6 +1,5 @@
 ﻿using System;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Nextension
 {
@@ -32,7 +31,7 @@ namespace Nextension
         [ContextMenu("Ping origin")]
         private void pingOrigin()
         {
-            var alls = Object.FindObjectsOfType<OriginInstance>(true);
+            var alls = FindObjectsByType<OriginInstance>(FindObjectsInactive.Include, FindObjectsSortMode.InstanceID);
             foreach (var o in alls)
             {
                 if (o.isOrigin && o.Id == Id)

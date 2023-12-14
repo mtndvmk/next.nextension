@@ -37,6 +37,13 @@ namespace Nextension
                 throw new Exception($"`{typeOfT}` requires [{nameof(LoadableScriptableAttribute)}]");
             }
         }
+
+        [StartupMethod]
+        private static void startup()
+        {
+            getContainer();
+        }
+
         private static void loadContainer()
         {
             _container = NAssetUtils.getObjectOnMainResource<LoadableScriptableContainer>(LoadableScriptableContainer.FileNameOnResource);
@@ -49,6 +56,12 @@ namespace Nextension
                 loadContainer();
             }
             return _container;
+        }
+        internal static bool contains(ScriptableObject scriptableObject)
+        {
+            var container = getContainer();
+            if (container == null) return false;
+            return container.contains(scriptableObject);
         }
 
         public static bool isLoadable(Object @object)

@@ -27,7 +27,7 @@ namespace Nextension
 
         private static Stopwatch _stopwatch;
         public static long LatestUpdatedTimeMs { get; private set; }
-        public static long TimeSinceStartupMs => _stopwatch.ElapsedMilliseconds;
+        public static long CurrentTimeMs => _stopwatch.ElapsedMilliseconds;
         public static int DeltaTimeMs { get; private set; }
 
         public static uint UpdateCount => _isUpdatedInNewFrame ? _updateCount : (_updateCount + 1);

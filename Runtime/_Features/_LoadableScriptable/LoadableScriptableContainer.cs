@@ -55,6 +55,12 @@ namespace Nextension
                 _loadedNonPreloadScriptables.Clear();
             }
         }
+        internal bool contains(ScriptableObject scriptableObject)
+        {
+            bool isPreload = _preloadScriptables.Contains(scriptableObject);
+            if (isPreload) { return true; }
+            return _nonPreloadScriptables.FindIndex(nonLoadScriptable => nonLoadScriptable.getScriptableObject() == scriptableObject) >= 0;
+        }
 
         #region Editor
 #if UNITY_EDITOR

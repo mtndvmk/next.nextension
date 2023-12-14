@@ -45,14 +45,8 @@ namespace Nextension.NEditor
                 var enumNameStyle = new GUIStyle(GUI.skin.label);
                 enumNameStyle.fontStyle = FontStyle.Bold;
 
-                object cache = null;
+                bool hasChanged = arrValue.refreshEditorCache();
 
-                if (values.arraySize != arrValue.EnumCount)
-                {
-                    cache = arrValue.getEditorCache();
-                }
-
-                bool hasChanged = false;
                 while (values.arraySize > arrValue.EnumCount)
                 {
                     values.DeleteArrayElementAtIndex(values.arraySize - 1);
@@ -71,7 +65,7 @@ namespace Nextension.NEditor
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
                     arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
-                    arrValue.applyEditorCache(cache);
+                    property.serializedObject.ApplyModifiedProperties();
                 }
 
                 contentPosition.y += EditorGUIUtility.singleLineHeight;
@@ -87,6 +81,15 @@ namespace Nextension.NEditor
                     var valuePosition = contentPosition;
                     EditorGUI.PropertyField(valuePosition, vPro, new GUIContent(enumName), true);
                     contentPosition.y += h;
+                }
+            }
+            else
+            {
+                if (arrValue.refreshEditorCache())
+                {
+                    property.serializedObject.ApplyModifiedProperties();
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
                 }
             }
             arrValue.refreshEditorCache();

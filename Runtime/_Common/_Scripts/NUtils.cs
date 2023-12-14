@@ -1122,6 +1122,17 @@ namespace Nextension
             return hex;
         }
         /// <summary>
+        /// Format: #RRGGBBAA
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public static void toHex(this Color color, StringBuilder stringBuilder)
+        {
+            Color32 c = color;
+            stringBuilder.Clear();
+            stringBuilder.AppendFormat("#{0:X2}{1:X2}{2:X2}{3:X2}", c.r, c.g, c.b, c.a);
+        }
+        /// <summary>
         /// htmlCode format: #RGB,#RRGGBB,#RGBA, #RRGGBBAA, red, cyan, blue, darkblue, lightblue, purple, yellow, lime, fuchsia, white, silver, grey, black, orange, brown, maroon, green, olive, navy, teal, aqua, magenta
         /// </summary>
         public static Color toColor(this string htmlCode)
@@ -1325,6 +1336,14 @@ namespace Nextension
 
         #region Collection
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void copyTo<T>(this IEnumerable<T> colletion, IList<T> list)
+        {
+            list.Clear();
+            foreach (var item in colletion)
+            {
+                list.Add(item);
+            }
+        }
         public static Span<T> asSpan<T>(this List<T> self)
         {
             return self.AsSpan();
@@ -1382,7 +1401,7 @@ namespace Nextension
             throw new Exception("HashSet is empty");
         }
 
-        public static bool isSameItem<T>(this T[] a, T[] b) where T : IEquatable<T>
+        public static bool isSameItem<T>(this T[] a, T[] b)
         {
             if (a == null || b == null)
             {
@@ -1394,9 +1413,16 @@ namespace Nextension
                 return false;
             }
 
-            return a.AsSpan().SequenceEqual(b.AsSpan());
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (!a[i].equals(b[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
-        public static bool isSameItem<T>(this List<T> a, List<T> b) where T : IEquatable<T>
+        public static bool isSameItem<T>(this List<T> a, List<T> b)
         {
             if (a == null || b == null)
             {
@@ -1408,7 +1434,28 @@ namespace Nextension
                 return false;
             }
 
-            return a.asSpan().SequenceEqual(b.asSpan());
+            return isSameItem(a.asSpan(), b.asSpan());
+        }
+        public static bool isSameItem<T>(this Span<T> a, Span<T> b)
+        {
+            if (a == default || b == default)
+            {
+                return false;
+            }
+
+            if (a.Length != b.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (!a[i].equals(b[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         public static bool contains<T>(this T[] self, T value)
         {
@@ -1524,15 +1571,7 @@ namespace Nextension
         public static void removeAtSwapBack<T>(this List<T> self, int index)
         {
             var lastIndex = self.Count - 1;
-            if (lastIndex <= 0)
-            {
-                self.RemoveAt(index);
-                return;
-            }
-            if (lastIndex != index)
-            {
-                self[index] = self[lastIndex];
-            }
+            self[index] = self[lastIndex];
             self.RemoveAt(lastIndex);
         }
         public static T takeAndRemoveSwapBack<T>(this List<T> self, int index)

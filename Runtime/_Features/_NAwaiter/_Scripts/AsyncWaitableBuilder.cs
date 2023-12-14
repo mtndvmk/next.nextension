@@ -36,9 +36,9 @@ namespace Nextension
                 return;
             }
             awaiter.OnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancelable)
+            if (awaiter is ICancelable cancelableAwaiter)
             {
-                waitable.addCancelable(awaiter as ICancelable);
+                waitable.addCancelable(cancelableAwaiter);
             }
         }
         public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : ICriticalNotifyCompletion where TStateMachine : IAsyncStateMachine
@@ -48,9 +48,9 @@ namespace Nextension
                 return;
             }
             awaiter.UnsafeOnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancelable)
+            if (awaiter is ICancelable cancelableAwaiter)
             {
-                waitable.addCancelable(awaiter as ICancelable);
+                waitable.addCancelable(cancelableAwaiter);
             }
         }
     }
@@ -87,9 +87,9 @@ namespace Nextension
                 return;
             }
             awaiter.OnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancelable)
+            if (awaiter is ICancelable cancelableAwaiter)
             {
-                waitable.addCancelable(awaiter as ICancelable);
+                waitable.addCancelable(cancelableAwaiter);
             }
         }
         public void AwaitUnsafeOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : ICriticalNotifyCompletion where TStateMachine : IAsyncStateMachine
@@ -99,9 +99,9 @@ namespace Nextension
                 return;
             }
             awaiter.UnsafeOnCompleted(stateMachine.MoveNext);
-            if (awaiter is ICancelable)
+            if (awaiter is ICancelable cancelableAwaiter)
             {
-                waitable.addCancelable(awaiter as ICancelable);
+                waitable.addCancelable(cancelableAwaiter);
             }
         }
     }

@@ -13,6 +13,11 @@ namespace Nextension.Tween
             id = ++_maxId;
         }
 
+        public override int GetHashCode()
+        {
+            return NConverter.bitConvert<uint, int>(id);
+        }
+
         internal readonly uint id;
         internal bool isFinalized;
         internal bool isScheduled => scheduledTime > 0;

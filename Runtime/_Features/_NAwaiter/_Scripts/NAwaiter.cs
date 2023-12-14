@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Unity.Jobs;
 using UnityEngine;
 
@@ -29,6 +30,7 @@ namespace Nextension
         internal readonly Func<bool> predicate;
 
         NLoopType IWaitable.LoopType => loopType;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         public NWaitUntil(Func<bool> predicate, NLoopType loopType = NLoopType.Update)
         {
@@ -56,6 +58,7 @@ namespace Nextension
         internal readonly uint waitFrame;
 
         NLoopType IWaitable.LoopType => loopType;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         public NWaitFrame(uint waitFrame, NLoopType loopType = NLoopType.Update)
         {
@@ -83,6 +86,7 @@ namespace Nextension
         internal readonly float waitSecond;
 
         NLoopType IWaitable.LoopType => loopType;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         public NWaitSecond(float waitSecond, NLoopType loopType = NLoopType.Update)
         {
@@ -110,6 +114,7 @@ namespace Nextension
         internal readonly float waitSecond;
 
         NLoopType IWaitable.LoopType => loopType;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         public NWaitRealtimeSecond(float waitSecond, NLoopType loopType = NLoopType.Update)
         {
@@ -135,6 +140,7 @@ namespace Nextension
     {
         public NLoopType loopType;
         internal readonly JobHandle jobHandle;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         NLoopType IWaitable.LoopType => loopType;
 
@@ -163,6 +169,7 @@ namespace Nextension
     {
         public NLoopType loopType;
         internal readonly IEnumerator routine;
+        bool IWaitableFromCancelable.IsIgnoreFirstFrameCheck => true;
 
         NLoopType IWaitableFromCancelable.LoopType => loopType;
 
@@ -193,6 +200,7 @@ namespace Nextension
         public readonly NWaitable[] waitables;
 
         NLoopType IWaitable.LoopType => loopType;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         public CombineNWaitable(params NWaitable[] waitables)
         {
@@ -236,10 +244,45 @@ namespace Nextension
     public readonly struct NWaitMainThread : IWaitable
     {
         readonly NLoopType IWaitable.LoopType => NLoopType.Update;
+        bool IWaitable.IsIgnoreFirstFrameCheck => false;
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
-            // because wait system iterates and runs continuation function on main thread
-            return NWaitableResult.CompletedFunc;
+            static NWaitableResult func()
+            {
+                if (Thread.CurrentThread.ManagedThreadId == NStartRunner.MainThreadId)
+                {
+                    return NWaitableResult.Completed;
+                }
+                return NWaitableResult.None;
+            }
+            return func;
+        }
+    }
+    public readonly struct NWaitDeltaTime : IWaitable
+    {
+        NLoopType IWaitable.LoopType => NLoopType.Update;
+        bool IWaitable.IsIgnoreFirstFrameCheck => false;
+
+        public readonly uint timeMs;
+
+        public NWaitDeltaTime(uint timeMs = 10)
+        {
+            this.timeMs = timeMs;
+        }
+
+        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        {
+            long timeMs = this.timeMs;
+            NWaitableResult func()
+            {
+                var deltaTimeMs = NUpdater.CurrentTimeMs - NUpdater.LatestUpdatedTimeMs;
+                if (deltaTimeMs <= timeMs)
+                {
+                    return NWaitableResult.Completed;
+                }
+                return NWaitableResult.None;
+            }
+            return func;
         }
     }
 }

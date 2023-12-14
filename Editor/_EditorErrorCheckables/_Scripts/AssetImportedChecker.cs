@@ -61,33 +61,40 @@ namespace Nextension.NEditor
                     deletedMethods.Sort((a, b) => b.Item2.CompareTo(a.Item2));
                     movedMethods.Sort((a, b) => b.Item2.CompareTo(a.Item2));
 
+                    object[] arr = null;
                     if (importedAssets.Length > 0)
                     {
+                        arr ??= new object[1];
                         foreach (var p in importedAssets)
                         {
+                            arr[0] = p;
                             foreach (var m in importedMethods)
                             {
-                                m.Item1.Invoke(null, new object[] { p });
+                                m.Item1.Invoke(null, arr);
                             }
                         }
                     }
                     if (deletedAssets.Length > 0)
                     {
+                        arr ??= new object[1];
                         foreach (var p in deletedAssets)
                         {
+                            arr[0] = p;
                             foreach (var m in deletedMethods)
                             {
-                                m.Item1.Invoke(null, new object[] { p });
+                                m.Item1.Invoke(null, arr);
                             }
                         }
                     }
                     if (movedAssets.Length > 0)
                     {
+                        arr ??= new object[1];
                         foreach (var p in movedAssets)
                         {
+                            arr[0] = p;
                             foreach (var m in movedMethods)
                             {
-                                m.Item1.Invoke(null, new object[] { p });
+                                m.Item1.Invoke(null, arr);
                             }
                         }
                     }

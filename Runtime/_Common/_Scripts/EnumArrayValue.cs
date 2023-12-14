@@ -18,9 +18,7 @@ namespace Nextension
         object getValueAtIndex(int index);
 
 #if UNITY_EDITOR
-        object getEditorCache();
-        void applyEditorCache(object cache);
-        void refreshEditorCache();
+        bool refreshEditorCache();
 #endif
     }
 
@@ -29,44 +27,49 @@ namespace Nextension
     {
         [SerializeField] private TValue[] enumValues = new TValue[EnumIndex<TEnum>.getCount()];
 #pragma warning disable 0414
-        [SerializeField] private TEnum[] enumArrayCache;
+        [SerializeField] private int[] enumArrayCache;
+        [SerializeField] private int hash;
 #pragma warning restore 0414
 
         #region Editor
 #if UNITY_EDITOR
-        public object getEditorCache()
+        public bool refreshEditorCache()
         {
-            if (enumArrayCache == null || enumArrayCache.Length == 0)
+            if (enumArrayCache == null || hash != EnumIndex<TEnum>.Hash)
             {
-                refreshEditorCache();
-            }
+                hash = EnumIndex<TEnum>.Hash;
 
-            Dictionary<TEnum, TValue> dict = new(enumArrayCache.Length);
-            for (int i = 0; i < enumArrayCache.Length; ++i)
-            {
-                var k = enumArrayCache[i];
-                if (!EnumIndex<TEnum>.isValid(k) || i >= enumValues.Length) continue;
-                dict[k] = enumValues[i];
-            }
-            return dict;
-        }
-        public void refreshEditorCache()
-        {
-            if (enumArrayCache != EnumIndex<TEnum>.IndexToEnumTable)
-            {
-                enumArrayCache = EnumIndex<TEnum>.IndexToEnumTable;
-            }
-        }
-        public void applyEditorCache(object cache)
-        {
-            var dict = (Dictionary<TEnum, TValue>)cache;
-            if (dict != null)
-            {
-                foreach (var item in dict)
+                Dictionary<TEnum, TValue> dict = null;
+                int cacheCount = enumArrayCache == null ? 0 : enumArrayCache.Length;
+                if (cacheCount > 0)
                 {
-                    set(item.Key, item.Value);
+                    dict = new(cacheCount);
+                    for (int i = 0; i < cacheCount; i++)
+                    {
+                        var k = NConverter.bitConvert<int, TEnum>(enumArrayCache[i]);
+                        if (!EnumIndex<TEnum>.isValid(k) || i >= enumValues.Length) continue;
+                        dict[k] = enumValues[i];
+                    }
                 }
+
+                var enumArr = EnumIndex<TEnum>.IndexToEnumTable;
+                enumValues = new TValue[enumArr.Length];
+                enumArrayCache = new int[enumArr.Length];
+                for (int i = 0; i < enumArr.Length; i++)
+                {
+                    enumArrayCache[i] = NConverter.bitConvert<TEnum, int>(enumArr[i]);
+                }
+
+                if (dict != null)
+                {
+                    foreach (var item in dict)
+                    {
+                        set(item.Key, item.Value);
+                    }
+                }
+                return true;
             }
+            return false;
         }
 #endif
         #endregion
@@ -88,6 +91,9 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue get(TEnum enumType)
         {
+#if UNITY_EDITOR
+            refreshEditorCache();
+#endif
             return enumValues[EnumIndex<TEnum>.getIndex(enumType)];
         }
         public void set(TEnum enumType, TValue val)

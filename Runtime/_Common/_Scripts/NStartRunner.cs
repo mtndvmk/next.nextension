@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using UnityEngine;
 
 namespace Nextension
@@ -10,13 +11,14 @@ namespace Nextension
     {
         public static bool IsPlaying { get; private set; }
         public static int SessionId { get; private set; }
-
+        public static int MainThreadId { get; private set; }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
         private static void startRunner()
         {
 #if UNITY_EDITOR
             Application.quitting -= onAppQuitting;
 #endif
+            MainThreadId = Thread.CurrentThread.ManagedThreadId;
             Application.quitting += onAppQuitting;
 
             SessionId = DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode();

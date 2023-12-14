@@ -128,7 +128,7 @@ namespace Nextension.NEditor
                     scanAndReload();
                 }
             }
-            static void onAssetImported(string path)
+            static async void onAssetImported(string path)
             {
                 if (!path.EndsWith(NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION))
                 {
@@ -143,13 +143,14 @@ namespace Nextension.NEditor
                         Debug.LogError($"Missing {EditorLoadableScriptableContainer.FileNameOnResource} on Resource directory");
                         return;
                     }
+                    await new NWaitFrame_Editor(1);
                     if (container.add(scriptableObject))
                     {
                         container.reload();
                     }
                 }
             }
-            static void onAssetMoved(string path)
+            static async void onAssetMoved(string path)
             {
                 if (!path.EndsWith(NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION))
                 {
@@ -164,11 +165,12 @@ namespace Nextension.NEditor
                         Debug.LogError($"Missing {EditorLoadableScriptableContainer.FileNameOnResource} on Resource directory");
                         return;
                     }
+                    await new NWaitFrame_Editor(1);
                     container.add(scriptableObject);
                     container.reload();
                 }
             }
-            static void onAssetDeleted(string path)
+            static async void onAssetDeleted(string path)
             {
                 if (!path.EndsWith(NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION))
                 {
@@ -198,6 +200,7 @@ namespace Nextension.NEditor
 
                 if (path.EndsWith(NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION))
                 {
+                    await new NWaitFrame_Editor(1);
                     _editorContainer.reload();
                 }
             }

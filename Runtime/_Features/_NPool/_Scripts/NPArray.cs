@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
@@ -22,9 +23,15 @@ namespace Nextension
             return poolList;
         }
         private NPArray() : base() { }
+        
         public T this[int index]
         {
             get { return _collection[index]; }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T getWithoutChecks(int index)
+        {
+            return _collection.getWithoutChecks(index);
         }
         public void AddRange(IEnumerable<T> collection)
         {

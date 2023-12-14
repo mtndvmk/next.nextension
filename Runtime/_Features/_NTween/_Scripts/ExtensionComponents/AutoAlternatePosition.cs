@@ -4,18 +4,30 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public class AutoOscillatePosition : MonoBehaviour
+    public class AutoAlternatePosition : MonoBehaviour
     {
         [SerializeField] private float3 _fromPosition;
         [SerializeField] private float3 _toPosition;
-        [SerializeField] private bool _isLocalSpace = true;
         [SerializeField] private float _timePerHalfCycle = 0.5f;
+        [SerializeField] private bool _isLocalSpace = true;
         [SerializeField] private bool _isStartOnEnable = true;
+        [SerializeField] private bool _isResetToFromPositionOnEnable = true;
 
         private NTweener _tweener;
 
         private void OnEnable()
         {
+            if (_isResetToFromPositionOnEnable)
+            {
+                if (_isLocalSpace)
+                {
+                    transform.localPosition = _fromPosition;
+                }
+                else
+                {
+                    transform.position = _fromPosition;
+                }
+            }
             if (_isStartOnEnable)
             {
                 start();
@@ -26,6 +38,7 @@ namespace Nextension
             stop();
         }
 
+#if UNITY_EDITOR
         [ContextMenu("Caputure FromPosition")]
         private void caputureFromPosition()
         {
@@ -38,6 +51,7 @@ namespace Nextension
             _toPosition = _isLocalSpace ? transform.localPosition : transform.position; 
             NAssetUtils.setDirty(this);
         }
+#endif
 
         public void start()
         {

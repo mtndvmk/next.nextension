@@ -18,6 +18,7 @@ namespace Nextension
         public override bool keepWaiting => !_isFinalized;
 
         NLoopType IWaitable.LoopType => NLoopType.Update;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFinished() => Status.isFinished();

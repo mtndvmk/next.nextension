@@ -30,17 +30,46 @@ namespace Nextension
                 return _enumToIndexTable;
             }
         }
+
+#if UNITY_EDITOR
+        private static uint _hash;
+        internal static int Hash
+        {
+            get
+            {
+                if (_enumToIndexTable == null)
+                {
+                    createTable();
+                }
+                return NConverter.bitConvert<uint, int>(_hash);
+            }
+        }
+#endif
+
         private static void createTable()
         {
             _indexToEnumTable = Enum.GetValues(typeof(T)) as T[];
 
             Array.Sort(_indexToEnumTable);
 
-            _enumToIndexTable = new Dictionary<T, int>(_indexToEnumTable.Length);
-            for (int i = 0; i < _indexToEnumTable.Length; ++i)
+#if UNITY_EDITOR
+            _hash = (uint)NUtils.sizeOf<T>();
+#endif
+            int enumCount = _indexToEnumTable.Length;
+            _enumToIndexTable = new Dictionary<T, int>(enumCount);
+            for (int i = 0; i < enumCount; ++i)
             {
                 _enumToIndexTable[_indexToEnumTable[i]] = i;
+#if UNITY_EDITOR
+                uint seed = NConverter.bitConvert<T, uint>(_indexToEnumTable[i]);
+                if (seed == 0) seed = 0x6E624EB7u;
+                _hash ^= new Unity.Mathematics.Random(seed).state;
+#endif
             }
+
+#if UNITY_EDITOR
+            _hash ^= (uint)_indexToEnumTable.Length;
+#endif
         }
 
         public static int EnumCount => IndexToEnumTable.Length;
@@ -71,6 +100,11 @@ namespace Nextension
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<T> asReadOnlySpan()
+        {
+            return IndexToEnumTable;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Span<T> asSpan()
         {
             return IndexToEnumTable;
         }

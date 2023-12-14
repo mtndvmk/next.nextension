@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
@@ -38,11 +39,12 @@ namespace Nextension
                 _items[index] = value;
             }
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T getWithoutChecks(int index)
         {
             return _items[index];
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void setWithoutChecks(int index, T value)
         {
             _items[index] = value;
