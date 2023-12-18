@@ -22,7 +22,7 @@ namespace Nextension.Tween
                 _isInitialized = true;
                 _inQueueRunnableTweeners = new List<NRunnableTweener>();
                 _inCombinedTweeners = new List<CombinedNTweener>();
-                _runners = new Dictionary<uint, AbsTweenRunner>();
+                _runners = new Dictionary<uint, AbsTweenRunner>(1);
                 _cancelControlManager = new CancelControlManager();
 
                 NUpdater.onUpdateEvent.add(update);

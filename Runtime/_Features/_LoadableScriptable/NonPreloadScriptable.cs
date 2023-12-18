@@ -24,7 +24,7 @@ namespace Nextension
 
         public ScriptableObject getScriptableObject()
         {
-            return NAssetUtils.getObjectOnMainResource<ScriptableObject>(pathInResource);
+            return NAssetUtils.getObjectOnResources<ScriptableObject>(pathInResource);
         }
         public int CompareTo(NonPreloadScriptable other)
         {

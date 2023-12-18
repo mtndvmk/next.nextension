@@ -35,7 +35,7 @@ namespace Nextension
 #if UNITY_EDITOR
         public bool refreshEditorCache()
         {
-            if (enumArrayCache == null || hash != EnumIndex<TEnum>.Hash)
+            if (enumArrayCache == null || enumArrayCache.Length == 0 || hash != EnumIndex<TEnum>.Hash)
             {
                 hash = EnumIndex<TEnum>.Hash;
 

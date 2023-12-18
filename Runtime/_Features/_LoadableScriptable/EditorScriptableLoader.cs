@@ -12,7 +12,7 @@ namespace Nextension.NEditor
         private static EditorLoadableScriptableContainer _editorContainer;
         private static void loadEditorContainer()
         {
-            _editorContainer = NAssetUtils.getObjectOnMainResource<EditorLoadableScriptableContainer>(EditorLoadableScriptableContainer.FileNameOnResource);
+            _editorContainer = NAssetUtils.getObjectOnResources<EditorLoadableScriptableContainer>(EditorLoadableScriptableContainer.FileNameOnResource);
         }
         private static EditorLoadableScriptableContainer getEditorContainer()
         {
@@ -119,14 +119,7 @@ namespace Nextension.NEditor
             static void onLoadOrRecompiled()
             {
                 loadEditorContainer();
-                if (_editorContainer != null)
-                {
-                    _editorContainer.reload();
-                }
-                else
-                {
-                    scanAndReload();
-                }
+                scanAndReload();
             }
             static async void onAssetImported(string path)
             {

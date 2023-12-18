@@ -86,7 +86,7 @@ namespace Nextension.Tween
                         if (deltaTime < common.duration)
                         {
                             uint seed = NConverter.bitConvert<float, uint>(deltaTime + index) ^ 0x6E624EB7u;
-                            result = NTweenUtils.randShakeValue<TValue>(seed, data.range);
+                            result = NTweenUtils.addValue(data.origin, NTweenUtils.randShakeValue<TValue>(seed, data.range));
                         }
                         else
                         {

@@ -9,7 +9,10 @@ namespace Nextension.NEditor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-
+            if (NAssetUtils.IsCompiling)
+            {
+                return;
+            }
 #if UNITY_2022_3_OR_NEWER
             EditorGUI.indentLevel--;
 #endif

@@ -98,7 +98,14 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void updateStartupInstances()
         {
-            updateStartupInstances(null);
+            if (_isUniquePool)
+            {
+                updateStartupInstances(null);
+            }
+            else
+            {
+                SharedPool.updateStartupInstances(null);
+            }
         }
         internal void updateStartupInstances(int? startupCount)
         {
@@ -371,7 +378,15 @@ namespace Nextension
 
         public void OnAfterDeserialize()
         {
-#if !UNITY_EDITOR
+#if UNITY_EDITOR
+            new NWaitFrame_Editor(1).startWaitable().addCompletedEvent(() =>
+            {
+                if (NStartRunner.IsPlaying && _prefab)
+                {
+                    updateStartupInstances();
+                }
+            });
+#else
             new NWaitFrame(1).startWaitable().addCompletedEvent(updateStartupInstances);
 #endif
         }

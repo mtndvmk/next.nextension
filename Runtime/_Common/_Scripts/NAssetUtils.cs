@@ -63,8 +63,9 @@ namespace Nextension
         }
         internal static async Task awaitImportWorkerProcess()
         {
-            await new NWaitUntil_Editor(() => !AssetDatabase.IsAssetImportWorkerProcess() && !EditorApplication.isUpdating && !EditorApplication.isCompiling);
+            await new NWaitUntil_Editor(() => !IsCompiling);
         }
+        public static bool IsCompiling => AssetDatabase.IsAssetImportWorkerProcess() || EditorApplication.isUpdating || EditorApplication.isCompiling;
 
         public static bool delete(Object @object)
         {
@@ -138,7 +139,7 @@ namespace Nextension
             ScriptableObject scriptable;
             if (System.IO.File.Exists(filePath))
             {
-                scriptable = getObjectOnMainResource<ScriptableObject>(fileName);
+                scriptable = getObjectOnResources<ScriptableObject>(fileName);
                 if (scriptable == null)
                 {
                     throw new System.Exception($"`{fileName}` exists but can't be loaded");
@@ -167,11 +168,11 @@ namespace Nextension
             EditorUtility.SetDirty(@object);
 #endif
         }
-        public static bool hasObjectOnMainResource(string fileName)
+        public static bool hasObjectOnResources(string fileName)
         {
-            return getObjectOnMainResource<Object>(fileName);
+            return getObjectOnResources<Object>(fileName);
         }
-        public static T getObjectOnMainResource<T>(string fileName) where T : Object
+        public static T getObjectOnResources<T>(string fileName) where T : Object
         {
 #if UNITY_EDITOR
             var dir = MAIN_RESOURCE_PATH;
@@ -197,7 +198,7 @@ namespace Nextension
             var @object = AssetDatabase.LoadAssetAtPath<T>(path);
             if (@object == null)
             {
-                return null;
+                return Resources.Load<T>(fileName.removeExtension());
             }
 #else
             var @object = Resources.Load<T>(fileName.removeExtension());
@@ -222,14 +223,17 @@ namespace Nextension
 #endif
         }
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        public static async void saveAssets(bool isImmediate = false)
+        public static void saveAssets(bool isImmediate = false)
         {
 #if UNITY_EDITOR
             if (!isImmediate)
             {
-                await awaitImportWorkerProcess();
+                saveInNext();
             }
-            AssetDatabase.SaveAssets();
+            else
+            {
+                AssetDatabase.SaveAssets();
+            }
 #endif
         }
     }

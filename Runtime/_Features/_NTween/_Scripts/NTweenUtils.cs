@@ -81,6 +81,18 @@ namespace Nextension.Tween
             };
         }
         [BurstCompile]
+        public static T addValue<T>(T a, T b) where T : unmanaged
+        {
+            return ISupportedDataType<T>.type switch
+            {
+                SupportedDataType.Float => NConverter.bitConvert<float, T>(NConverter.bitConvert<T, float>(a) + NConverter.bitConvert<T, float>(b)),
+                SupportedDataType.Float2 => NConverter.bitConvert<float2, T>(NConverter.bitConvert<T, float2>(a) + NConverter.bitConvert<T, float2>(b)),
+                SupportedDataType.Float3 => NConverter.bitConvert<float3, T>(NConverter.bitConvert<T, float3>(a) + NConverter.bitConvert<T, float3>(b)),
+                SupportedDataType.Float4 => NConverter.bitConvert<float4, T>(NConverter.bitConvert<T, float4>(a) + NConverter.bitConvert<T, float4>(b)),
+                _ => throw new NotImplementedException(),
+            };
+        }
+        [BurstCompile]
         public static void applyTransformAccessJobData<TValue>(TransformTweenType transformTweenType, TransformAccess transform, TValue result) where TValue : unmanaged
         {
             switch (transformTweenType)

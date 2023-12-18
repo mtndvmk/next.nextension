@@ -41,7 +41,7 @@ namespace Nextension
 
             if (_nonPreloadScriptablePaths.TryGetValue(typeOfT, out var path))
             {
-                var scriptable = NAssetUtils.getObjectOnMainResource<T>(path);
+                var scriptable = NAssetUtils.getObjectOnResources<T>(path);
                 (_loadedNonPreloadScriptables ??= new(1))[typeOfT] = scriptable;
                 return scriptable;
             }

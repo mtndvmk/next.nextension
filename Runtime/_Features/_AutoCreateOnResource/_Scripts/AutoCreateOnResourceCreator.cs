@@ -17,7 +17,7 @@ namespace Nextension
                 var attr = type.GetCustomAttribute<AutoCreateOnResourceAttribute>();
                 if (attr == null) continue;
                 var fileName = attr.getFileName(type);
-                if (NAssetUtils.hasObjectOnMainResource(fileName)) continue;
+                if (NAssetUtils.hasObjectOnResources(fileName)) continue;
                 try
                 {
                     NAssetUtils.createOnResource(type, fileName);
