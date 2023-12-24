@@ -108,7 +108,7 @@ namespace Nextension
             {
                 return;
             }
-            (otherOperation._dependedOperations ??= new()).add(otherOperation);
+            (otherOperation._dependedOperations ??= new(1)).addIfNotPresent(otherOperation);
         }
 
         private void finalizeOnDependedOperations()

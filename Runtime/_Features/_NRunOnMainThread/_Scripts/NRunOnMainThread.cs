@@ -9,6 +9,7 @@ namespace Nextension
     {
         private static List<ActionData> _actions = new();
         private static bool _isInitialized;
+#if UNITY_EDITOR
         [EditorQuittingMethod]
         private static void reset()
         {
@@ -20,6 +21,7 @@ namespace Nextension
             }
             _actions.Clear();
         }
+#endif
         private static void initialize()
         {
             if (!_isInitialized)

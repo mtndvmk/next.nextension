@@ -7,11 +7,23 @@ namespace Nextension
     {
         public static NPList<T> get()
         {
-            return (_pool ??= new()).get();
+            var collectionPool = (_pool ??= new()).get();
+            collectionPool.startTracking();
+            return collectionPool;
         }
         public static NPList<T> get(IEnumerable<T> collection)
         {
             var poolList = get();
+            poolList.AddRange(collection);
+            return poolList;
+        }
+        public static NPList<T> getWithoutTracking()
+        {
+            return (_pool ??= new()).get();
+        }
+        public static NPList<T> getWithoutTracking(IEnumerable<T> collection)
+        {
+            var poolList = getWithoutTracking();
             poolList.AddRange(collection);
             return poolList;
         }

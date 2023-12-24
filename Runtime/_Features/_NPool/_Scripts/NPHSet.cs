@@ -6,11 +6,23 @@ namespace Nextension
     {
         public static NPHSet<T> get()
         {
-            return (_pool ??= new()).get();
+            var collectionPool = (_pool ??= new()).get();
+            collectionPool.startTracking();
+            return collectionPool;
         }
         public static NPHSet<T> get(IEnumerable<T> collection)
         {
             var poolList = get();
+            poolList.UnionWith(collection);
+            return poolList;
+        }
+        public static NPHSet<T> getWithoutTracking()
+        {
+            return (_pool ??= new()).get();
+        }
+        public static NPHSet<T> getWithoutTracking(IEnumerable<T> collection)
+        {
+            var poolList = getWithoutTracking();
             poolList.UnionWith(collection);
             return poolList;
         }

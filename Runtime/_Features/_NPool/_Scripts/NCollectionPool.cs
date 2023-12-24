@@ -19,13 +19,22 @@ namespace Nextension
 
         protected NCollectionPool()
         {
-            _collection = new();
+            _collection = NUtils.createInstance<TCollection>();
 #if !NNEXT_DISABLE_NPOOL_TRACKING
             string id = $"{GetType()}, {_pool.CountAll}";
             _poolTrackable = new(id);
             Debug.Log($"Created {id}");
 #endif
         }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        protected void startTracking()
+        {
+#if !NNEXT_DISABLE_NPOOL_TRACKING
+            _poolTrackable.setUpdateNumber();
+#endif
+        }
+
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         protected void onAccessed()
         {
@@ -45,11 +54,6 @@ namespace Nextension
 
 #if !NNEXT_DISABLE_NPOOL_TRACKING
         private PoolTracker _poolTrackable;
-
-        void IPoolable.onSpawned()
-        {
-            _poolTrackable.setUpdateNumber();
-        }
         void IPoolable.onDespawned()
         {
             _poolTrackable.resetUpdateNumber();

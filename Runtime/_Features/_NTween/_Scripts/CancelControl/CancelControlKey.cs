@@ -1,21 +1,24 @@
-﻿using UnityEngine;
+﻿using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace Nextension.Tween
 {
     internal struct CancelControlKey
     {
-        private readonly long _key;
+        public readonly long longKey;
         public override int GetHashCode()
         {
-            return _key.GetHashCode();
+            return longKey.GetHashCode();
         }
         internal CancelControlKey(long key)
         {
-            _key = key;
+            longKey = key;
         }
-        internal long LongKey => _key;
-        internal bool isDefault() { return _key == 0; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal bool isDefault() { return longKey == 0; }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static long getLongKey(uint uintKey) => (long)uintKey << 32;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static long getLongKey(Object objKey) => objKey.GetHashCode();
     }
 }

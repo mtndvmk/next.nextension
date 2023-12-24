@@ -6,8 +6,10 @@ namespace Nextension
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class AutoCreateOnResourceAttribute : Attribute
     {
+#if UNITY_EDITOR
         internal readonly string fileName;
-        public AutoCreateOnResourceAttribute() { }
+        internal bool useTypeName => string.IsNullOrEmpty(fileName);
+        public AutoCreateOnResourceAttribute() { fileName = null; }
         public AutoCreateOnResourceAttribute(string fileName) { this.fileName = fileName; }
         public string getFileName(Type type)
         {
@@ -17,6 +19,7 @@ namespace Nextension
             }
             return "AutoCreated/[AutoCreated] " + fileName;
         }
+#endif
     }
 
     public class AutoCreateOnResourceUtils

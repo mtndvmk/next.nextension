@@ -20,9 +20,11 @@ namespace Nextension.Tween
 
         internal readonly uint id;
         internal bool isFinalized;
-        internal bool isScheduled => scheduledTime > 0;
+        public RunState Status { get; private set; }
         internal float scheduledTime;
         internal CancelControlKey controlKey;
+
+        internal bool isScheduled => scheduledTime > 0;
 
         private Action onStartedEvent;
         private Action onUpdatedEvent;
@@ -41,7 +43,6 @@ namespace Nextension.Tween
             await new NWaitUntil(() => Status == RunState.Completed);
         }
 
-        public RunState Status { get; private set; }
 
         /// <summary>
         /// Stop tweener
@@ -158,11 +159,7 @@ namespace Nextension.Tween
         }
         public NTweener cancelWhen(Func<bool> condition)
         {
-            if (cancelWhenFuncList == null)
-            {
-                cancelWhenFuncList = new List<Func<bool>>();
-            }
-            cancelWhenFuncList.Add(condition);
+            (cancelWhenFuncList ??= new List<Func<bool>>()).Add(condition);
             return this;
         }
         public void setCancelControlKey(UnityEngine.Object target)
@@ -202,7 +199,7 @@ namespace Nextension.Tween
                 controlKey = default;
             }
         }
-        internal bool checkCancelFromFunc()
+        internal bool isCanceledFromFunc()
         {
             if (cancelWhenFuncList == null)
             {
@@ -223,7 +220,7 @@ namespace Nextension.Tween
             if (Status == RunState.None && !isScheduled)
             {
                 scheduledTime = Time.time;
-                NTweenManager.run(this);
+                onRun();
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -232,7 +229,7 @@ namespace Nextension.Tween
             if (Status == RunState.None && !isScheduled)
             {
                 scheduledTime = Time.time;
-                NTweenManager.schedule(this);
+                onSchedule();
             }
         }
         internal void resetState()
@@ -276,8 +273,10 @@ namespace Nextension.Tween
         {
             try
             {
-                onUpdatedEvent?.Invoke();
-                checkCancelFromFunc();
+                if (!isCanceledFromFunc())
+                {
+                    onUpdatedEvent?.Invoke();
+                }
             }
             catch (Exception e)
             {
@@ -335,6 +334,9 @@ namespace Nextension.Tween
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal virtual void forceComplete() { }
+
+        protected abstract void onRun();
+        protected abstract void onSchedule();
     }
     public abstract class GenericNTweener<T> : NTweener where T : NTweener
     {
@@ -404,13 +406,13 @@ namespace Nextension.Tween
     public class CombinedNTweener : GenericNTweener<CombinedNTweener>
     {
         private readonly NTweener[] _tweeners;
-        private readonly HashSet<NTweener> _updatedTweeners;
+        private readonly List<uint> _updatedTweeners;
         private int _finalizedCount;
 
         public CombinedNTweener(params NTweener[] tweeners)
         {
             _tweeners = tweeners;
-            _updatedTweeners = new HashSet<NTweener>(_tweeners.Length);
+            _updatedTweeners = new(_tweeners.Length);
         }
 
         protected override void onInnerStarted()
@@ -439,10 +441,17 @@ namespace Nextension.Tween
                 tweener.resetState();
             }
         }
-
+        protected override void onRun()
+        {
+            NTweenManager.run(this);
+        }
+        protected override void onSchedule()
+        {
+            NTweenManager.schedule(this);
+        }
         private void onTweenerUpdated(NTweener tweener)
         {
-            if (_updatedTweeners.Add(tweener))
+            if (_updatedTweeners.addIfNotPresent(tweener.id))
             {
                 if (_updatedTweeners.Count == _tweeners.Length - _finalizedCount)
                 {

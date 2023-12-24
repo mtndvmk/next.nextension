@@ -28,25 +28,24 @@ namespace Nextension
             {
                 this.groupId = groupId;
                 this.name = func.ToString();
+                if (!_runningCoroutines.TryGetValue(groupId, out var hashset))
+                {
+                    hashset = new(1) { this };
+                    _runningCoroutines.Add(groupId, hashset);
+                }
+                else
+                {
+                    hashset.Add(this);
+                }
+
                 IEnumerator innerRoutine()
                 {
                     Status = RunState.Running;
                     yield return func;
                     Status = RunState.Completed;
-                    _runningCoroutines[groupId].Remove(this);
+                    hashset.Remove(this);
                 }
                 this.coroutine = _runner.StartCoroutine(innerRoutine());
-                HashSet<Data> hashset;
-                if (_runningCoroutines.ContainsKey(groupId))
-                {
-                    hashset = _runningCoroutines[groupId];
-                }
-                else
-                {
-                    hashset = new HashSet<Data>(1);
-                    _runningCoroutines.Add(groupId, hashset);
-                }
-                hashset.Add(this);
             }
             public void cancel()
             {

@@ -159,6 +159,14 @@ namespace Nextension
             }
             _items[_count] = default;
         }
+        public void removeWithoutChecks(int index)
+        {
+            if (index < --_count)
+            {
+                Array.Copy(_items, index + 1, _items, index, _count - index);
+            }
+            _items[_count] = default;
+        }
 
         public int IndexOf(T item)
         {

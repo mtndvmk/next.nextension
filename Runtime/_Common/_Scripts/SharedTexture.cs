@@ -5,19 +5,17 @@ namespace Nextension
 {
     public static class SharedTextureManager
     {
-        [StartupMethod]
-        private static void reset()
+#if UNITY_EDITOR
+        static SharedTextureManager()
+        {
+            NUpdater.onUpdateEvent.add(checkOrigins);
+        }
+        [EditorQuittingMethod]
+        static void reset()
         {
             SHARED_TEXTURE_COUNTER = 0;
-            origins = new HashSet<OriginTexture>();
-#if UNITY_EDITOR
-            NUpdater.onUpdateEvent.add(checkOrigins);
-#endif
+            origins.Clear();
         }
-        internal static uint SHARED_TEXTURE_COUNTER;
-        internal static HashSet<OriginTexture> origins;
-
-#if UNITY_EDITOR
         private static void checkOrigins()
         {
             foreach (var origin in origins)
@@ -29,6 +27,9 @@ namespace Nextension
             }
         }
 #endif
+        internal static uint SHARED_TEXTURE_COUNTER;
+        internal static HashSet<OriginTexture> origins = new();
+
         public static void disposeAllOrigins()
         {
             foreach (var origin in origins)

@@ -53,7 +53,6 @@ namespace Nextension.Tween
             return tweener;
         }
 
-
         public static NRunnableTweener punchPosition(Transform target, float3 punchDestination, float duration, bool isLocalSpace = true)
         {
             NRunnableTweener tweener;

@@ -36,7 +36,7 @@ namespace Nextension.NEditor
             return _editorContainer;
         }
 
-        internal static void scanAndReload()
+        internal static void scanAndReload(bool forceReload = false)
         {
             List<ScriptableObject> validScriptables = new List<ScriptableObject>();
             var guids = AssetDatabase.FindAssets("t:ScriptableObject");
@@ -57,7 +57,7 @@ namespace Nextension.NEditor
                 {
                     isAdded |= container.add(scriptableObject);
                 }
-                if (isAdded) container.reload();
+                if (isAdded || forceReload) container.reload();
             }
             else
             {

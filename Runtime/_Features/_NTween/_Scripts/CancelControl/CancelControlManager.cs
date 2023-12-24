@@ -26,16 +26,17 @@ namespace Nextension.Tween
         }
         public bool isInvalid(CancelControlKey key)
         {
-            if (_objectKeys.TryGetValue(key.LongKey, out var target) && !target) return false;
+            if (_objectKeys.TryGetValue(key.longKey, out var target) && !target) return false;
             return true;
         }
 
         public void addTweener(NTweener tweener)
         {
-            if (!_controlledTweeners.TryGetValue(tweener.controlKey.LongKey, out var hashset))
+            var key = tweener.controlKey.longKey;
+            if (!_controlledTweeners.TryGetValue(key, out var hashset))
             {
-                hashset = new(1) { tweener };
-                _controlledTweeners.Add(tweener.controlKey.LongKey, hashset);
+                hashset = new() { tweener };
+                _controlledTweeners.Add(key, hashset);
             }
             else
             {
@@ -47,11 +48,12 @@ namespace Nextension.Tween
         }
         public void removeTweener(NTweener tweener)
         {
-            if (_controlledTweeners.TryGetValue(tweener.controlKey.LongKey, out var hashset))
+            var key = tweener.controlKey.longKey;
+            if (_controlledTweeners.TryGetValue(key, out var hashset))
             {
                 if (hashset.Remove(tweener) && hashset.Count == 0)
                 {
-                    _controlledTweeners.Remove(tweener.controlKey.LongKey);
+                    _controlledTweeners.Remove(key);
                 }
             }
         }
@@ -71,7 +73,7 @@ namespace Nextension.Tween
         {
             if (_controlledTweeners.Count > 0)
             {
-                var keys = _objectKeys.ToArray();
+                using var keys = _objectKeys.toNPArray();
                 foreach (var k in keys)
                 {
                     if (!k.Value)
@@ -82,5 +84,12 @@ namespace Nextension.Tween
                 }
             }
         }
+#if UNITY_EDITOR
+        public void clear()
+        {
+            _controlledTweeners.Clear();
+            _objectKeys.Clear();
+        }
+#endif
     }
 }

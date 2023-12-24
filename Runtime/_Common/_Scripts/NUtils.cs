@@ -1356,16 +1356,14 @@ namespace Nextension
         {
             return NPHSet<T>.get(colletion);
         }
-        public static void add<T>(this ICollection<T> self, T item, bool ignoreIfExist = true)
+        public static bool addIfNotPresent<T>(this ICollection<T> self, T item)
         {
-            if (ignoreIfExist)
+            if (self.Contains(item))
             {
-                if (self.Contains(item))
-                {
-                    return;
-                }
+                return false;
             }
             self.Add(item);
+            return true;
         }
         public static void addAndSort<T>(this List<T> self, T item, bool ignoreIfExist = true)
         {

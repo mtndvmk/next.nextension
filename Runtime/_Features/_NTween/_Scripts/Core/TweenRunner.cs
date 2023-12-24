@@ -1,52 +1,68 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using Unity.Collections;
 using Unity.Jobs;
 
 namespace Nextension.Tween
 {
     internal abstract class AbsTweenRunner
     {
+        public static ushort maxId = 0;
         protected const int MIN_COUNT_OF_CHUNK = 1;
 
-        public uint runnerId;
+        public ushort runnerId;
 
         public abstract void addTweener(NRunnableTweener inTweener);
-        public abstract void runTweenJob(NativeList<JobHandle> jobHandles, NativeList<(uint runnerId, uint chunkId)> runningChunks);
+        public abstract void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks);
         public abstract void dispose();
-        public abstract TweenChunk getChunk(uint chunkId);
+        public abstract TweenChunk getChunk(ushort chunkId);
     }
+
+    internal static class TweenRunnerIdCache<TRunner> where TRunner : AbsTweenRunner
+    {
+        public readonly static ushort id = ++AbsTweenRunner.maxId;
+    }
+
     internal sealed class TweenRunner<TChunk> : AbsTweenRunner where TChunk : TweenChunk
     {
-        private readonly Dictionary<uint, TChunk> _chunks = new(1);
-        private readonly List<TChunk> _notFullChunks = new(1);
+        private readonly Dictionary<ushort, TweenChunk> _chunks = new(1);
+        private readonly NArray<TweenChunk> _notFullChunks = new();
+        private readonly Action<TweenChunk> onChunkBecomeNotFullFunc;
+
+        public TweenRunner()
+        {
+            onChunkBecomeNotFullFunc = (chunk) =>
+            {
+                _notFullChunks.Add(chunk);
+            };
+        }
 
         public int ChunkCount => _chunks.Count;
 
         public sealed override void addTweener(NRunnableTweener tweener)
         {
-            TChunk chunk;
+            TweenChunk newChunk;
             int lastIndex = _notFullChunks.Count - 1;
             if (lastIndex < 0)
             {
-                chunk = NUtils.createInstance<TChunk>();
-                chunk.onChunkBecomeNotFull = () => _notFullChunks.Add(chunk);
-                _chunks.Add(chunk.chunkId, chunk);
-                _notFullChunks.Add(chunk);
+                newChunk = NUtils.createInstance<TChunk>();     
+                newChunk.onChunkBecomeNotFull = onChunkBecomeNotFullFunc;
+                _chunks.Add(newChunk.chunkId, newChunk);
+                _notFullChunks.Add(newChunk);
                 lastIndex = 0;
             }
             else
             {
-                chunk = _notFullChunks[lastIndex];
+                newChunk = _notFullChunks.getWithoutChecks(lastIndex);
             }
 
-            chunk.addTweener(tweener);
-            if (chunk.isFull())
+            newChunk.addTweener(tweener);
+            if (newChunk.isFull())
             {
-                _notFullChunks.RemoveAt(lastIndex);
+                _notFullChunks.removeWithoutChecks(lastIndex);
             }
         }
-        public sealed override void runTweenJob(NativeList<JobHandle> jobHandles, NativeList<(uint runnerId, uint chunkId)> runningChunks)
+        public sealed override void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks)
         {
             int chunksCount = _chunks.Count;
             using var chunkIds = _chunks.Keys.toNPArray();
@@ -70,7 +86,7 @@ namespace Nextension.Tween
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public sealed override TweenChunk getChunk(uint chunkId)
+        public sealed override TweenChunk getChunk(ushort chunkId)
         {
             return _chunks[chunkId];
         }

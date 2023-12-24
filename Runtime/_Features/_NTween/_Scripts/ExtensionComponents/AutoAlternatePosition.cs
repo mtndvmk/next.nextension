@@ -35,7 +35,10 @@ namespace Nextension
         }
         private void OnDisable()
         {
-            stop();
+#if UNITY_EDITOR
+            if (NStartRunner.IsPlaying)
+#endif
+                stop();
         }
 
 #if UNITY_EDITOR

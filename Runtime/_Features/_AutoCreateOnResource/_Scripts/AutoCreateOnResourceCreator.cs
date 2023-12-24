@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using System;
+using System.IO;
 using System.Reflection;
+using UnityEditor;
 using UnityEngine;
 
 namespace Nextension
@@ -18,6 +20,32 @@ namespace Nextension
                 if (attr == null) continue;
                 var fileName = attr.getFileName(type);
                 if (NAssetUtils.hasObjectOnResources(fileName)) continue;
+                if (attr.useTypeName)
+                {
+                    var fullPath = NAssetUtils.createMainResourcesPath(fileName);
+                    var dir = Path.GetDirectoryName(fullPath);
+                    var so = NAssetUtils.findAssetAt(dir, type, out var foundPath);
+                    if (so != null)
+                    {
+                        try
+                        {
+                            var error = AssetDatabase.ValidateMoveAsset(foundPath, fullPath);
+                            if (string.IsNullOrEmpty(error))
+                            {
+                                AssetDatabase.MoveAsset(foundPath, fullPath);
+                            }
+                            else
+                            {
+                                Debug.LogError(error);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                        continue;
+                    }
+                }
                 try
                 {
                     NAssetUtils.createOnResource(type, fileName);
@@ -28,6 +56,7 @@ namespace Nextension
                     continue;
                 }
             }
+            AssetDatabase.Refresh();
         }
         static void onAssetDeleted(string path)
         {

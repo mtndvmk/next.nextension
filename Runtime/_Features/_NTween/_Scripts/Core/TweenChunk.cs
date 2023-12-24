@@ -11,8 +11,7 @@ namespace Nextension.Tween
         #region Const & Static
         private static short[] _defaultEmptyIndices;
 
-        [StartupMethod]
-        static void initialize()
+        static TweenChunk()
         {
             _chunkIdOrder = 0;
             ChunkCount = 0;
@@ -24,29 +23,25 @@ namespace Nextension.Tween
                 _defaultEmptyIndices[i] = (short)(chunkSizeMinusOne - i);
             }
         }
-        private static uint _chunkIdOrder;
+        private static ushort _chunkIdOrder;
         public static short ChunkCount { get; private set; }
         public const ushort ChunkSize = 256;
         public const float NotAccessTimeLimit = 10;
         #endregion
 
         protected NativeArray<byte> _mask;
-        protected readonly NativeList<short> _emptyIndices;
+        protected NNativeListFixedSize<short> _emptyIndices;
         protected float _lastEmptyTime;
 
-        public readonly uint chunkId;
-        public Action onChunkBecomeNotFull;
+        public readonly ushort chunkId;
+        public Action<TweenChunk> onChunkBecomeNotFull;
 
         public unsafe TweenChunk()
         {
             chunkId = ++_chunkIdOrder;
             ChunkCount++;
             _mask = new NativeArray<byte>(ChunkSize, Allocator.Persistent);
-            _emptyIndices = new(ChunkSize, AllocatorManager.Persistent);
-            fixed (void* ptr = &_defaultEmptyIndices[0])
-            {
-                _emptyIndices.AddRangeNoResize(ptr, ChunkSize);
-            }
+            _emptyIndices = new(_defaultEmptyIndices, Allocator.Persistent);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void dispose()
@@ -56,9 +51,9 @@ namespace Nextension.Tween
             ChunkCount--;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool isFull() => _emptyIndices.Length == 0;
+        public bool isFull() => _emptyIndices.Count == 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool isEmpty() => _emptyIndices.Length == ChunkSize;
+        public bool isEmpty() => _emptyIndices.Count == ChunkSize;
 
         public bool isUnused()
         {
@@ -73,7 +68,7 @@ namespace Nextension.Tween
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int getNextMaskIndex()
         {
-            return _emptyIndices.takeAndRemoveLast();
+            return _emptyIndices.TakeAndRemoveLast();
         }
 
         public abstract void addTweener(NRunnableTweener tweener);
@@ -108,7 +103,7 @@ namespace Nextension.Tween
 #endif
             var isFull = this.isFull();
             _mask.setBit0(maskIndex);
-            _emptyIndices.Add((short)maskIndex);
+            _emptyIndices.AddNoResize((short)maskIndex);
             if (isEmpty())
             {
                 _lastEmptyTime = TweenStaticManager.currentTime;
@@ -117,7 +112,7 @@ namespace Nextension.Tween
             TweenStaticManager.runningTweenerCount--;
             if (isFull && !this.isFull())
             {
-                onChunkBecomeNotFull.Invoke();
+                onChunkBecomeNotFull.Invoke(this);
             }
         }
 

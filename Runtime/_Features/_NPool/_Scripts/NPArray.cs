@@ -8,19 +8,38 @@ namespace Nextension
     {
         public static NPArray<T> get()
         {
-            return (_pool ??= new()).get();
+            var collectionPool = (_pool ??= new()).get();
+            collectionPool.startTracking();
+            return collectionPool;
         }
         public static NPArray<T> get(IEnumerable<T> collection)
         {
-            var poolList = get();
-            poolList._collection.copyFrom(collection);
-            return poolList;
+            var collectionPool = get();
+            collectionPool._collection.copyFrom(collection);
+            return collectionPool;
         }
         public static NPArray<T> get(Span<T> span)
         {
-            var poolList = get();
-            poolList._collection.copyFrom(span);
-            return poolList;
+            var collectionPool = get();
+            collectionPool._collection.copyFrom(span);
+            return collectionPool;
+        }
+        public static NPArray<T> getWithoutTracking()
+        {
+            var collectionPool = (_pool ??= new()).get();
+            return collectionPool;
+        }
+        public static NPArray<T> getWithoutTracking(IEnumerable<T> collection)
+        {
+            var collectionPool = getWithoutTracking();
+            collectionPool._collection.copyFrom(collection);
+            return collectionPool;
+        }
+        public static NPArray<T> getWithoutTracking(Span<T> span)
+        {
+            var collectionPool = getWithoutTracking();
+            collectionPool._collection.copyFrom(span);
+            return collectionPool;
         }
         private NPArray() : base() { }
         

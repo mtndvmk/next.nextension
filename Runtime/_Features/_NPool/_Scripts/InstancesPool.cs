@@ -381,18 +381,25 @@ namespace Nextension
 #if UNITY_EDITOR
             new NWaitFrame_Editor(1).startWaitable().addCompletedEvent(() =>
             {
-                if (NStartRunner.IsPlaying && _prefab)
+                if (NStartRunner.IsPlaying && _prefab && getGameObject(_prefab))
                 {
                     updateStartupInstances();
                 }
             });
 #else
-            new NWaitFrame(1).startWaitable().addCompletedEvent(updateStartupInstances);
+            new NWaitFrame(1).startWaitable().addCompletedEvent(() =>
+            {
+                if (_prefab != null)
+                {
+                    updateStartupInstances();
+                }
+            });
 #endif
         }
     }
     internal static class SharedInstancesPool
     {
+#if UNITY_EDITOR
         [EditorQuittingMethod]
         static void reset()
         {
@@ -402,6 +409,7 @@ namespace Nextension
             }
             _sharedPools.Clear();
         }
+#endif
         private static Dictionary<int, InstancesPool<GameObject>> _sharedPools = new();
         public static InstancesPool<GameObject> getOrCreatePool(GameObject prefab, int startupInstanceCount)
         {

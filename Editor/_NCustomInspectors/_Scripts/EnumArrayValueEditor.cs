@@ -9,10 +9,11 @@ namespace Nextension.NEditor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (NAssetUtils.IsCompiling)
+            if (NAssetUtils.IsCompiling || property == null || property.serializedObject == null)
             {
                 return;
             }
+
 #if UNITY_2022_3_OR_NEWER
             EditorGUI.indentLevel--;
 #endif
@@ -23,80 +24,81 @@ namespace Nextension.NEditor
 #if UNITY_2022_3_OR_NEWER
             EditorGUI.indentLevel++;
 #endif
-            EditorGUI.indentLevel++;
             var arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
-            if (property.isExpanded)
+            if (arrValue != null)
             {
-
-                if (arrValue.getTypeOfValue().IsArray)
+                EditorGUI.indentLevel++;
+                try
                 {
-                    Debug.LogError("Don't support type: " + arrValue.getTypeOfValue());
-                    return;
+                    if (property.isExpanded)
+                    {
+                        if (arrValue.getTypeOfValue().IsArray)
+                        {
+                            Debug.LogError("Don't support type: " + arrValue.getTypeOfValue());
+                            return;
+                        }
+
+                        contentPosition.height = EditorGUIUtility.singleLineHeight;
+                        contentPosition.y += NEditorConst.ROW_SPACING;
+
+                        var values = property.FindPropertyRelative("enumValues");
+
+                        if (values == null)
+                        {
+                            Debug.LogError("Don't support type: " + arrValue.getTypeOfValue());
+                            return;
+                        }
+
+                        var enumNameStyle = new GUIStyle(GUI.skin.label);
+                        enumNameStyle.fontStyle = FontStyle.Bold;
+
+                        bool hasChanged = arrValue.refreshEditorCache();
+
+                        while (values.arraySize > arrValue.EnumCount)
+                        {
+                            values.DeleteArrayElementAtIndex(values.arraySize - 1);
+                            hasChanged = true;
+                        }
+                        while (values.arraySize < arrValue.EnumCount)
+                        {
+                            values.InsertArrayElementAtIndex(values.arraySize - 1);
+                            hasChanged = true;
+                        }
+
+                        if (hasChanged)
+                        {
+                            property.serializedObject.ApplyModifiedProperties();
+                            EditorUtility.SetDirty(property.serializedObject.targetObject);
+                            AssetDatabase.SaveAssets();
+                            AssetDatabase.Refresh();
+                            arrValue = NEditorHelper.getValue(property) as IEnumArrayValue;
+                        }
+
+                        contentPosition.y += EditorGUIUtility.singleLineHeight;
+
+                        var length = arrValue.Length;
+                        for (int i = 0; i < length; ++i)
+                        {
+                            var enumType = arrValue.getEnumAtIndex(i);
+                            var enumName = getEnumDisplayName(enumType);
+                            var vPro = values.GetArrayElementAtIndex(i);
+                            var h = EditorGUI.GetPropertyHeight(vPro);
+                            contentPosition.height = h;
+                            var valuePosition = contentPosition;
+                            EditorGUI.PropertyField(valuePosition, vPro, new GUIContent(enumName), true);
+                            contentPosition.y += h;
+                        }
+                    }
+                    else
+                    {
+                        arrValue.refreshEditorCache();
+                    }
                 }
-
-                contentPosition.height = EditorGUIUtility.singleLineHeight;
-                contentPosition.y += NEditorConst.ROW_SPACING;
-
-                var values = property.FindPropertyRelative("enumValues");
-
-                if (values == null)
+                finally
                 {
-                    Debug.LogError("Don't support type: " + arrValue.getTypeOfValue());
-                    return;
-                }
-
-                var enumNameStyle = new GUIStyle(GUI.skin.label);
-                enumNameStyle.fontStyle = FontStyle.Bold;
-
-                bool hasChanged = arrValue.refreshEditorCache();
-
-                while (values.arraySize > arrValue.EnumCount)
-                {
-                    values.DeleteArrayElementAtIndex(values.arraySize - 1);
-                    hasChanged = true;
-                }
-                while (values.arraySize < arrValue.EnumCount)
-                {
-                    values.InsertArrayElementAtIndex(values.arraySize - 1);
-                    hasChanged = true;
-                }
-
-                if (hasChanged)
-                {
-                    property.serializedObject.ApplyModifiedProperties();
-                    EditorUtility.SetDirty(property.serializedObject.targetObject);
-                    AssetDatabase.SaveAssets();
-                    AssetDatabase.Refresh();
-                    arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
-                    property.serializedObject.ApplyModifiedProperties();
-                }
-
-                contentPosition.y += EditorGUIUtility.singleLineHeight;
-
-                var length = arrValue.Length;
-                for (int i = 0; i < length; ++i)
-                {
-                    var enumType = arrValue.getEnumAtIndex(i);
-                    var enumName = getEnumDisplayName(enumType);
-                    var vPro = values.GetArrayElementAtIndex(i);
-                    var h = EditorGUI.GetPropertyHeight(vPro);
-                    contentPosition.height = h;
-                    var valuePosition = contentPosition;
-                    EditorGUI.PropertyField(valuePosition, vPro, new GUIContent(enumName), true);
-                    contentPosition.y += h;
+                    EditorGUI.indentLevel--;
                 }
             }
-            else
-            {
-                if (arrValue.refreshEditorCache())
-                {
-                    property.serializedObject.ApplyModifiedProperties();
-                    AssetDatabase.SaveAssets();
-                    AssetDatabase.Refresh();
-                }
-            }
-            arrValue.refreshEditorCache();
-            EditorGUI.indentLevel--;
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

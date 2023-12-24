@@ -22,7 +22,7 @@ namespace Nextension.NEditor
         [ContextMenu("Scan and reload")]
         private void scanAndReload()
         {
-            EditorScriptableLoader.scanAndReload();
+            EditorScriptableLoader.scanAndReload(true);
         }
         private long _lastReloadTime;
         internal void reload(bool isDeleteIfEmpty = true)
@@ -53,8 +53,6 @@ namespace Nextension.NEditor
                     hasChanged = true;
                     continue;
                 }
-
-                ScriptableLoader.updateContainer(scriptable);
             }
 
             if (maxIndex >= 0)
@@ -64,6 +62,11 @@ namespace Nextension.NEditor
                     _editorLoadableScriptables.Sort((a, b) => a.name.CompareTo(b.name));
                     NAssetUtils.saveAsset(this);
                 }
+
+                foreach (var scriptable in _editorLoadableScriptables)
+                {
+                    ScriptableLoader.updateScriptable(scriptable);
+                }
             }
             else
             {
@@ -72,8 +75,8 @@ namespace Nextension.NEditor
                     if (ScriptableLoader.getContainer() != null)
                     {
                         WarningTracker.trackWarning($"Delete... {ScriptableLoader.getContainer().name}", 1);
-                        //NAssetUtils.delete(this);
                         NAssetUtils.delete(ScriptableLoader.getContainer());
+                        NAssetUtils.refresh();
                     }
                 }
             }

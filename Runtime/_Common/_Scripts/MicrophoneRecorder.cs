@@ -146,8 +146,9 @@ namespace Nextension
             _tempSample = null;
         }
 
+#if UNITY_EDITOR
         [EditorQuittingMethod]
-        private static void tryStopAndDipose()
+        private static void tryStopAndDispose()
         {
             try
             {
@@ -165,6 +166,7 @@ namespace Nextension
                 tryDisposeOldData();
             }
         }
+#endif
     }
 #endif
 }

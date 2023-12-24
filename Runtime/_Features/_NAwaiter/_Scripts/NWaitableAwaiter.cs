@@ -125,11 +125,13 @@ namespace Nextension
     }
     public sealed class NWaitableAwaiter : AbsNWaitableAwaiter, IPoolable
     {
+#if UNITY_EDITOR
         [EditorQuittingMethod]
         private static void clearPool()
         {
             _pool?.clear();
         }
+#endif
         private static NPool<NWaitableAwaiter> _pool = new NPool<NWaitableAwaiter>();
 
         public static NWaitableAwaiter create(IWaitable waitable)

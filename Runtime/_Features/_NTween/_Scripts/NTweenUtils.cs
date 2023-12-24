@@ -9,25 +9,25 @@ namespace Nextension.Tween
 {
     internal static class NTweenUtils
     {
-        private static Dictionary<Type, SupportedDataType> _supportedDataTypeTable;
+        static NTweenUtils()
+        {
+            _supportedDataTypeTable = new()
+            {
+                { typeof(float), SupportedDataType.Float },
+                { typeof(float2), SupportedDataType.Float2 },
+                { typeof(float3), SupportedDataType.Float3 },
+                { typeof(float4), SupportedDataType.Float4 },
+                { typeof(Vector2), SupportedDataType.Float2 },
+                { typeof(Vector3), SupportedDataType.Float3 },
+                { typeof(Vector4), SupportedDataType.Float4 },
+                { typeof(Color), SupportedDataType.Float4 },
+                { typeof(Quaternion), SupportedDataType.Float4 },
+                { typeof(quaternion), SupportedDataType.Float4 },
+            };
+        }
+        private readonly static Dictionary<Type, SupportedDataType> _supportedDataTypeTable;
         public static SupportedDataType getSupportedDataType<T>() where T : unmanaged
         {
-            if (_supportedDataTypeTable == null)
-            {
-                _supportedDataTypeTable = new()
-                {
-                    { typeof(float), SupportedDataType.Float },
-                    { typeof(float2), SupportedDataType.Float2 },
-                    { typeof(float3), SupportedDataType.Float3 },
-                    { typeof(float4), SupportedDataType.Float4 },
-                    { typeof(Vector2), SupportedDataType.Float2 },
-                    { typeof(Vector3), SupportedDataType.Float3 },
-                    { typeof(Vector4), SupportedDataType.Float4 },
-                    { typeof(Color), SupportedDataType.Float4 },
-                    { typeof(Quaternion), SupportedDataType.Float4 },
-                    { typeof(quaternion), SupportedDataType.Float4 },
-                };
-            }
             if (_supportedDataTypeTable.TryGetValue(typeof(T), out var type))
             {
                 return type;

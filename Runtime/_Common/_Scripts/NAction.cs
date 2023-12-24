@@ -18,11 +18,11 @@ namespace Nextension
                 _actions.Add(callback);
             }
         }
-        public void addIfNotExists(Action callback)
+        public void addIfNotPresent(Action callback)
         {
             if (callback != null)
             {
-                _actions.add(callback);
+                _actions.addIfNotPresent(callback);
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,11 +112,11 @@ namespace Nextension
                 _actions.Add(callback);
             }
         }
-        public void addIfNotExists(Action<T> callback)
+        public void addIfNotPresent(Action<T> callback)
         {
             if (callback != null)
             {
-                _actions.add(callback);
+                _actions.addIfNotPresent(callback);
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

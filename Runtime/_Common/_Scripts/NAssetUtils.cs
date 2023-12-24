@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -13,7 +14,6 @@ namespace Nextension
 #if UNITY_EDITOR
         internal const string MAIN_RESOURCE_PATH = "Assets/Resources/";
         internal const string SCRIPTABLE_OBJECT_EXTENSION = ".asset";
-        internal const string META_EXTENSION = ".meta";
         internal class CustomAssetPostprocessor : AssetPostprocessor
         {
 #if UNITY_2021_2_OR_NEWER
@@ -67,16 +67,26 @@ namespace Nextension
         }
         public static bool IsCompiling => AssetDatabase.IsAssetImportWorkerProcess() || EditorApplication.isUpdating || EditorApplication.isCompiling;
 
+        public static string createMainResourcesPath(string fileName)
+        {
+            var index = fileName.IndexOf(MAIN_RESOURCE_PATH);
+            if (index < 0)
+            {
+                fileName = Path.Combine(MAIN_RESOURCE_PATH, fileName);
+            }
+            if (!fileName.Contains('.'))
+            {
+                fileName += SCRIPTABLE_OBJECT_EXTENSION;
+            }
+            return fileName;
+        }
         public static bool delete(Object @object)
         {
             if (!@object || !isFile(@object)) return false;
             try
             {
-                var file = AssetDatabase.GetAssetPath(@object);
-                System.IO.File.Delete(file);
-                var metaFile = file + META_EXTENSION;
-                System.IO.File.Delete(metaFile);
-                return true;
+                var filePath = AssetDatabase.GetAssetPath(@object);
+                return AssetDatabase.DeleteAsset(filePath);
             }
             catch (System.Exception e)
             {
@@ -84,7 +94,6 @@ namespace Nextension
                 return false;
             }
         }
-
         public static bool isFile(Object @object)
         {
             return !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(@object));
@@ -104,6 +113,53 @@ namespace Nextension
         public static bool hasAssetAt(string path)
         {
             return loadAssetAt<Object>(path) != null;
+        }
+        public static (string path, ScriptableObject scriptableObject)[] loadAll(string directory)
+        {
+            if (!Directory.Exists(directory))
+            {
+                return null;
+            }
+            var files = Directory.GetFiles(directory, "*.asset");
+            List<(string path, ScriptableObject scriptableObject)> result = new();
+            foreach (var filePath in files)
+            {
+                try
+                {
+                    var so = loadAssetAt<ScriptableObject>(filePath);
+                    if (so)
+                    {
+                        result.Add((filePath, so));
+                    }
+                }
+                catch { }
+            }
+
+            return result.ToArray();
+        }
+        public static Object findAssetAt(string directory, System.Type type, out string path)
+        {
+            if (!Directory.Exists(directory))
+            {
+                path = null;
+                return null;
+            }
+            var files = Directory.GetFiles(directory, "*.asset");
+            foreach (var filePath in files)
+            {
+                try
+                {
+                    var so = loadAssetAt<Object>(filePath);
+                    if (so && so.GetType() == type)
+                    {
+                        path = filePath;
+                        return so;
+                    }
+                }
+                catch { }
+            }
+            path = null;
+            return null;
         }
         public static T loadAssetAt<T>(string path) where T : Object
         {
@@ -184,7 +240,7 @@ namespace Nextension
             var index = fileName.IndexOf(dir);
             if (index < 0)
             {
-                fileName = System.IO.Path.Combine(dir, fileName);
+                fileName = Path.Combine(dir, fileName);
             }
             if (!fileName.Contains('.'))
             {
@@ -217,7 +273,7 @@ namespace Nextension
             }
             else
             {
-                _needSaves.add(@object);
+                _needSaves.addIfNotPresent(@object);
                 saveInNext();
             }
 #endif
@@ -234,6 +290,13 @@ namespace Nextension
             {
                 AssetDatabase.SaveAssets();
             }
+#endif
+        }
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        public static void refresh()
+        {
+#if UNITY_EDITOR
+            AssetDatabase.Refresh();
 #endif
         }
     }

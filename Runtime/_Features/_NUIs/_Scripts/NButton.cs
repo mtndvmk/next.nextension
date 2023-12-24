@@ -19,7 +19,7 @@ namespace Nextension.UI
         public UnityEvent onButtonEnterEvent = new();
         public UnityEvent onButtonExitEvent = new();
 
-        private HashSet<INButtonListener> _listeners;
+        [NonSerialized] private List<INButtonListener> _listeners;
         protected float _lastClickTime;
         protected bool _isSetup;
 
@@ -67,7 +67,7 @@ namespace Nextension.UI
                     }
                     else
                     {
-                        _listeners.UnionWith(listeners);
+                        _listeners.AddRange(listeners);
                     }
                 }
                 _isSetup = true;

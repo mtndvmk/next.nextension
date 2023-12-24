@@ -6,6 +6,7 @@ namespace Nextension
 {
     internal class NAwaiterLoop
     {
+#if UNITY_EDITOR
         [EditorQuittingMethod]
         private void reset()
         {
@@ -17,6 +18,7 @@ namespace Nextension
             _lateUpdateHandleCount = 0;
             _eofFrameHandleCount = 0;
         }
+#endif
         private static List<NWaitableHandle> _updateWaitableHandles;
         private static List<NWaitableHandle> _lateUpdateWaitableHandles;
         private static List<NWaitableHandle> _endOfFrameWaitableHandles;
@@ -88,7 +90,10 @@ namespace Nextension
         {
             if (_updateWaitableHandles?.Count > 0)
             {
-                update(_updateWaitableHandles, _updateHandleCount - 1);
+                if (_updateHandleCount > 0)
+                {
+                    update(_updateWaitableHandles, _updateHandleCount - 1);
+                }
                 _updateHandleCount = _updateWaitableHandles.Count;
             }
         }
@@ -97,7 +102,10 @@ namespace Nextension
         {
             if (_lateUpdateWaitableHandles?.Count > 0)
             {
-                update(_lateUpdateWaitableHandles, _lateUpdateHandleCount - 1);
+                if (_lateUpdateHandleCount > 0)
+                {
+                    update(_lateUpdateWaitableHandles, _lateUpdateHandleCount - 1);
+                }
                 _lateUpdateHandleCount = _lateUpdateWaitableHandles.Count;
             }
         }
@@ -106,7 +114,10 @@ namespace Nextension
         {
             if (_endOfFrameWaitableHandles?.Count > 0)
             {
-                update(_endOfFrameWaitableHandles, _eofFrameHandleCount - 1);
+                if (_eofFrameHandleCount > 0)
+                {
+                    update(_endOfFrameWaitableHandles, _eofFrameHandleCount - 1);
+                }
                 _eofFrameHandleCount = _endOfFrameWaitableHandles.Count;
             }
         }

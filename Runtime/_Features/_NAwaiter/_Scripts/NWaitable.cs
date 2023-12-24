@@ -196,11 +196,11 @@ namespace Nextension
             }
             return func;
         }
-        public async NWaitable waitCompleteOrException()
+        public async NWaitable waitCompletedOrException()
         {
             await new NWaitUntil(() => Status == RunState.Completed || Status == RunState.Exception);
         }
-        public async NWaitable waitFinish()
+        public async NWaitable waitFinished()
         {
             await new NWaitUntil(() => Status.isFinished());
         }

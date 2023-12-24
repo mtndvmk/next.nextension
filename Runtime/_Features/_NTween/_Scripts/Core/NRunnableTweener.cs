@@ -10,9 +10,6 @@ namespace Nextension.Tween
         internal EaseType easeType;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal uint createRunnerId() => NConverter.bitConvert<int, uint>(getRunnerType().GetHashCode());
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public NRunnableTweener setDuration(float duration)
         {
             this.duration = duration;
@@ -38,7 +35,14 @@ namespace Nextension.Tween
             base.onResetState();
             chunkIndex = default;
         }
-
+        protected override void onRun()
+        {
+            NTweenManager.run(this);
+        }
+        protected override void onSchedule()
+        {
+            NTweenManager.schedule(this);
+        }
         internal CommonJobData getCommonJobData()
         {
             return new()
@@ -50,7 +54,7 @@ namespace Nextension.Tween
         }
 
         internal abstract AbsTweenRunner createRunner();
-        internal abstract Type getRunnerType();
+        internal abstract ushort getRunnerId();
     }
     internal abstract class GenericNRunnableTweener<TJobData> : NRunnableTweener
         where TJobData : struct

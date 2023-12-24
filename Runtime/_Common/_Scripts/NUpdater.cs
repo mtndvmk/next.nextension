@@ -182,6 +182,7 @@ namespace Nextension
             else _staticEndOfFrameEvent = null;
         }
 
+#if UNITY_EDITOR
         [EditorQuittingMethod]
         private static void reset()
         {
@@ -199,5 +200,6 @@ namespace Nextension
             onLateUpdateEvent.clear();
             onLateUpdateOnceTimeEvent.clear();
         }
+#endif
     }
 }

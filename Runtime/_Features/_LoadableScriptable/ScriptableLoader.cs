@@ -125,6 +125,8 @@ namespace Nextension
 
             return false;
         }
+
+#if UNITY_EDITOR
         [EditorQuittingMethod]
         public static void unloadNonPreloadScriptables()
         {
@@ -155,8 +157,6 @@ namespace Nextension
                 Resources.UnloadUnusedAssets();
             }
         }
-
-#if UNITY_EDITOR
         private static LoadableScriptableContainer getOrCreateContainer()
         {
             if (!_container)
@@ -166,10 +166,11 @@ namespace Nextension
             if (!_container)
             {
                 _container = NAssetUtils.createOnResource<LoadableScriptableContainer>(LoadableScriptableContainer.FileNameOnResource);
+                NAssetUtils.refresh();
             }
             return _container;
         }
-        public static void updateContainer(ScriptableObject scriptable)
+        public static void updateScriptable(ScriptableObject scriptable)
         {
             getOrCreateContainer().updateScriptable(scriptable);
         }

@@ -11,10 +11,10 @@ namespace Nextension
         }
 
         protected NBList<TSchedulable, int> _pending;
-        protected HashSet<TSchedulable> _executing;
+        protected List<TSchedulable> _executing;
 
         public NBList<TSchedulable, int> Pending => _pending ??= new(item => item.Priority);
-        public HashSet<TSchedulable> Executing => _executing ??= new();
+        public List<TSchedulable> Executing => _executing ??= new();
 
         public int MaxSchedulableAtOnce { get; set; }
 

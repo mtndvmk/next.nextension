@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,10 +7,6 @@ namespace Nextension.Tween
     {
         public static void cancelAllTweeners(this GameObject target, bool includeChildren = false, bool includeInActive = false)
         {
-            if (target == null)
-            {
-                throw new NullReferenceException("cancelAllTweener.target");
-            }
             Component[] components;
             if (includeChildren)
             {
@@ -26,12 +21,8 @@ namespace Nextension.Tween
                 NTween.cancelAllTweeners(com);
             }
         }
-        public static void cancelAllTweeners(this UnityEngine.Object target)
+        public static void cancelAllTweeners(this Object target)
         {
-            if (target == null)
-            {
-                throw new NullReferenceException("cancelAllTweener.target");
-            }
             NTween.cancelAllTweeners(target);
         }
 
@@ -57,7 +48,13 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
-        
+        public static NRunnableTweener scaleTo(this Transform target, float destination, float duration)
+        {
+            var tweener = NTween.scaleTo(target, destination, duration);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+
         public static NRunnableTweener punchPosition(this Transform target, Vector3 punchDestination, float duration, bool isLocalSpace = true)
         {
             var tweener = NTween.punchPosition(target, punchDestination, duration, isLocalSpace);

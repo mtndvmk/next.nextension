@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -14,11 +13,13 @@ namespace Nextension
         {
             private static NPool<NWaitableHandle> pool = new();
 
+#if UNITY_EDITOR
             [EditorQuittingMethod]
             private static void clearPool()
             {
                 pool.clear();
             }
+#endif
             public static void release(NWaitableHandle handle)
             {
                 if (handle != null)

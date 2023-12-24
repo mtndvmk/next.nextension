@@ -31,9 +31,9 @@ namespace Nextension.Tween
                 return new TweenRunner<Chunk>();
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal override Type getRunnerType()
+            internal override ushort getRunnerId()
             {
-                return typeof(TweenRunner<Chunk>);
+                return TweenRunnerIdCache<TweenRunner<Chunk>>.id;
             }
         }
         internal sealed class Chunk : AbsValueTweenChunk<TValue, Tweener, Job, FromToData<TValue>>
