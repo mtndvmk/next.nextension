@@ -4,15 +4,14 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public class LoadableScriptableContainer : ScriptableObject
+    public class SingletonScriptableContainer : ScriptableObject
     {
-        internal const string FileNameOnResource = "AutoCreated/[AutoCreated][LoadableScriptableContainer]";
+        internal const string FileNameOnResource = "AutoCreated/[AutoCreated][SingletonScriptableContainer]";
 
         [SerializeField] private List<ScriptableObject> _preloadScriptables;
         [SerializeField] private List<NonPreloadScriptable> _nonPreloadScriptables;
 
         internal Dictionary<Type, string> _nonPreloadScriptablePaths;
-        internal Dictionary<Type, ScriptableObject> _loadedNonPreloadScriptables;
 
         private void loadNonPreloadScriptablePaths()
         {
@@ -21,6 +20,9 @@ namespace Nextension
             {
                 _nonPreloadScriptablePaths[nonPreloadScriptable.getScriptableType()] = nonPreloadScriptable.PathInResource;
             }
+#if !UNITY_EDITOR
+            _nonPreloadScriptables.Clear();
+#endif
         }
 
         internal T get<T>() where T : ScriptableObject
@@ -41,28 +43,12 @@ namespace Nextension
 
             if (_nonPreloadScriptablePaths.TryGetValue(typeOfT, out var path))
             {
-                var scriptable = NAssetUtils.getObjectOnResources<T>(path);
-                (_loadedNonPreloadScriptables ??= new(1))[typeOfT] = scriptable;
-                return scriptable;
+                return NAssetUtils.getObjectOnResources<T>(path);
             }
             return null;
         }
-        internal Dictionary<Type, ScriptableObject> getLoadedNonPreloadScriptables() => _loadedNonPreloadScriptables;
-        internal void clearLoadedNonPreloadScriptableDictionary()
-        {
-            if (_loadedNonPreloadScriptables != null && _loadedNonPreloadScriptables.Count > 0)
-            {
-                _loadedNonPreloadScriptables.Clear();
-            }
-        }
-        internal bool contains(ScriptableObject scriptableObject)
-        {
-            bool isPreload = _preloadScriptables.Contains(scriptableObject);
-            if (isPreload) { return true; }
-            return _nonPreloadScriptables.FindIndex(nonLoadScriptable => nonLoadScriptable.getScriptableObject() == scriptableObject) >= 0;
-        }
 
-        #region Editor
+#region Editor
 #if UNITY_EDITOR
         private void OnEnable()
         {
@@ -71,7 +57,7 @@ namespace Nextension
         [ContextMenu("Scan and reload")]
         private void scanAndReload()
         {
-            NEditor.EditorScriptableLoader.scanAndReload();
+            NEditor.EditorSingletonScriptableLoader.scanAndReload();
         }
         internal void updateScriptable(ScriptableObject scriptable)
         {
@@ -155,7 +141,21 @@ namespace Nextension
                 NAssetUtils.saveAsset(this);
             }
         }
+        internal bool contains(ScriptableObject scriptableObject)
+        {
+            bool isPreload = _preloadScriptables.Contains(scriptableObject);
+            if (isPreload) { return true; }
+            return _nonPreloadScriptables.FindIndex(nonLoadScriptable => nonLoadScriptable.getScriptableObject() == scriptableObject) >= 0;
+        }
+        internal bool isNonPreloadSingletonScriptable(Type type)
+        {
+            if (_nonPreloadScriptablePaths != null)
+            {
+                return _nonPreloadScriptablePaths.ContainsKey(type);
+            }
+            return _nonPreloadScriptables.FindIndex(nonLoadScriptable => nonLoadScriptable.getScriptableType() == type) >= 0;
+        }
 #endif
-        #endregion
+#endregion
     }
 }

@@ -389,7 +389,7 @@ namespace Nextension
 #else
             new NWaitFrame(1).startWaitable().addCompletedEvent(() =>
             {
-                if (_prefab != null)
+                if (_prefab && getGameObject(_prefab))
                 {
                     updateStartupInstances();
                 }

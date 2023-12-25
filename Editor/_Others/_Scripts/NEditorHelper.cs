@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,6 +16,15 @@ namespace Nextension.NEditor
                 return null;
             }
             return value;
+        }
+        public static T getValue<T>(SerializedProperty property)
+        {
+            var fieldInfo = getFieldInfo(property, out var value);
+            if (fieldInfo == null)
+            {
+                return default;
+            }
+            return (T)value;
         }
         public static FieldInfo getFieldInfo(SerializedProperty property)
         {

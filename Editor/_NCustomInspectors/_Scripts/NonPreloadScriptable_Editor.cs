@@ -7,45 +7,29 @@ namespace Nextension.NEditor
     [CustomPropertyDrawer(typeof(NonPreloadScriptable))]
     public class NonPreloadScriptable_Editor : PropertyDrawer
     {
-        public class SerializedScriptableObject : ScriptableObject
-        {
-            public ScriptableObject scriptable;
-            [NonSerialized] public SerializedObject serializedObject;
-            [NonSerialized] public SerializedProperty scriptableProperty;
-        }
-        private SerializedScriptableObject _serializedScriptableObject;
-
+        private ScriptableObject _scriptableObject;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            loadProperty(property);
-            if (_serializedScriptableObject != null)
+            if (_scriptableObject == null)
             {
-                EditorGUI.PropertyField(position, _serializedScriptableObject.scriptableProperty);
-                _serializedScriptableObject.serializedObject.Dispose();
-                _serializedScriptableObject.scriptableProperty.Dispose();
-                NUtils.destroy(_serializedScriptableObject);
-                _serializedScriptableObject = null;
+                _scriptableObject = NEditorHelper.getValue<NonPreloadScriptable>(property).getScriptableObject();
             }
-            else
+            try
             {
+                EditorGUI.PropertyField(position, SerializedPropertyUtil.getSerializedProperty(_scriptableObject));
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
                 base.OnGUI(position, property, label);
             }
         }
-
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        ~NonPreloadScriptable_Editor()
         {
-            return base.GetPropertyHeight(property, label);
-        }
-
-        private void loadProperty(SerializedProperty property)
-        {
-            var scriptableObject = (NEditorHelper.getValue(property) as NonPreloadScriptable)?.getScriptableObject();
-            if (scriptableObject)
+            if (_scriptableObject != null)
             {
-                _serializedScriptableObject = ScriptableObject.CreateInstance<SerializedScriptableObject>();
-                _serializedScriptableObject.scriptable = scriptableObject;
-                _serializedScriptableObject.serializedObject = new SerializedObject(_serializedScriptableObject);
-                _serializedScriptableObject.scriptableProperty = _serializedScriptableObject.serializedObject.FindProperty(nameof(SerializedScriptableObject.scriptable));
+                SerializedPropertyUtil.release(_scriptableObject);
+                _scriptableObject = null;
             }
         }
     }

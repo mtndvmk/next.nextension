@@ -6,15 +6,15 @@ using UnityEditor;
 
 namespace Nextension.NEditor
 {
-    internal static class EditorScriptableLoader
+    internal static class EditorSingletonScriptableLoader
     {
         private static bool _isLoaded;
-        private static EditorLoadableScriptableContainer _editorContainer;
+        private static EditorSingletonScriptableContainer _editorContainer;
         private static void loadEditorContainer()
         {
-            _editorContainer = NAssetUtils.getObjectOnResources<EditorLoadableScriptableContainer>(EditorLoadableScriptableContainer.FileNameOnResource);
+            _editorContainer = NAssetUtils.getObjectOnResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
         }
-        private static EditorLoadableScriptableContainer getEditorContainer()
+        private static EditorSingletonScriptableContainer getEditorContainer()
         {
             if (!_isLoaded)
             {
@@ -23,7 +23,7 @@ namespace Nextension.NEditor
             }
             return _editorContainer;
         }
-        private static EditorLoadableScriptableContainer getOrCreateEditorContainer()
+        private static EditorSingletonScriptableContainer getOrCreateEditorContainer()
         {
             if (!_editorContainer)
             {
@@ -31,7 +31,7 @@ namespace Nextension.NEditor
             }
             if (!_editorContainer)
             {
-                _editorContainer = NAssetUtils.createOnResource<EditorLoadableScriptableContainer>(EditorLoadableScriptableContainer.FileNameOnResource);
+                _editorContainer = NAssetUtils.createOnResource<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
             }
             return _editorContainer;
         }
@@ -44,7 +44,7 @@ namespace Nextension.NEditor
             {
                 var path = AssetDatabase.GUIDToAssetPath(g);
                 var item = NAssetUtils.loadAssetAt<ScriptableObject>(path);
-                if (ScriptableLoader.isLoadable(item))
+                if (ScriptableLoader.isSingletonable(item))
                 {
                     validScriptables.Add(item);
                 }
@@ -65,14 +65,14 @@ namespace Nextension.NEditor
             }
         }
 
-        [MenuItem("Assets/Nextension/Add to LoadableScriptableContainer")]
+        [MenuItem("Assets/Nextension/Add to SingletonScriptableContainer")]
         private static void manualImport()
         {
             if (Selection.objects == null || Selection.objects.Length == 0) return;
             List<ScriptableObject> validScriptables = new List<ScriptableObject>();
             foreach (var item in Selection.objects)
             {
-                if (ScriptableLoader.isLoadable(item))
+                if (ScriptableLoader.isSingletonable(item))
                 {
                     validScriptables.Add(item as ScriptableObject);
                 }
@@ -85,28 +85,28 @@ namespace Nextension.NEditor
                 {
                     if (container.add(scriptableObject))
                     {
-                        Debug.Log($"Added [{scriptableObject}] to LoadableScriptableContainer", scriptableObject);
+                        Debug.Log($"Added [{scriptableObject}] to SingletonScriptableContainer", scriptableObject);
                         addCount++;
                     }
                     else
                     {
-                        Debug.LogWarning($"[{scriptableObject}] is added or is not LoadableScriptable", scriptableObject);
+                        Debug.LogWarning($"[{scriptableObject}] is added or is not SingletonScriptable", scriptableObject);
                     }
                    
                 }
 
-                Debug.Log($"Added {addCount} LoadableScriptables", container);
+                Debug.Log($"Added {addCount} SingletonScriptables", container);
                 if (addCount > 0) container.reload();
             }
         }
-        [MenuItem("Assets/Nextension/Add to LoadableScriptableContainer", true)]
+        [MenuItem("Assets/Nextension/Add to SingletonScriptableContainer", true)]
         private static bool validateManualImport()
         {
             if (Selection.objects == null || Selection.objects.Length == 0) return false;
             List<ScriptableObject> validScriptables = new List<ScriptableObject>();
             foreach (var item in Selection.objects)
             {
-                if (ScriptableLoader.isLoadable(item))
+                if (ScriptableLoader.isSingletonable(item))
                 {
                     validScriptables.Add(item as ScriptableObject);
                 }
@@ -128,12 +128,12 @@ namespace Nextension.NEditor
                     return;
                 }
                 var scriptableObject = NAssetUtils.loadAssetAt<ScriptableObject>(path);
-                if (ScriptableLoader.isLoadable(scriptableObject))
+                if (ScriptableLoader.isSingletonable(scriptableObject))
                 {
                     var container = getOrCreateEditorContainer();
                     if (!container)
                     {
-                        Debug.LogError($"Missing {EditorLoadableScriptableContainer.FileNameOnResource} on Resource directory");
+                        Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameOnResource} on Resource directory");
                         return;
                     }
                     await new NWaitFrame_Editor(1);
@@ -150,12 +150,12 @@ namespace Nextension.NEditor
                     return;
                 }
                 var scriptableObject = NAssetUtils.loadAssetAt<ScriptableObject>(path);
-                if (ScriptableLoader.isLoadable(scriptableObject))
+                if (ScriptableLoader.isSingletonable(scriptableObject))
                 {
                     var container = getOrCreateEditorContainer();
                     if (!container)
                     {
-                        Debug.LogError($"Missing {EditorLoadableScriptableContainer.FileNameOnResource} on Resource directory");
+                        Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameOnResource} on Resource directory");
                         return;
                     }
                     await new NWaitFrame_Editor(1);
@@ -169,7 +169,7 @@ namespace Nextension.NEditor
                 {
                     return;
                 }
-                var editorName = EditorLoadableScriptableContainer.FileNameOnResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
+                var editorName = EditorSingletonScriptableContainer.FileNameOnResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
                 if (path.EndsWith(editorName))
                 {
                     scanAndReload();
@@ -185,7 +185,7 @@ namespace Nextension.NEditor
                     return;
                 }
 
-                var runtimeName = LoadableScriptableContainer.FileNameOnResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
+                var runtimeName = SingletonScriptableContainer.FileNameOnResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
                 if (path.EndsWith(runtimeName) && !NAssetUtils.hasAssetAt(path))
                 {
                     WarningTracker.trackError($"Did you delete `{runtimeName}`?, please don't do that!");

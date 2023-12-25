@@ -5,10 +5,10 @@ using UnityEngine;
 #if UNITY_EDITOR
 namespace Nextension.NEditor
 {
-    internal class EditorLoadableScriptableContainer : ScriptableObject
+    internal class EditorSingletonScriptableContainer : ScriptableObject
     {
-        internal const string FileNameOnResource = "AutoCreated/Editor/[AutoCreated][EditorLoadableScriptableContainer]";
-        [SerializeField] private List<ScriptableObject> _editorLoadableScriptables;
+        internal const string FileNameOnResource = "AutoCreated/Editor/[AutoCreated][EditorSingletonScriptableContainer]";
+        [SerializeField] private List<ScriptableObject> _editorSingletonScriptables;
 
         private void OnEnable()
         {
@@ -22,7 +22,7 @@ namespace Nextension.NEditor
         [ContextMenu("Scan and reload")]
         private void scanAndReload()
         {
-            EditorScriptableLoader.scanAndReload(true);
+            EditorSingletonScriptableLoader.scanAndReload(true);
         }
         private long _lastReloadTime;
         internal void reload(bool isDeleteIfEmpty = true)
@@ -35,21 +35,21 @@ namespace Nextension.NEditor
             _lastReloadTime = current;
 
             bool hasChanged = false;
-            _editorLoadableScriptables ??= new List<ScriptableObject>();
-            var span = _editorLoadableScriptables.asSpan();
-            int maxIndex = _editorLoadableScriptables.Count - 1;
+            _editorSingletonScriptables ??= new List<ScriptableObject>();
+            var span = _editorSingletonScriptables.asSpan();
+            int maxIndex = _editorSingletonScriptables.Count - 1;
             for (int i = maxIndex; i >= 0; i--)
             {
                 var scriptable = span[i];
                 if (scriptable == null)
                 {
-                    _editorLoadableScriptables.RemoveAt(i);
+                    _editorSingletonScriptables.RemoveAt(i);
                     hasChanged = true;
                     continue;
                 }
-                if (!ScriptableLoader.isLoadable(scriptable))
+                if (!ScriptableLoader.isSingletonable(scriptable))
                 {
-                    _editorLoadableScriptables.RemoveAt(i);
+                    _editorSingletonScriptables.RemoveAt(i);
                     hasChanged = true;
                     continue;
                 }
@@ -59,11 +59,11 @@ namespace Nextension.NEditor
             {
                 if (hasChanged)
                 {
-                    _editorLoadableScriptables.Sort((a, b) => a.name.CompareTo(b.name));
+                    _editorSingletonScriptables.Sort((a, b) => a.name.CompareTo(b.name));
                     NAssetUtils.saveAsset(this);
                 }
 
-                foreach (var scriptable in _editorLoadableScriptables)
+                foreach (var scriptable in _editorSingletonScriptables)
                 {
                     ScriptableLoader.updateScriptable(scriptable);
                 }
@@ -83,14 +83,14 @@ namespace Nextension.NEditor
         }
         internal bool add(ScriptableObject scriptableObject)
         {
-            _editorLoadableScriptables ??= new List<ScriptableObject>();
-            if (_editorLoadableScriptables.Contains(scriptableObject))
+            _editorSingletonScriptables ??= new List<ScriptableObject>();
+            if (_editorSingletonScriptables.Contains(scriptableObject))
             {
                 if (ScriptableLoader.contains(scriptableObject)) return false;
                 return false;
             }
-            _editorLoadableScriptables.Add(scriptableObject);
-            _editorLoadableScriptables.Sort((a, b) => a.name.CompareTo(b.name));
+            _editorSingletonScriptables.Add(scriptableObject);
+            _editorSingletonScriptables.Sort((a, b) => a.name.CompareTo(b.name));
             NAssetUtils.saveAsset(this);
             return true;
         }

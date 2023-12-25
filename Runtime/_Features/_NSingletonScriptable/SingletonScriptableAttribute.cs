@@ -3,12 +3,12 @@ using System;
 namespace Nextension
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = true)]
-    public class LoadableScriptableAttribute : Attribute
+    public class SingletonScriptableAttribute : Attribute
     {
         public bool isPreload;
     }
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public class NonLoadableScriptableAttribute : Attribute
+    public class NonSingletonScriptableAttribute : Attribute
     {
 
     }

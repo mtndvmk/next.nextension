@@ -41,7 +41,7 @@ namespace Nextension
         }
         public static bool isNonPreload(ScriptableObject scriptable)
         {
-            if (!ScriptableLoader.isLoadable(scriptable, out var attribute))
+            if (!ScriptableLoader.isSingletonable(scriptable, out var attribute))
             {
                 return false;
             }

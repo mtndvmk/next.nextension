@@ -8,9 +8,8 @@ namespace Nextension
 {
     public static class ScriptableLoader
     {
-        private static LoadableScriptableContainer _container;
+        private static SingletonScriptableContainer _container;
         private static bool _isLoaded = false;
-        private static Dictionary<Type, Action> _unloadActions;
 
         internal static class Getter<T> where T : ScriptableObject
         {
@@ -32,9 +31,9 @@ namespace Nextension
             {
                 throw new Exception($"`{typeOfT}` must not be abstract or does not contain generic parameters");
             }
-            if (typeOfT.GetCustomAttribute<LoadableScriptableAttribute>() == null)
+            if (typeOfT.GetCustomAttribute<SingletonScriptableAttribute>() == null)
             {
-                throw new Exception($"`{typeOfT}` requires [{nameof(LoadableScriptableAttribute)}]");
+                throw new Exception($"`{typeOfT}` requires [{nameof(SingletonScriptableAttribute)}]");
             }
         }
 
@@ -46,9 +45,9 @@ namespace Nextension
 
         private static void loadContainer()
         {
-            _container = NAssetUtils.getObjectOnResources<LoadableScriptableContainer>(LoadableScriptableContainer.FileNameOnResource);
+            _container = NAssetUtils.getObjectOnResources<SingletonScriptableContainer>(SingletonScriptableContainer.FileNameOnResource);
         }
-        internal static LoadableScriptableContainer getContainer()
+        internal static SingletonScriptableContainer getContainer()
         {
             if (!_isLoaded)
             {
@@ -57,20 +56,13 @@ namespace Nextension
             }
             return _container;
         }
-        internal static bool contains(ScriptableObject scriptableObject)
-        {
-            var container = getContainer();
-            if (container == null) return false;
-            return container.contains(scriptableObject);
-        }
-
-        public static bool isLoadable(Object @object)
+        public static bool isSingletonable(Object @object)
         {
             if (@object is not ScriptableObject) return false;
             var type = @object.GetType();
-            return type.GetCustomAttribute<LoadableScriptableAttribute>() != null && type.GetCustomAttribute<NonLoadableScriptableAttribute>() == null;
+            return type.GetCustomAttribute<SingletonScriptableAttribute>() != null && type.GetCustomAttribute<NonSingletonScriptableAttribute>() == null;
         }
-        public static bool isLoadable(Object @object, out LoadableScriptableAttribute attribute)
+        public static bool isSingletonable(Object @object, out SingletonScriptableAttribute attribute)
         {
             if (@object is not ScriptableObject)
             {
@@ -78,8 +70,8 @@ namespace Nextension
                 return false;
             }
             var type = @object.GetType();
-            attribute = type.GetCustomAttribute<LoadableScriptableAttribute>();
-            if (attribute != null && type.GetCustomAttribute<NonLoadableScriptableAttribute>() == null)
+            attribute = type.GetCustomAttribute<SingletonScriptableAttribute>();
+            if (attribute != null && type.GetCustomAttribute<NonSingletonScriptableAttribute>() == null)
             {
                 return true;
             }
@@ -97,36 +89,33 @@ namespace Nextension
 
             checkType<T>();
 
-            if (Getter<T>.version != NStartRunner.SessionId || !Getter<T>.scriptable)
+            if (Getter<T>.version != NStartRunner.SessionId || Getter<T>.scriptable == null)
             {
-                Getter<T>.scriptable ??= _container.get<T>();
+                Getter<T>.scriptable = _container.get<T>();
                 Getter<T>.version = NStartRunner.SessionId;
-                (_unloadActions ??= new Dictionary<Type, Action>(1))[typeof(T)] = Getter<T>.unload;
+#if UNITY_EDITOR
+                addNonPreloadSingletonScriptable(Getter<T>.scriptable);
+#endif
             }
             return Getter<T>.scriptable;
         }
-        public static bool unload<T>() where T : ScriptableObject
+        public static bool unload<T>(bool unloadUnusedAssets = true) where T : ScriptableObject
         {
             if (_container == null || Getter<T>.scriptable == null)
             {
                 return false;
             }
 
-            var type = typeof(T);
-            var loadedNonPreload = _container.getLoadedNonPreloadScriptables();
-            if (loadedNonPreload != null && loadedNonPreload.ContainsKey(type))
+            Getter<T>.unload();
+            if (unloadUnusedAssets)
             {
-                _unloadActions?.Remove(type);
-                loadedNonPreload.Remove(type);
-                Getter<T>.unload();
                 Resources.UnloadUnusedAssets();
-                return true;
             }
-
-            return false;
+            return true;
         }
 
 #if UNITY_EDITOR
+        private static List<ScriptableObject> _loadedNonPreloadSingletonScriptables = new();
         [EditorQuittingMethod]
         public static void unloadNonPreloadScriptables()
         {
@@ -134,30 +123,18 @@ namespace Nextension
             {
                 return;
             }
-            var loadedNonPreload = _container.getLoadedNonPreloadScriptables();
-            if (loadedNonPreload != null)
+            foreach (var item in _loadedNonPreloadSingletonScriptables)
             {
-                foreach (var item in loadedNonPreload)
+                if (!item)
                 {
-                    if (!item.Value)
-                    {
-                        continue;
-                    }
-                    if (_unloadActions != null && _unloadActions.ContainsKey(item.Key))
-                    {
-                        _unloadActions[item.Key].Invoke();
-                        _unloadActions.Remove(item.Key);
-                    }
-                    else
-                    {
-                        Resources.UnloadAsset(item.Value);
-                    }
+                    continue;
                 }
-                _container.clearLoadedNonPreloadScriptableDictionary();
-                Resources.UnloadUnusedAssets();
+                Resources.UnloadAsset(item);
             }
+            _loadedNonPreloadSingletonScriptables.Clear();
+            Resources.UnloadUnusedAssets();
         }
-        private static LoadableScriptableContainer getOrCreateContainer()
+        private static SingletonScriptableContainer getOrCreateContainer()
         {
             if (!_container)
             {
@@ -165,14 +142,27 @@ namespace Nextension
             }
             if (!_container)
             {
-                _container = NAssetUtils.createOnResource<LoadableScriptableContainer>(LoadableScriptableContainer.FileNameOnResource);
+                _container = NAssetUtils.createOnResource<SingletonScriptableContainer>(SingletonScriptableContainer.FileNameOnResource);
                 NAssetUtils.refresh();
             }
             return _container;
         }
+        private static void addNonPreloadSingletonScriptable(ScriptableObject scriptableObject)
+        {
+            if (_container.isNonPreloadSingletonScriptable(scriptableObject.GetType()))
+            {
+                _loadedNonPreloadSingletonScriptables.Add(scriptableObject);
+            }
+        }
         public static void updateScriptable(ScriptableObject scriptable)
         {
             getOrCreateContainer().updateScriptable(scriptable);
+        }
+        internal static bool contains(ScriptableObject scriptableObject)
+        {
+            var container = getContainer();
+            if (container == null) return false;
+            return container.contains(scriptableObject);
         }
 #endif
     }
