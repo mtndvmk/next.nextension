@@ -41,48 +41,62 @@ namespace Nextension.Tween
 
         public sealed override void addTweener(NRunnableTweener tweener)
         {
-            TweenChunk newChunk;
+            TweenChunk nextChunk;
             int lastIndex = _notFullChunks.Count - 1;
             if (lastIndex < 0)
             {
-                newChunk = NUtils.createInstance<TChunk>();     
-                newChunk.onChunkBecomeNotFull = onChunkBecomeNotFullFunc;
-                _chunks.Add(newChunk.chunkId, newChunk);
-                _notFullChunks.Add(newChunk);
+                nextChunk = NUtils.createInstance<TChunk>();
+                nextChunk.onChunkBecomeNotFull = onChunkBecomeNotFullFunc;
+                _chunks.Add(nextChunk.chunkId, nextChunk);
+                _notFullChunks.Add(nextChunk);
                 lastIndex = 0;
             }
             else
             {
-                newChunk = _notFullChunks.getWithoutChecks(lastIndex);
+                nextChunk = _notFullChunks.getAtWithoutChecks(lastIndex);
             }
 
-            newChunk.addTweener(tweener);
-            if (newChunk.isFull())
+            nextChunk.addTweener(tweener);
+            if (nextChunk.isFull())
             {
-                _notFullChunks.removeWithoutChecks(lastIndex);
+                _notFullChunks.removeAtWithoutChecks(lastIndex);
             }
         }
         public sealed override void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks)
         {
             int chunksCount = _chunks.Count;
-            using var chunkIds = _chunks.Keys.toNPArray();
-
-            foreach (var chunkId in chunkIds.asSpan())
+            using var unusedchunkIds = NPUArray<ushort>.get();
+            foreach (var (chunkId, chunk) in _chunks)
             {
-                var chunk = _chunks[chunkId];
                 if (chunk.isUnused())
                 {
-                    if (chunksCount > MIN_COUNT_OF_CHUNK)
-                    {
-                        chunk.dispose();
-                        _chunks.Remove(chunkId);
-                        chunksCount--;
-                    }
-                    continue;
+                    unusedchunkIds.Add(chunkId);
                 }
-                var jobHandle = chunk.runJob();
-                jobHandles.AddNoResize(jobHandle);
-                runningChunks.AddNoResize((runnerId, chunkId));
+                else
+                {
+                    var jobHandle = chunk.runJob();
+                    jobHandles.AddNoResize(jobHandle);
+                    runningChunks.AddNoResize((runnerId, chunkId));
+                }
+            }
+
+            if (chunksCount > MIN_COUNT_OF_CHUNK && unusedchunkIds.Count > 0)
+            {
+                foreach (var chunkId in unusedchunkIds)
+                {
+                    if (chunksCount <= MIN_COUNT_OF_CHUNK) break;
+                    _chunks[chunkId].dispose();
+                    _chunks.Remove(chunkId);
+                    chunksCount--;
+                }
+
+                for (int i = _notFullChunks.Count - 1; i >= 0; i--)
+                {
+                    if (_notFullChunks.getAtWithoutChecks(i).isDisposed())
+                    {
+                        _notFullChunks.removeAtSwapBackWithoutChecks(i);
+                    }
+                }
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -92,10 +106,9 @@ namespace Nextension.Tween
         }
         public sealed override void dispose()
         {
-            using var chunkIds = _chunks.Keys.toNPArray();
-            foreach (var chunkId in chunkIds.asSpan())
+            foreach (var chunk in _chunks.Values)
             {
-                _chunks[chunkId].dispose();
+                chunk.dispose();
             }
             _chunks.Clear();
             _notFullChunks.Clear();

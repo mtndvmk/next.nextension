@@ -775,25 +775,25 @@ namespace Nextension
         [BurstCompile]
         public static Vector4 toVector4(this Quaternion quaternion)
         {
-            return NConverter.bitConvert<Quaternion, Vector4>(quaternion);
+            return NConverter.bitConvertWithoutChecks<Quaternion, Vector4>(quaternion);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
         public static Quaternion toQuaternion(this Vector4 vector4)
         {
-            return NConverter.bitConvert<Vector4, Quaternion>(vector4);
+            return NConverter.bitConvertWithoutChecks<Vector4, Quaternion>(vector4);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
         public static float4 toFloat4(this Quaternion quaternion)
         {
-            return NConverter.bitConvert<Quaternion, float4>(quaternion);
+            return NConverter.bitConvertWithoutChecks<Quaternion, float4>(quaternion);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         [BurstCompile]
         public static Quaternion toQuaternion(this float4 f4)
         {
-            return NConverter.bitConvert<float4, Quaternion>(f4);
+            return NConverter.bitConvertWithoutChecks<float4, Quaternion>(f4);
         }
         #endregion
 
@@ -936,24 +936,7 @@ namespace Nextension
             self.localEulerAngles = Vector3.zero;
             self.localScale = Vector3.one;
         }
-        public static bool hasParent(this Transform self, Transform other)
-        {
-            var parent = self.parent;
-            while (parent)
-            {
-                if (parent == other)
-                {
-                    return true;
-                }
-                parent = parent.parent;
-            }
-            return false;
-        }
-        public static bool hasChild(this Transform self, Transform other)
-        {
-            var children = self.GetComponentsInChildren<Transform>();
-            return children.contains(other);
-        }
+
         public static Vector3 getBotomLeft(this RectTransform self, bool isWorldSpace = true)
         {
             var poses = new Vector3[4];
@@ -996,7 +979,6 @@ namespace Nextension
                 return poses[2];
             }
         }
-
         public static Vector3 getBotomRight(this RectTransform self, bool isWorldSpace = true)
         {
             var poses = new Vector3[4];
@@ -1198,11 +1180,11 @@ namespace Nextension
         }
         public static float4 toFloat4(this Color from)
         {
-            return NConverter.bitConvert<Color, float4>(from);
+            return NConverter.bitConvertWithoutChecks<Color, float4>(from);
         }
         public static Color toColor(this float4 from)
         {
-            return NConverter.bitConvert<float4, Color>(from);
+            return NConverter.bitConvertWithoutChecks<float4, Color>(from);
         }
         #endregion
 
@@ -1344,14 +1326,43 @@ namespace Nextension
                 list.Add(item);
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Span<T> asSpan<T>(this List<T> self)
         {
             return self.AsSpan();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static Span<T> asSpan<T>(void* src, int lengthInBytes) where T : unmanaged
+        {
+            return new Span<T>(src, lengthInBytes / sizeOf<T>());
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static Span<T> asSpan<T>(this byte[] src) where T : unmanaged
+        {
+            fixed (byte* ptr = src)
+            {
+                return new Span<T>(ptr, src.Length / sizeOf<T>());
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static Span<T> asSpan<TFrom, T>(this Span<TFrom> src) where T : unmanaged where TFrom : unmanaged
+        {
+            fixed (TFrom* ptr = src)
+            {
+                return new Span<T>(ptr, src.Length * sizeOf<TFrom>() / sizeOf<T>());
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NPArray<T> toNPArray<T>(this IEnumerable<T> colletion)
         {
             return NPArray<T>.get(colletion);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static NPUArray<T> toNPUArray<T>(this IEnumerable<T> colletion) where T : unmanaged
+        {
+            return NPUArray<T>.get(colletion);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NPHSet<T> toNPHSet<T>(this IEnumerable<T> colletion)
         {
             return NPHSet<T>.get(colletion);
@@ -1466,6 +1477,40 @@ namespace Nextension
             }
             return false;
         }
+        public static bool contains<T>(this Span<T> self, T value)
+        {
+            for (int i = self.Length - 1; i >= 0; i--)
+            {
+                if (equals(self[i], value))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public static int indexOf<T>(this T[] self, T value)
+        {
+            for (int i = self.Length - 1; i >= 0; i--)
+            {
+                if (equals(self[i], value))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        public static int indexOf<T>(this Span<T> self, T value)
+        {
+            for (int i = self.Length - 1; i >= 0; i--)
+            {
+                if (equals(self[i], value))
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
         public static bool contains<T>(this ICollection<T> self, ICollection<T> b)
         {
             foreach (var item in b)
@@ -1691,7 +1736,7 @@ namespace Nextension
         private static Unity.Mathematics.Random s_random = initRandom();
         private static Unity.Mathematics.Random initRandom()
         {
-            uint seed = NConverter.bitConvert<int, uint>(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().GetHashCode()) ^ 0x6E624EB7u;
+            uint seed = NConverter.bitConvertWithoutChecks<int, uint>(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().GetHashCode()) ^ 0x6E624EB7u;
             if (seed == 0) new Unity.Mathematics.Random(0x6E624EB7u);
             return new Unity.Mathematics.Random(seed);
         }

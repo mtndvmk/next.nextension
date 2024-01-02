@@ -5,8 +5,8 @@ namespace Nextension.Tween
 {
     internal class CancelControlManager
     {
-        private Dictionary<long, HashSet<NTweener>> _controlledTweeners = new();
-        private Dictionary<long, Object> _objectKeys = new();
+        private readonly Dictionary<long, HashSet<NTweener>> _controlledTweeners = new();
+        private readonly Dictionary<long, Object> _objectKeys = new();
         public CancelControlKey createKey(uint key)
         {
             if (key == 0) throw new System.Exception("key cannot equals 0");
@@ -70,16 +70,17 @@ namespace Nextension.Tween
         }
         public void cancelInvalid()
         {
-            if (_controlledTweeners.Count > 0)
+            if (_controlledTweeners.Count > 0 && _objectKeys.Count > 0)
             {
-                using var keys = _objectKeys.toNPArray();
+                using var keys = NPUArray<long>.get();
+                foreach (var (k, obj) in _objectKeys)
+                {
+                    if (!obj) keys.Add(k);
+                }
                 foreach (var k in keys)
                 {
-                    if (!k.Value)
-                    {
-                        cancel(k.Key);
-                        _objectKeys.Remove(k.Key);
-                    }
+                    cancel(k);
+                    _objectKeys.Remove(k);
                 }
             }
         }

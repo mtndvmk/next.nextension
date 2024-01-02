@@ -25,20 +25,20 @@ namespace Nextension.Tween
                 switch (_transformTweenType)
                 {
                     case TransformTweenType.Local_Position:
-                        _target.localPosition = NConverter.bitConvert<TValue, Vector3>(destination);
+                        _target.localPosition = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
                         break;
                     case TransformTweenType.World_Position:
-                        _target.position = NConverter.bitConvert<TValue, Vector3>(destination);
+                        _target.position = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
                         break;
                     case TransformTweenType.Local_Scale:
-                        _target.localScale = NConverter.bitConvert<TValue, Vector3>(destination);
+                        _target.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
                         break;
 
                     case TransformTweenType.Local_Rotation:
-                        _target.localRotation = NConverter.bitConvert<TValue, Quaternion>(destination);
+                        _target.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(destination);
                         break;
                     case TransformTweenType.World_Rotation:
-                        _target.rotation = NConverter.bitConvert<TValue, Quaternion>(destination);
+                        _target.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(destination);
                         break;
                     default:
                         throw new NotImplementedException(_transformTweenType.ToString());
@@ -57,11 +57,11 @@ namespace Nextension.Tween
                 };
                 from = _transformTweenType switch
                 {
-                    TransformTweenType.Local_Position => jobData.fromToData.from = NConverter.bitConvert<Vector3, TValue>(_target.localPosition),
-                    TransformTweenType.World_Position => jobData.fromToData.from = NConverter.bitConvert<Vector3, TValue>(_target.position),
-                    TransformTweenType.Local_Scale => jobData.fromToData.from = NConverter.bitConvert<Vector3, TValue>(_target.localScale),
-                    TransformTweenType.Local_Rotation => jobData.fromToData.from = NConverter.bitConvert<Quaternion, TValue>(_target.localRotation),
-                    TransformTweenType.World_Rotation => jobData.fromToData.from = NConverter.bitConvert<Quaternion, TValue>(_target.rotation),
+                    TransformTweenType.Local_Position => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
+                    TransformTweenType.World_Position => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
+                    TransformTweenType.Local_Scale => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
+                    TransformTweenType.Local_Rotation => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
+                    TransformTweenType.World_Rotation => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
                     _ => throw new NotImplementedException(_transformTweenType.ToString()),
                 };
                 return jobData;

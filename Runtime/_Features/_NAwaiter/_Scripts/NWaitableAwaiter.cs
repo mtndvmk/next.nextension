@@ -214,7 +214,7 @@ namespace Nextension
         private void releaseToPool()
         {
 #if UNITY_EDITOR
-            if (handle.isEditorWaitable)
+            if (handle != null && handle.isEditorWaitable)
             {
                 handle = null;
                 return;

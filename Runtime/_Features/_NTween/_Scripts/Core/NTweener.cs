@@ -15,7 +15,7 @@ namespace Nextension.Tween
 
         public override int GetHashCode()
         {
-            return NConverter.bitConvert<uint, int>(id);
+            return NConverter.bitConvertWithoutChecks<uint, int>(id);
         }
 
         internal readonly uint id;
@@ -34,13 +34,9 @@ namespace Nextension.Tween
 
         private List<Func<bool>> cancelWhenFuncList;
 
-        public async NWaitable waitFinalized()
+        public async NWaitable waitTweener()
         {
-            await new NWaitUntil(() => isFinalized);
-        }
-        public async NWaitable waitCompleted()
-        {
-            await new NWaitUntil(() => Status == RunState.Completed);
+            await new NWaitTweener(this);
         }
 
 
@@ -159,7 +155,7 @@ namespace Nextension.Tween
         }
         public NTweener cancelWhen(Func<bool> condition)
         {
-            (cancelWhenFuncList ??= new List<Func<bool>>()).Add(condition);
+            (cancelWhenFuncList ??= new List<Func<bool>>(1)).Add(condition);
             return this;
         }
         public void setCancelControlKey(UnityEngine.Object target)

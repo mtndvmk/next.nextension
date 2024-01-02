@@ -9,7 +9,7 @@ namespace Nextension
     {
         public override bool keepWaiting => !IsFinalized;
         public bool IsFinalized { get; private set; }
-        public string Error => ErrorException.Message;
+        public string Error => ErrorException?.Message;
         public bool IsError => ErrorException != null;
         public Exception ErrorException { get; private set; }
 
@@ -173,9 +173,9 @@ namespace Nextension
             }
             foreach (var dependedOperation in _dependedOperations.asSpan())
             {
-                if (dependedOperation is NProgressOperation)
+                if (dependedOperation is NProgressOperation progressOperation)
                 {
-                    (dependedOperation as NProgressOperation).innerSetProgress(Progress);
+                    progressOperation.innerSetProgress(Progress);
                 }
             }
         }

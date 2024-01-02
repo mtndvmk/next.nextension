@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Nextension
 {
@@ -8,58 +9,130 @@ namespace Nextension
     {
         public ArrayEnumerator(T[] array)
         {
-            _array = array;
-            _index = _startIndex = 0;
-            _maxIndex = (uint)array.Length;
+            this.array = array;
+            _index = startIndex = 0;
+            maxIndex = (uint)array.Length;
             _current = default;
         }
         public ArrayEnumerator(T[] array, uint startIndex)
         {
-            _array = array;
-            _index = _startIndex = startIndex;
-            _maxIndex = (uint)array.Length;
+            this.array = array;
+            _index = this.startIndex = startIndex;
+            maxIndex = (uint)array.Length;
             _current = default;
         }
         public ArrayEnumerator(T[] array, uint startIndex, uint count)
         {
-            _array = array;
-            _index = _startIndex = startIndex;
-            _maxIndex = startIndex + count;
+            this.array = array;
+            _index = this.startIndex = startIndex;
+            maxIndex = startIndex + count;
 
-            if (_maxIndex > array.Length)
+            if (maxIndex > array.Length)
             {
                 throw new ArgumentOutOfRangeException();
             }
             _current = default;
         }
 
-        private readonly T[] _array;
-        private readonly uint _startIndex;
-        private readonly uint _maxIndex;
+        internal readonly T[] array;
+        internal readonly uint startIndex;
+        internal readonly uint maxIndex;
 
         private uint _index;
         private T _current;
 
         public T Current => _current;
-        object IEnumerator.Current => _current;
-
-        public void Dispose()
-        {  
+        object IEnumerator.Current
+        {
+            get
+            {
+                if (_index == startIndex || _index == maxIndex)
+                {
+                    throw new InvalidOperationException("InvalidOperation_EnumOpCantHappen");
+                }
+                return _current;
+            }
         }
 
+        public void Dispose()
+        {
+        }
         public bool MoveNext()
         {
-            if (_index < _maxIndex)
+            if (_index < maxIndex)
             {
-                _current = _array[_index++];
+                _current = array[_index++];
                 return true;
             }
             return false;
         }
-
         public void Reset()
         {
-            _index = _startIndex;
+            _index = startIndex;
+            _current = default;
+        }
+    }
+    public unsafe struct UnsafeArrayEnumerator<T> : IEnumerator<T> where T : unmanaged
+    {
+        public UnsafeArrayEnumerator(void* array, uint itemCount)
+        {
+            this.array = (T*)array;
+            maxIndex = itemCount;
+
+            _current = default;
+            _index = startIndex = 0;
+        }
+        public static unsafe UnsafeArrayEnumerator<T> createFromArrayEnumerator<TSrc>(ArrayEnumerator<TSrc> src) where TSrc : unmanaged
+        {
+            var sizeOfSrc = sizeof(TSrc);
+#if UNITY_EDITOR
+            var sizeOfT = NUtils.sizeOf<T>();
+            if (sizeOfSrc != sizeOfT)
+            {
+                Debug.LogWarning($"SizeOfSrc is different from SizeOfT ({sizeOfSrc} != {sizeOfT})");
+            }
+#endif
+            fixed (TSrc* srcPtr = &src.array[src.startIndex])
+            {
+                return new UnsafeArrayEnumerator<T>(srcPtr, src.maxIndex - src.startIndex);
+            }
+        }
+
+        internal readonly T* array;
+        internal readonly uint maxIndex;
+        internal readonly uint startIndex;
+
+        private uint _index;
+        private T _current;
+
+        public T Current => _current;
+        object IEnumerator.Current
+        {
+            get
+            {
+                if (_index == startIndex || _index == maxIndex)
+                {
+                    throw new InvalidOperationException("InvalidOperation_EnumOpCantHappen");
+                }
+                return _current;
+            }
+        }
+
+        public void Dispose()
+        {
+        }
+        public bool MoveNext()
+        {
+            if (_index < maxIndex)
+            {
+                _current = array[_index++];
+                return true;
+            }
+            return false;
+        }
+        public void Reset()
+        {
+            _index = startIndex;
             _current = default;
         }
     }

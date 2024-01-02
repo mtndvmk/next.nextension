@@ -13,7 +13,6 @@ namespace Nextension
         [EditorQuittingMethod]
         static void reset()
         {
-            SHARED_TEXTURE_COUNTER = 0;
             origins.Clear();
         }
         private static void checkOrigins()
@@ -27,7 +26,6 @@ namespace Nextension
             }
         }
 #endif
-        internal static uint SHARED_TEXTURE_COUNTER;
         internal static HashSet<OriginTexture> origins = new();
 
         public static void disposeAllOrigins()
@@ -42,7 +40,7 @@ namespace Nextension
     public class OriginTexture
     {
         internal Texture texture;
-        private NBList<SharedTexture, uint> _sharedList = new((item) => item.id);
+        private HashSet<SharedTexture> _sharedList = new();
 
         internal OriginTexture(Texture texture)
         {
@@ -55,10 +53,11 @@ namespace Nextension
             {
                 return;
             }
+            IsDisposed = true;
             NUtils.destroy(texture);
             texture = null;
-            IsDisposed = true;
-            _sharedList.clear();
+            _sharedList.Clear();
+            SharedTextureManager.origins.Remove(this);
         }
 
         public bool IsDisposed { get; private set; }
@@ -68,17 +67,18 @@ namespace Nextension
             {
                 throw new System.Exception("OriginTexture has been disposed");
             }
-            var sharedTexture = new SharedTexture(++SharedTextureManager.SHARED_TEXTURE_COUNTER, this);
-            _sharedList.addAndSort(sharedTexture);
+            var sharedTexture = new SharedTexture(this);
+            _sharedList.Add(sharedTexture);
             return sharedTexture;
         }
         public void release(SharedTexture sharedTexture, bool isDisposeIfNoLongerUsed = true)
         {
             if (IsDisposed)
             {
+                Debug.LogWarning("OriginTexture has been disposed");
                 return;
             }
-            if (_sharedList.removeValue(sharedTexture))
+            if (_sharedList.Remove(sharedTexture))
             {
                 if (isDisposeIfNoLongerUsed && _sharedList.Count == 0)
                 {
@@ -89,14 +89,12 @@ namespace Nextension
     }
     public class SharedTexture
     {
-        internal SharedTexture(uint id, OriginTexture origin)
+        internal SharedTexture(OriginTexture origin)
         {
-            this.id = id;
             this.origin = origin;
         }
         internal OriginTexture origin;
 
-        public readonly uint id;
         public bool IsReleased => origin == null;
         public Texture Texture
         {
@@ -104,7 +102,7 @@ namespace Nextension
             {
                 if (IsReleased)
                 {
-                    throw new System.Exception("OriginTexture has been released");
+                    throw new System.Exception("SharedTexture has been released");
                 }
                 if (origin.IsDisposed)
                 {
@@ -118,6 +116,13 @@ namespace Nextension
         {
             if (IsReleased)
             {
+                Debug.LogWarning("SharedTexture has been released");
+                return;
+            }
+            if (origin.IsDisposed)
+            {
+                Debug.LogWarning("OriginTexture has been disposed");
+                origin = null;
                 return;
             }
             origin.release(this, isDisposeIfNoLongerUsed);
@@ -127,7 +132,7 @@ namespace Nextension
         {
             if (IsReleased)
             {
-                throw new System.Exception("OriginTexture has been released");
+                throw new System.Exception("SharedTexture has been released");
             }
             if (origin.IsDisposed)
             {

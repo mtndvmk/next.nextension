@@ -47,7 +47,7 @@ namespace Nextension
         {
             if (!_pool.release(pool))
             {
-                throw new Exception("Can't find poolList in usingPool");
+                throw new Exception("Can't find TPool in usingPool");
             }
             pool.Clear();
         }

@@ -58,10 +58,7 @@ namespace Nextension
 
         public void start()
         {
-            if (_tweener != null)
-            {
-                _tweener.cancel();
-            }
+            _tweener?.cancel();
             moveUp();
         }
         public void stop()

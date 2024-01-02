@@ -41,7 +41,7 @@ namespace Nextension
                 {
                     createTable();
                 }
-                return NConverter.bitConvert<uint, int>(_hash);
+                return NConverter.bitConvertWithoutChecks<uint, int>(_hash);
             }
         }
 #endif
@@ -61,7 +61,7 @@ namespace Nextension
             {
                 _enumToIndexTable[_indexToEnumTable[i]] = i;
 #if UNITY_EDITOR
-                uint seed = NConverter.bitConvert<T, uint>(_indexToEnumTable[i]);
+                uint seed = NConverter.bitConvertWithoutChecks<T, uint>(_indexToEnumTable[i]);
                 if (seed == 0) seed = 0x6E624EB7u;
                 _hash ^= new Unity.Mathematics.Random(seed).state;
 #endif

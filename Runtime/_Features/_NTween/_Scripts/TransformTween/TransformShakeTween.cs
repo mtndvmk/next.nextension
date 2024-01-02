@@ -32,11 +32,11 @@ namespace Nextension.Tween
                 };
                 origin = _transformTweenType switch
                 {
-                    TransformTweenType.Local_Position => jobData.shakeData.origin = NConverter.bitConvert<Vector3, TValue>(_target.localPosition),
-                    TransformTweenType.World_Position => jobData.shakeData.origin = NConverter.bitConvert<Vector3, TValue>(_target.position),
-                    TransformTweenType.Local_Scale => jobData.shakeData.origin = NConverter.bitConvert<Vector3, TValue>(_target.localScale),
-                    TransformTweenType.Local_Rotation => jobData.shakeData.origin = NConverter.bitConvert<Quaternion, TValue>(_target.localRotation),
-                    TransformTweenType.World_Rotation => jobData.shakeData.origin = NConverter.bitConvert<Quaternion, TValue>(_target.rotation),
+                    TransformTweenType.Local_Position => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
+                    TransformTweenType.World_Position => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
+                    TransformTweenType.Local_Scale => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
+                    TransformTweenType.Local_Rotation => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
+                    TransformTweenType.World_Rotation => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
                     _ => throw new NotImplementedException(_transformTweenType.ToString()),
                 };
                 return jobData;
@@ -85,7 +85,7 @@ namespace Nextension.Tween
                         var deltaTime = currentTime - common.startTime;
                         if (deltaTime < common.duration)
                         {
-                            uint seed = NConverter.bitConvert<float, uint>(deltaTime + index) ^ 0x6E624EB7u;
+                            uint seed = NConverter.bitConvertWithoutChecks<float, uint>(deltaTime + index) ^ 0x6E624EB7u;
                             result = NTweenUtils.addValue(data.origin, NTweenUtils.randShakeValue<TValue>(seed, data.range));
                         }
                         else

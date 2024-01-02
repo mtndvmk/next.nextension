@@ -16,6 +16,6 @@ namespace Nextension
         }
         public override bool keepWaiting => !_task.IsCompleted;
 
-        public static explicit operator WaitTask(Task task) => new WaitTask(task);
+        public static implicit operator WaitTask(Task task) => new(task);
     }
 }

@@ -8,18 +8,18 @@ namespace Nextension
         private NWaitable _expirationWaitable;
 
         public T Value { get; set; }
-        public float ExpirationTime { get; private set; }
+        public float ExpirationDurationInSecond { get; private set; }
         public bool IsExpired { get; private set; }
         public readonly NCallback onExpired = new();
 
 
-        public ExpirableValue(T value, float expirationTimeInSecond, Action onExpiredCallback)
+        public ExpirableValue(T value, float expirationDurationInSecond, Action onExpiredCallback)
         {
             Value = value;
             onExpired.add(onExpiredCallback);
-            renew(expirationTimeInSecond);
+            renew(expirationDurationInSecond);
         }
-        public void renew(float expirationTimeInSecond = 10)
+        public void renew(float expirationDurationInSecond = 10)
         {
             if (IsExpired)
             {
@@ -27,7 +27,7 @@ namespace Nextension
             }
             else
             {
-                ExpirationTime = expirationTimeInSecond;
+                ExpirationDurationInSecond = expirationDurationInSecond;
 #if UNITY_EDITOR
                 if (NStartRunner.IsPlaying)
 #endif
@@ -40,7 +40,7 @@ namespace Nextension
         private void checkExpiration()
         {
             _expirationWaitable?.cancel();
-            _expirationWaitable = new NWaitSecond(ExpirationTime).startWaitable();
+            _expirationWaitable = new NWaitSecond(ExpirationDurationInSecond).startWaitable();
             _expirationWaitable.addCompletedEvent(() =>
             {
                 IsExpired = true;

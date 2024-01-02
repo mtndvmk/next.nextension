@@ -28,7 +28,7 @@ namespace Nextension.UI
         }
         private void Start()
         {
-            ScreenResizeDetector.Instance.onScreenResizeEvent += (size) =>
+            ScreenSizeChangedDetector.onScreenResizeEvent += (size) =>
             {
                 if (m_IsUpdateOnScreenSizeChanged)
                 {
@@ -84,7 +84,7 @@ namespace Nextension.UI
                 newSize.y = (size.y - (m_FitSizeFactor.y - 1) * m_SpacingFactor.y) / m_FitSizeFactor.y;
             }
             m_GridLayoutGroup.cellSize = newSize;
-            Canvas.ForceUpdateCanvases();
+            LayoutRebuilder.MarkLayoutForRebuild(m_GridLayoutGroup.transform as RectTransform);
         }
     }
 }

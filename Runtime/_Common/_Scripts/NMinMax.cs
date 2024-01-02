@@ -6,8 +6,8 @@ namespace Nextension
     [Serializable]
     public struct NMinMax01
     {
-        [SerializeField] private float min;
-        [SerializeField] private float max;
+        [SerializeField, Range(0, 1)] private float min;
+        [SerializeField, Range(0, 1)] private float max;
 
         public float Min
         {

@@ -54,11 +54,11 @@ namespace Nextension.Tween
         public bool isFull() => _emptyIndices.Count == 0;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isEmpty() => _emptyIndices.Count == ChunkSize;
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool isDisposed() => !_mask.IsCreated;
         public bool isUnused()
         {
-            if (_lastEmptyTime == -1 ||
-               TweenStaticManager.currentTime - _lastEmptyTime < NotAccessTimeLimit)
+            if (_lastEmptyTime == -1 || TweenStaticManager.currentTime - _lastEmptyTime < NotAccessTimeLimit)
             {
                 return false;
             }

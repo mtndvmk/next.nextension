@@ -171,24 +171,37 @@ namespace Nextension
             return dst;
         }
 
-        public static unsafe TOut bitConvert<TIn, TOut>(TIn inValue, bool checkSize) where TIn : unmanaged where TOut : unmanaged
-        {
-            if (checkSize)
-            {
-                var sizeOfTin = NUtils.sizeOf<TIn>();
-                var sizeOfTOut = NUtils.sizeOf<TOut>();
-
-                if (sizeOfTin != sizeOfTOut)
-                {
-                    throw new Exception("TIn and TOut binary must be the same size");
-                }
-            }
-            return bitConvert<TIn, TOut>(inValue);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe TOut bitConvert<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
         {
+            var sizeOfTin = NUtils.sizeOf<TIn>();
+            var sizeOfTOut = NUtils.sizeOf<TOut>();
+
+            if (sizeOfTin != sizeOfTOut)
+            {
+                throw new Exception("TIn and TOut binary must be the same size");
+            }
             return *(TOut*)&inValue;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe TOut bitConvertWithoutChecks<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
+        {
+            return *(TOut*)&inValue;
+        }
+        public static unsafe TOut bitConvertDiffSize<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
+        {
+            var sizeOfTin = NUtils.sizeOf<TIn>();
+            var sizeOfTOut = NUtils.sizeOf<TOut>();
+
+            if (sizeOfTOut > sizeOfTin)
+            {
+                var resultPtr = stackalloc byte[sizeOfTOut];
+                *(TIn*)resultPtr = inValue;
+                return *(TOut*)resultPtr;
+            }
+            else
+            {
+                return *(TOut*)&inValue;
+            }
         }
         public static T[] convert<T>(byte[] src) where T : unmanaged
         {

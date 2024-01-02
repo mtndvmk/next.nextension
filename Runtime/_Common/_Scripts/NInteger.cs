@@ -37,7 +37,7 @@ namespace Nextension
             return _value.GetHashCode();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static explicit operator long(NInteger nInteger)
+        public static implicit operator long(NInteger nInteger)
         {
             return nInteger._value;
         }

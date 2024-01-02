@@ -24,13 +24,13 @@ namespace Nextension
         public int Count => _count;
         public bool IsCreated => _array.IsCreated;
 
-        public unsafe void AddRangeNoReize(T[] array)
+        public unsafe void AddRangeNoReSize(T[] array)
         {
-            fixed (void* srcPtr = &array[0])
+            fixed (void* srcPtr = array)
             {
-                int strike = NUtils.sizeOf<T>();
-                var dstPtr = (byte*)_array.GetUnsafePtr() + strike * _count;
-                UnsafeUtility.MemCpy(dstPtr, srcPtr, strike * array.Length);
+                int stride = NUtils.sizeOf<T>();
+                var dstPtr = (byte*)_array.GetUnsafePtr() + stride * _count;
+                UnsafeUtility.MemCpy(dstPtr, srcPtr, stride * array.Length);
             }
             _count += array.Length;
         }

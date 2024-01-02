@@ -45,15 +45,17 @@ namespace Nextension
         
         public T this[int index]
         {
-            get { return _collection[index]; }
+            get { onAccessed(); return _collection[index]; }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T getWithoutChecks(int index)
+        public T getAtWithoutChecks(int index)
         {
-            return _collection.getWithoutChecks(index);
+            onAccessed();
+            return _collection.getAtWithoutChecks(index);
         }
         public void AddRange(IEnumerable<T> collection)
         {
+            onAccessed();
             _collection.AddRange(collection);
         }
         public void RemoveAt(int index)
@@ -68,16 +70,27 @@ namespace Nextension
         }
         public void ensureCapacity(int capacity)
         {
+            onAccessed();
             _collection.ensureCapacity(capacity);
         }
         public void copyFrom(IEnumerable<T> collection)
         {
+            onAccessed();
             _collection.copyFrom(collection);
         }
         public ArrayEnumerator<T> GetEnumerator()
         {
             onAccessed();
             return _collection.GetEnumerator();
+        }
+        public T[] toArray()
+        {
+            onAccessed();
+            return asSpan().ToArray();
+        }
+        public int IndexOf(T item)
+        {
+            return Collection.IndexOf(item);
         }
     }
 }

@@ -152,7 +152,10 @@ namespace Nextension.Tween
 
         internal static void cancelFromTweener(NRunnableTweener tweener)
         {
-            _runners[tweener.getRunnerId()].getChunk(tweener.chunkIndex.chunkId).cancelTween(tweener.chunkIndex.maskIndex);
+            if (_runners.TryGetValue(tweener.getRunnerId(), out var runner))
+            {
+                runner.getChunk(tweener.chunkIndex.chunkId).cancelTween(tweener.chunkIndex.maskIndex);
+            }
         }
         internal static void cancelFromUintControlKey(uint uintKey)
         {

@@ -46,7 +46,7 @@ namespace Nextension
                     dict = new(cacheCount);
                     for (int i = 0; i < cacheCount; i++)
                     {
-                        var k = NConverter.bitConvert<int, TEnum>(enumArrayCache[i]);
+                        var k = NConverter.bitConvertWithoutChecks<int, TEnum>(enumArrayCache[i]);
                         if (!EnumIndex<TEnum>.isValid(k) || i >= enumValues.Length) continue;
                         dict[k] = enumValues[i];
                     }
@@ -57,7 +57,7 @@ namespace Nextension
                 enumArrayCache = new int[enumArr.Length];
                 for (int i = 0; i < enumArr.Length; i++)
                 {
-                    enumArrayCache[i] = NConverter.bitConvert<TEnum, int>(enumArr[i]);
+                    enumArrayCache[i] = NConverter.bitConvertDiffSize<TEnum, int>(enumArr[i]);
                 }
 
                 if (dict != null)

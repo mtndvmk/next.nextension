@@ -10,12 +10,17 @@ namespace Nextension.NEditor
         private ScriptableObject _scriptableObject;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (_scriptableObject == null)
-            {
-                _scriptableObject = NEditorHelper.getValue<NonPreloadScriptable>(property).getScriptableObject();
-            }
             try
             {
+                var nonPreloadScriptable = NEditorHelper.getValue<NonPreloadScriptable>(property);
+                if (_scriptableObject == null || nonPreloadScriptable.getScriptableObject() != _scriptableObject)
+                {
+                    if (_scriptableObject != null)
+                    {
+                        SerializedPropertyUtil.release(_scriptableObject);
+                    }
+                    _scriptableObject = nonPreloadScriptable.getScriptableObject();
+                }
                 EditorGUI.PropertyField(position, SerializedPropertyUtil.getSerializedProperty(_scriptableObject));
             }
             catch (Exception e)
