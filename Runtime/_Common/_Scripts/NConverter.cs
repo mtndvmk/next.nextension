@@ -55,21 +55,6 @@ namespace Nextension
             }
             return array;
         }
-        public static unsafe byte[] getBytes<T>(params T[] inData) where T : unmanaged
-        {
-            var sizeOfT = NUtils.sizeOf<T>();
-            int length = inData.Length;
-            byte[] array = new byte[length * sizeOfT];
-            fixed (byte* ptr = array)
-            {
-                T* ptrOfT = (T*)ptr;
-                for (int i = 0; i < length; ++i)
-                {
-                    *ptrOfT++ = inData[i];
-                }
-            }
-            return array;
-        }
 
         public static unsafe void writeBytes<T>(byte[] inData, T t1, int startIndex) where T : unmanaged
         {
@@ -160,14 +145,38 @@ namespace Nextension
             return getUTF8StringToEnd(inData, 0);
         }
 
+        public unsafe static byte[] getBytes<T>(this Span<T> self) where T : unmanaged
+        {
+            var dst = new byte[self.Length * NUtils.sizeOf<T>()];
+            fixed (T* srcPtr = self)
+            {
+                fixed (byte* dstPtr = dst)
+                {
+                    Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+                }
+            }
+            return dst;
+        }
+        public unsafe static byte[] getBytes<T>(this T[] self) where T : unmanaged
+        {
+            var dst = new byte[self.Length * NUtils.sizeOf<T>()];
+            fixed (T* srcPtr = self)
+            {
+                fixed (byte* dstPtr = dst)
+                {
+                    Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+                }
+            }
+            return dst;
+        }
         public unsafe static byte[] getBytes<T>(this NativeArray<T> self) where T : unmanaged
         {
             var dst = new byte[self.Length * NUtils.sizeOf<T>()];
-            var dstGCHandle = GCHandle.Alloc(dst, GCHandleType.Pinned);
-
-            Buffer.MemoryCopy(NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(self), (void*)dstGCHandle.AddrOfPinnedObject(), dst.Length, dst.Length);
-
-            dstGCHandle.Free();
+            fixed (byte* dstPtr = dst)
+            {
+                var srcPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(self);
+                Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+            }
             return dst;
         }
 
@@ -203,15 +212,33 @@ namespace Nextension
                 return *(TOut*)&inValue;
             }
         }
-        public static T[] convert<T>(byte[] src) where T : unmanaged
+        public unsafe static T[] convert<T>(byte[] src) where T : unmanaged
         {
             var tSize = NUtils.sizeOf<T>();
             var resultLength = src.Length / tSize;
-            var t = new T[resultLength];
-            GCHandle handle = GCHandle.Alloc(t, GCHandleType.Pinned);
-            Marshal.Copy(src, 0, handle.AddrOfPinnedObject(), src.Length);
-            handle.Free();
-            return t;
+            var dst = new T[resultLength];
+            fixed (byte* srcPtr = src)
+            {
+                fixed (T* dstPtr = dst)
+                {
+                    Buffer.MemoryCopy(srcPtr, dstPtr, src.Length, src.Length);
+                }
+            }
+            return dst;
+        }
+        public unsafe static T[] convert<T>(Span<byte> src) where T : unmanaged
+        {
+            var tSize = NUtils.sizeOf<T>();
+            var resultLength = src.Length / tSize;
+            var dst = new T[resultLength];
+            fixed (byte* srcPtr = src)
+            {
+                fixed (T* dstPtr = dst)
+                {
+                    Buffer.MemoryCopy(srcPtr, dstPtr, src.Length, src.Length);
+                }
+            }
+            return dst;
         }
         public unsafe static NativeArray<T> convertToNativeArray<T>(IntPtr src, int bytesLength, Allocator allocator) where T : unmanaged
         {
@@ -227,18 +254,66 @@ namespace Nextension
         {
             int sizeOfTIn = NUtils.sizeOf<TIn>();
             int sizeOfTOut = NUtils.sizeOf<TOut>();
-            int fromSize = sizeOfTIn * from.Length;
+            int sizeInBytes = sizeOfTIn * from.Length;
 
-            TOut[] result = new TOut[fromSize / sizeOfTOut];
-            GCHandle inHandle = GCHandle.Alloc(from, GCHandleType.Pinned);
-            GCHandle outHandle = GCHandle.Alloc(result, GCHandleType.Pinned);
+            TOut[] result = new TOut[sizeInBytes / sizeOfTOut];
+            fixed (TIn* src = from)
+            {
+                fixed (TOut* dst = result)
+                {
+                    Buffer.MemoryCopy(src, dst, sizeInBytes, sizeInBytes);
 
-            Buffer.MemoryCopy((void*)inHandle.AddrOfPinnedObject(), (void*)outHandle.AddrOfPinnedObject(), fromSize, fromSize);
-
-            inHandle.Free();
-            outHandle.Free();
-
+                }
+            }
             return result;
+        }
+        public unsafe static TOut[] convertArray<TIn, TOut>(Span<TIn> from) where TIn : unmanaged where TOut : unmanaged
+        {
+            int sizeOfTIn = NUtils.sizeOf<TIn>();
+            int sizeOfTOut = NUtils.sizeOf<TOut>();
+            int sizeInBytes = sizeOfTIn * from.Length;
+
+            TOut[] result = new TOut[sizeInBytes / sizeOfTOut];
+            fixed (TIn* src = from)
+            {
+                fixed (TOut* dst = result)
+                {
+                    Buffer.MemoryCopy(src, dst, sizeInBytes, sizeInBytes);
+
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// Convert binary array to dst array
+        /// </summary>
+        public static bool tryConvert<T>(byte[] src, out T[] result) where T : unmanaged
+        {
+            try
+            {
+                result = convert<T>(src);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                result = null;
+                return false;
+            }
+        }
+        public static bool tryConvert<T>(Span<byte> src, out T[] result) where T : unmanaged
+        {
+            try
+            {
+                result = convert<T>(src);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                result = null;
+                return false;
+            }
         }
         /// <summary>
         /// Convert src array to result array using binary of src array
@@ -257,14 +332,11 @@ namespace Nextension
                 return false;
             }
         }
-        /// <summary>
-        /// Convert binary array to dst array
-        /// </summary>
-        public static bool tryConvert<T>(byte[] src, out T[] result) where T : unmanaged
+        public static bool tryConvertArray<TIn, TOut>(Span<TIn> from, out TOut[] result) where TIn : unmanaged where TOut : unmanaged
         {
             try
             {
-                result = convert<T>(src);
+                result = convertArray<TIn, TOut>(from);
                 return true;
             }
             catch (Exception e)

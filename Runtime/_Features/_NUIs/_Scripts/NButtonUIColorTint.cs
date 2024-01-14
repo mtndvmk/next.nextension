@@ -7,7 +7,8 @@ namespace Nextension.UI
     [DisallowMultipleComponent]
     public class NButtonUIColorTint : MonoBehaviour, INButtonListener
     {
-        [SerializeField] private Graphic _target;
+        [SerializeField] NButton _nButton;
+        [SerializeField] private CanvasRenderer _target;
         [SerializeField] private Color _normalColor = Color.white;
         [SerializeField] private Color _enterColor = new Color32(0xF5, 0xF5, 0xF5, 0xFF);
         [SerializeField] private Color _downColor = new Color32(0xC8, 0xC8, 0xC8, 0xFF);
@@ -18,8 +19,25 @@ namespace Nextension.UI
 
         private void OnValidate()
         {
-            _target ??= GetComponent<Image>();
-            _target ??= GetComponent<RawImage>();
+            _target ??= GetComponent<CanvasRenderer>();
+            _nButton ??= GetComponent<NButton>();
+
+            OnEnable();
+        }
+
+        private void OnEnable()
+        {
+            if (_nButton && _target)
+            {
+                if (_nButton.IsInteractable)
+                {
+                    _target.SetColor(_normalColor);
+                }
+                else
+                {
+                    _target.SetColor(_disableColor);
+                }
+            }
         }
 
         void INButtonListener.onButtonUp()
@@ -62,15 +80,15 @@ namespace Nextension.UI
                 _colorTweener.cancel();
                 _colorTweener = null;
             }
-            if (_duration == 0)
+            if (_duration <= 0)
             {
-                _target.color = color;
+                _target.SetColor(color);
             }
             else
             {
-                _colorTweener = NTween.fromTo(_target.color, color, (resultColor) =>
+                _colorTweener = NTween.fromTo(_target.GetColor(), color, (resultColor) =>
                 {
-                    _target.color = resultColor;
+                    _target.SetColor(resultColor);
                 }, _duration);
             }
         }

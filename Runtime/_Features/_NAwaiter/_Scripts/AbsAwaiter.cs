@@ -10,7 +10,15 @@ namespace Nextension
 
         public void OnCompleted(Action continuation)
         {
-            this.continuation = continuation;
+            if (IsCompleted)
+            {
+                continuation.Invoke();
+                onInnerCompleted();
+            }
+            else
+            {
+                this.continuation = continuation;
+            }
         }
         public void GetResult()
         {
@@ -24,8 +32,11 @@ namespace Nextension
             if (!IsCompleted)
             {
                 IsCompleted = true;
-                continuation?.Invoke();
-                onInnerCompleted();
+                if (continuation != null)
+                {
+                    continuation.Invoke();
+                    onInnerCompleted();
+                }
             }
         }
         internal virtual void invokeException(Exception ex)
