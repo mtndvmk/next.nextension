@@ -5,25 +5,25 @@ namespace Nextension.Tween
 {
     public static class NTweenExtension
     {
-        public static void cancelAllTweeners(this GameObject target, bool includeChildren = false, bool includeInActive = false)
+        public static void cancelAllTweeners(this Object target)
+        {
+            NTween.cancelAllTweeners(target);
+        }
+        public static void cancelAllTweenersInGameObject(this GameObject target, bool includeChildren, bool includeInActive = false)
         {
             Component[] components;
             if (includeChildren)
             {
-                components = target.GetComponents<Component>();
+                components = target.GetComponentsInChildren<Component>(includeInActive);
             }
             else
             {
-                components = target.GetComponentsInChildren<Component>(includeInActive);
+                components = target.GetComponents<Component>();
             }
             foreach (var com in components)
             {
                 NTween.cancelAllTweeners(com);
             }
-        }
-        public static void cancelAllTweeners(this Object target)
-        {
-            NTween.cancelAllTweeners(target);
         }
 
         public static NRunnableTweener moveTo(this Transform target, Vector3 destination, float duration, bool isLocalSpace = true)
@@ -73,7 +73,13 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
-        
+        public static NRunnableTweener punchScale(this Transform target, float punchDestination, float duration)
+        {
+            var tweener = NTween.punchScale(target, punchDestination, duration);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+
         public static CombinedNTweener jumpTo(this Transform target, Vector3 destination, float jumpHeight, float duration, bool isLocalSpace = true)
         {
             var moveTweener = NTween.moveTo(target, destination, duration, isLocalSpace);
@@ -113,6 +119,14 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
+        public static NRunnableTweener fadeTo(this CanvasRenderer target, float endAlpha, float duration)
+        {
+            var fromColor = target.GetColor();
+            var tweener = NTween.fromTo(fromColor.a, endAlpha, a => target.SetColor(fromColor.setA(a)), duration);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+        
         public static NRunnableTweener colorTo(this Graphic target, Color destination, float duration)
         {
             var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), c => target.color = c.toColor(), duration);
@@ -128,6 +142,13 @@ namespace Nextension.Tween
         public static NRunnableTweener colorTo(this SpriteRenderer target, Color destination, float duration)
         {
             var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), c => target.color = c.toColor(), duration);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+        public static NRunnableTweener colorTo(this CanvasRenderer target, Color destination, float duration)
+        {
+            var fromColor = target.GetColor();
+            var tweener = NTween.fromTo(fromColor.toFloat4(), destination.toFloat4(), c => target.SetColor(c.toColor()), duration);
             tweener.setCancelControlKey(target);
             return tweener;
         }

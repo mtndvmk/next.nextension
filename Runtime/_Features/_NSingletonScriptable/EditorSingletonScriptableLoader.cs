@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -116,10 +117,31 @@ namespace Nextension.NEditor
 
         public class OnLoadOrRecompiled : IErrorCheckable, IAssetImportedCallback
         {
-            static void onLoadOrRecompiled()
+            static async void onLoadOrRecompiled()
             {
                 loadEditorContainer();
-                scanAndReload();
+                int count = 2;
+                while (count > 0)
+                {
+                    try
+                    {
+                        scanAndReload();
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (--count <= 0) 
+                        {
+                            Debug.LogException(e);
+                            break;
+                        }
+                        else
+                        {
+                            Debug.LogWarning(e);
+                            await new NWaitSecond_Editor(0.2f);
+                        }
+                    }
+                }
             }
             static async void onAssetImported(string path)
             {

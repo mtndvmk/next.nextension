@@ -73,10 +73,7 @@ namespace Nextension.Tween
             {
                 Debug.LogWarning("Tweener has been started");
             }
-            else
-            {
-                this.onStartedEvent += onStarted;
-            }
+            this.onStartedEvent += onStarted;
             return this;
         }
         /// <summary>
@@ -88,10 +85,7 @@ namespace Nextension.Tween
             {
                 Debug.LogWarning("Tweener has been finished");
             }
-            else
-            {
-                this.onUpdatedEvent += onUpdated;
-            }
+            this.onUpdatedEvent += onUpdated;
             return this;
         }
         /// <summary>
@@ -99,6 +93,7 @@ namespace Nextension.Tween
         /// </summary>
         public NTweener onCompleted(Action onCompleted)
         {
+            this.onCompletedEvent += onCompleted;
             if (Status == RunState.Completed)
             {
                 try
@@ -110,10 +105,6 @@ namespace Nextension.Tween
                     Debug.LogException(e);
                 }
             }
-            else if (!Status.isFinished())
-            {
-                this.onCompletedEvent += onCompleted;
-            }
             return this;
         }
         /// <summary>
@@ -121,6 +112,7 @@ namespace Nextension.Tween
         /// </summary>
         public NTweener onCanceled(Action onCanceled)
         {
+            this.onCanceledEvent += onCanceled;
             if (Status == RunState.Canceled)
             {
                 try
@@ -131,10 +123,6 @@ namespace Nextension.Tween
                 {
                     Debug.LogException(e);
                 }
-            }
-            else if (!Status.isFinished())
-            {
-                this.onCanceledEvent += onCanceled;
             }
             return this;
         }
@@ -147,10 +135,7 @@ namespace Nextension.Tween
             {
                 Debug.LogWarning("Tweener has been finished");
             }
-            else
-            {
-                onFinalizedEvent += onFinalized;
-            }
+            onFinalizedEvent += onFinalized;
             return this;
         }
         public NTweener cancelWhen(Func<bool> condition)
@@ -230,9 +215,18 @@ namespace Nextension.Tween
         }
         internal void resetState()
         {
+            isFinalized = false;
             Status = RunState.None;
             scheduledTime = 0;
             onResetState();
+        }
+        public void removeAllEvents()
+        {
+            onStartedEvent = null;
+            onUpdatedEvent = null;
+            onCompletedEvent = null;
+            onCanceledEvent = null;
+            onFinalizedEvent = null;
         }
         public void stopAndResetState()
         {

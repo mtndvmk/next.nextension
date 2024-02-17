@@ -20,16 +20,30 @@ namespace Nextension
                 var data = autoTransformDatas[index];
                 switch (data.type)
                 {
+                    case AutoTransformType.AutoMove:
+                        {
+                            if (data.isLocalSpace)
+                            {
+                                transform.localPosition += (Vector3)data.data * _deltaTime.Data;
+                            }
+                            else
+                            {
+                                transform.position += (Vector3)data.data * _deltaTime.Data;
+                            }
+                            break;
+                        }
                     case AutoTransformType.AutoRotate:
-                        if (data.isLocalSpace)
                         {
-                            transform.localRotation *= quaternion.EulerXYZ(data.data * math.radians(_deltaTime.Data));
+                            if (data.isLocalSpace)
+                            {
+                                transform.localRotation *= quaternion.EulerXYZ(data.data * math.radians(_deltaTime.Data));
+                            }
+                            else
+                            {
+                                transform.rotation *= quaternion.EulerXYZ(data.data * math.radians(_deltaTime.Data));
+                            }
+                            break;
                         }
-                        else
-                        {
-                            transform.rotation *= quaternion.EulerXYZ(data.data * math.radians(_deltaTime.Data));
-                        }
-                        break;
                 }
             }
         }
@@ -108,6 +122,7 @@ namespace Nextension
     }
     internal enum AutoTransformType
     {
+        AutoMove,
         AutoRotate,
     }
     internal struct AutoTransformData

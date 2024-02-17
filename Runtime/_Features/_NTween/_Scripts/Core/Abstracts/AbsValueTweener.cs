@@ -32,5 +32,10 @@ namespace Nextension
                 Debug.LogException(e);
             }
         }
+
+        public void updateDuration(float duration)
+        {
+            this.duration = duration;
+        }
     }
 }

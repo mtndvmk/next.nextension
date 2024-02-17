@@ -18,5 +18,9 @@ namespace Nextension.Tween
         {
             invokeValueChanged(destination);
         }
+        public void updateDestination(T value)
+        {
+            destination = value;
+        }
     }
 }

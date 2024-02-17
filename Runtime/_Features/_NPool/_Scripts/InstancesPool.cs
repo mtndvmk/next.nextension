@@ -8,16 +8,12 @@ namespace Nextension
 {
     public static class InstancesPool
     {
-        /// <summary>
-        /// Release the game object to the pool if gameObject was spawned by the shared pool, otherwise destroy it
-        /// </summary>
-        public static void releaseOrDestroy(GameObject gameObject, bool invokeIPoolableEvent = false)
+        public static void release(GameObject gameObject, bool invokeIPoolableEvent = false)
         {
             var origin = gameObject.GetComponent<OriginInstance>();
             if (origin == null)
             {
-                Debug.LogWarning("Destroyed " + gameObject.name);
-                NUtils.destroy(gameObject);
+                Debug.LogError($"{gameObject.name} is not from pool");
             }
             else
             {
@@ -30,19 +26,18 @@ namespace Nextension
                     }
                     else
                     {
-                        NUtils.destroy(gameObject);
+                        Debug.LogError($"Can't find pool - {origin.Id}");
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("Only support unique pool, destroy gameObject");
-                    NUtils.destroy(gameObject);
+                    Debug.LogError("Only support unique pool, destroy gameObject");
                 }
             }
         }
-        public static void releaseOrDestroy(Component component, bool invokeIPoolableEvent = false)
+        public static void release(Component component, bool invokeIPoolableEvent = false)
         {
-            releaseOrDestroy(component.gameObject, invokeIPoolableEvent);
+            release(component.gameObject, invokeIPoolableEvent);
         }
     }
 
@@ -50,7 +45,7 @@ namespace Nextension
     public class InstancesPool<T> : ISerializationCallbackReceiver
         where T : Object
     {
-        private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"Not support InstancesPool for {type}");
+        private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"InstancesPool of {type} is not supported");
 
         [SerializeField] private T _prefab;
         [SerializeField] private bool _isUniquePool;

@@ -14,5 +14,10 @@ namespace Nextension.Tween
             this.origin = origin;
             this.punchDestination = punchDestination;
         }
+
+        public void updateDestination(T value)
+        {
+            punchDestination = value;
+        }
     }
 }

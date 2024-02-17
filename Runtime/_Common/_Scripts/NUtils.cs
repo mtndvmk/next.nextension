@@ -13,6 +13,8 @@ using UnityEngine.LowLevel;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
+using Random = Unity.Mathematics.Random;
+
 namespace Nextension
 {
     public static class NUtils
@@ -1733,27 +1735,31 @@ namespace Nextension
         #endregion
 
         #region Random
-        private static Unity.Mathematics.Random s_random = initRandom();
-        private static Unity.Mathematics.Random initRandom()
+        private static Random s_random = initRandom();
+        private static Random initRandom()
         {
             uint seed = NConverter.bitConvertWithoutChecks<int, uint>(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().GetHashCode()) ^ 0x6E624EB7u;
-            if (seed == 0) new Unity.Mathematics.Random(0x6E624EB7u);
-            return new Unity.Mathematics.Random(seed);
+            if (seed == 0) new Random(0x6E624EB7u);
+            return new Random(seed);
         }
-        public static Unity.Mathematics.Random getRandom(uint seed = 0)
+        public static Random getRandom(uint seed = 0)
         {
             if (seed == 0)
             {
                 s_random.NextUInt();
                 return s_random;
             }
-            return new Unity.Mathematics.Random(seed);
+            return new Random(seed);
         }
         public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers, uint seed = 0)
         {
+            return randInt32(min, max, exclusiveNumbers, getRandom(seed));
+        }
+        public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers, Random rand)
+        {
             if (exclusiveNumbers == null || exclusiveNumbers.Count == 0)
             {
-                return getRandom(seed).NextInt(min, max);
+                return rand.NextInt(min, max);
             }
 
             Span<int> nums = stackalloc int[max - min];
@@ -1765,23 +1771,31 @@ namespace Nextension
                     nums[count++] = i;
                 }
             }
-            return nums[getRandom(seed).NextInt(count)];
+            return nums[rand.NextInt(count)];
         }
         /// <summary>
         /// return random int array
         /// </summary>
         public static int[] createRandomIntArray(int arrayLength, int fillCount, uint seed = 0)
         {
+            return createRandomIntArray(arrayLength, fillCount, getRandom(seed));
+        }
+        public static int[] createRandomIntArray(int arrayLength, int fillCount, Random rand)
+        {
             int[] array = new int[arrayLength];
             for (int i = 1; i < fillCount; i++)
             {
                 array[i] = i;
             }
-            array.shuffle(fillCount, seed);
+            array.shuffle(fillCount, rand);
             return array;
         }
 
         public static int[] getRandomIndices(int maxIndex, int count, int minIndex = 0, uint seed = 0)
+        {
+            return getRandomIndices(maxIndex, count, minIndex, getRandom(seed));
+        }
+        public static int[] getRandomIndices(int maxIndex, int count, int minIndex, Random rand)
         {
             Span<int> nums = stackalloc int[maxIndex - minIndex];
             int itemCount = 0;
@@ -1789,22 +1803,29 @@ namespace Nextension
             {
                 nums[itemCount++] = i;
             }
-            shuffle(nums, seed);
+            shuffle(nums, rand);
             return nums[..(itemCount < count ? itemCount : count)].ToArray();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T randItem<T>(this IList<T> list, out int randIndex, uint seed = 0)
         {
-            if (list.Count == 0)
-            {
-                throw new Exception("List is empty");
-            }
-            randIndex = getRandom(seed).NextInt(list.Count);
+            return randItem(list, out randIndex, getRandom(seed));
+        }
+        public static T randItem<T>(this IList<T> list, out int randIndex, Random rand)
+        {
+            randIndex = rand.NextInt(list.Count);
             return list[randIndex];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T randItem<T>(this IList<T> list, uint seed = 0)
         {
-            return list.randItem(out _, seed);
+            return list.randItem(out _, getRandom(seed));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this IList<T> list, Random rand)
+        {
+            return list.randItem(out _, rand);
         }
         /// <summary>
         /// get a random item in contain list, return default if self is empty
@@ -1816,46 +1837,61 @@ namespace Nextension
         /// <returns></returns>
         public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices, uint seed = 0)
         {
-            if (self.Count == 0)
-            {
-                throw new Exception("List is empty");
-            }
-            index = randInt32(0, self.Count, exclusiveIndices, seed);
+            return randItem(self, out index, exclusiveIndices, getRandom(seed));
+        }
+        public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices, Random rand)
+        {
+            index = randInt32(0, self.Count, exclusiveIndices, rand);
             return self[index];
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, uint seed = 0)
+        public static void shuffle<T>(this IList<T> list, int startIndex, int count, Random rand)
         {
-            shuffle(list, list.Count, seed);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, int count, uint seed = 0)
-        {
-            shuffle(list, 0, count, seed);
-        }
-        public static void shuffle<T>(this IList<T> list, int startIndex, int count, uint seed = 0)
-        {
-            var rnd = getRandom(seed);
             int n = startIndex + count;
-
             if (n > list.Count) n = list.Count;
 
             int startIndexPlus1 = startIndex + 1;
             while (n > startIndexPlus1)
             {
-                int k = rnd.NextInt(startIndex, n--);
+                int k = rand.NextInt(startIndex, n--);
                 (list[n], list[k]) = (list[k], list[n]);
             }
         }
-        public static void shuffle<T>(Span<T> list, uint seed = 0)
+        public static void shuffle<T>(Span<T> list, Random rand)
         {
-            var rnd = getRandom(seed);
             int n = list.Length;
             while (n > 1)
             {
-                int k = rnd.NextInt(n--);
+                int k = rand.NextInt(n--);
                 (list[n], list[k]) = (list[k], list[n]);
             }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> list, uint seed = 0)
+        {
+            shuffle(list, 0, list.Count, getRandom(seed));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> list, Random rand)
+        {
+            shuffle(list, 0, list.Count, rand);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> list, int count, uint seed = 0)
+        {
+            shuffle(list, 0, count, getRandom(seed));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> list, int count, Random rand)
+        {
+            shuffle(list, 0, count, rand);
+        }
+        public static void shuffle<T>(this IList<T> list, int startIndex, int count, uint seed = 0)
+        {
+            shuffle(list, startIndex, count, getRandom(seed));
+        }
+        public static void shuffle<T>(Span<T> list, uint seed = 0)
+        {
+            shuffle(list, getRandom(seed));
         }
         #endregion
 
@@ -1878,6 +1914,14 @@ namespace Nextension
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void setEnable(this Behaviour target, bool isEnable)
+        {
+            if (target.enabled != isEnable)
+            {
+                target.enabled = isEnable;
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void setEnable(this Renderer target, bool isEnable)
         {
             if (target.enabled != isEnable)
             {

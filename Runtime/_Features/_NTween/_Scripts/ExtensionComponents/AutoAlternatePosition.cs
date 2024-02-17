@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Nextension
 {
+    [DisallowMultipleComponent]
     public class AutoAlternatePosition : MonoBehaviour
     {
         [SerializeField] private float3 _fromPosition;
@@ -11,13 +12,13 @@ namespace Nextension
         [SerializeField] private float _timePerHalfCycle = 0.5f;
         [SerializeField] private bool _isLocalSpace = true;
         [SerializeField] private bool _isStartOnEnable = true;
-        [SerializeField] private bool _isResetToFromPositionOnEnable = true;
+        [SerializeField] private bool _isResetFromPositionOnEnable = true;
 
         private NTweener _tweener;
 
         private void OnEnable()
         {
-            if (_isResetToFromPositionOnEnable)
+            if (_isResetFromPositionOnEnable)
             {
                 if (_isLocalSpace)
                 {
@@ -42,14 +43,14 @@ namespace Nextension
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("Caputure FromPosition")]
-        private void caputureFromPosition()
+        [ContextMenu("Capture FromPosition")]
+        private void captureFromPosition()
         {
             _fromPosition = _isLocalSpace ? transform.localPosition : transform.position;
             NAssetUtils.setDirty(this);
         }
-        [ContextMenu("Caputure ToPosition")]
-        private void caputureToPosition()
+        [ContextMenu("Capture ToPosition")]
+        private void captureToPosition()
         {
             _toPosition = _isLocalSpace ? transform.localPosition : transform.position; 
             NAssetUtils.setDirty(this);
@@ -59,7 +60,7 @@ namespace Nextension
         public void start()
         {
             _tweener?.cancel();
-            moveUp();
+            moveToTo();
         }
         public void stop()
         {
@@ -70,13 +71,13 @@ namespace Nextension
             }
         }
 
-        private void moveUp()
+        private void moveToTo()
         {
-            _tweener = NTween.moveTo(transform, _toPosition, _timePerHalfCycle, _isLocalSpace).onCompleted(moveDown);
+            _tweener = NTween.moveTo(transform, _toPosition, _timePerHalfCycle, _isLocalSpace).onCompleted(moveToFrom);
         }
-        private void moveDown()
+        private void moveToFrom()
         {
-            _tweener = NTween.moveTo(transform, _fromPosition, _timePerHalfCycle, _isLocalSpace).onCompleted(moveUp);
+            _tweener = NTween.moveTo(transform, _fromPosition, _timePerHalfCycle, _isLocalSpace).onCompleted(moveToTo);
         }
     }
 }
