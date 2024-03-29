@@ -18,10 +18,23 @@ namespace Nextension.UI
         public UnityEvent onButtonClickEvent = new();
         public UnityEvent onButtonEnterEvent = new();
         public UnityEvent onButtonExitEvent = new();
+        public UnityEvent onInteractableChangedEvent = new();
 
         [NonSerialized] private List<INButtonListener> _listeners;
         protected float _lastClickTime;
         protected bool _isSetup;
+
+#if UNITY_EDITOR
+        private bool? _editorInteractable;
+        private void OnValidate()
+        {
+            if (_editorInteractable != _isInteractable)
+            {
+                _editorInteractable = _isInteractable;
+                invokeInteractableChangedEvent();
+            }
+        }
+#endif
 
         public bool IsInteractable
         {
@@ -31,20 +44,7 @@ namespace Nextension.UI
                 if (_isInteractable != value)
                 {
                     _isInteractable = value;
-                    if (_listeners != null)
-                    {
-                        foreach (var listener in _listeners)
-                        {
-                            try
-                            {
-                                listener?.onInteractableChanged(_isInteractable);
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.LogException(e);
-                            }
-                        }
-                    }
+                    invokeInteractableChangedEvent();
                 }
             }
         }
@@ -88,12 +88,47 @@ namespace Nextension.UI
                 Debug.LogException(ex);
             }
         }
-
-        public void addListener(INButtonListener listener)
+        private void invokeInteractableChangedEvent()
         {
-            (_listeners ??= new(1)).Add(listener);
+            onInteractableChangedEvent?.Invoke();
+            if (!_isSetup)
+            {
+                foreach (var listener in GetComponents<INButtonListener>())
+                {
+                    try
+                    {
+                        listener?.onInteractableChanged(_isInteractable);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
+            else
+            {
+                if (_listeners != null)
+                {
+                    foreach (var listener in _listeners)
+                    {
+                        try
+                        {
+                            listener?.onInteractableChanged(_isInteractable);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                }
+            }
         }
-        public void removeListener(INButtonListener listener)
+
+        public void addNButtonListener(INButtonListener listener)
+        {
+            (_listeners ??= new(1)).addIfNotPresent(listener);
+        }
+        public void removeNButtonListener(INButtonListener listener)
         {
             _listeners?.Remove(listener);
         }

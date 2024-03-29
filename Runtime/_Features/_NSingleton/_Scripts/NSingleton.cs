@@ -26,7 +26,7 @@ namespace Nextension
         #endregion
 
         #region SerializeField
-        [SerializeField] protected bool m_DontDestroyOnLoad = true;
+        [SerializeField] protected bool m_DontDestroyOnLoad = false;
         [SerializeField] protected int m_Priority = 1;
         #endregion
 

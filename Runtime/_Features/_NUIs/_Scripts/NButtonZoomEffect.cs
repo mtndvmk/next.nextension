@@ -28,12 +28,14 @@ namespace Nextension.UI
 
         void INButtonListener.onButtonDown()
         {
+            if (!enabled) return;
             _effectTweener?.cancel();
             _effectTweener = NTween.scaleTo(_target, _originScale * _zoomRatio, _zoomTime);
         }
 
         void INButtonListener.onButtonUp()
         {
+            if (!enabled) return;
             _effectTweener?.cancel();
             _effectTweener = NTween.scaleTo(_target, _originScale, _zoomTime);
         }
@@ -44,6 +46,15 @@ namespace Nextension.UI
             {
                 _effectTweener.cancel();
                 _effectTweener = null;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            var button = GetComponent<NButton>();
+            if (button)
+            {
+                button.removeNButtonListener(this);
             }
         }
     }

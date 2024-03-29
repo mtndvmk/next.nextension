@@ -1,6 +1,5 @@
 using Nextension.Tween;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Nextension.UI
 {
@@ -19,8 +18,8 @@ namespace Nextension.UI
 
         private void OnValidate()
         {
-            _target ??= GetComponent<CanvasRenderer>();
-            _nButton ??= GetComponent<NButton>();
+            _target = _target != null ? _target : GetComponent<CanvasRenderer>();
+            _nButton = _nButton != null ? _nButton : GetComponent<NButton>();
 
             OnEnable();
         }
@@ -42,26 +41,31 @@ namespace Nextension.UI
 
         void INButtonListener.onButtonUp()
         {
+            if (!enabled) return;
             if (_target == null) return;
             changeColor(_enterColor);
         }
         void INButtonListener.onButtonEnter()
         {
+            if (!enabled) return;
             if (_target == null) return;
             changeColor(_enterColor);
         }
         void INButtonListener.onButtonExit()
         {
+            if (!enabled) return;
             if (_target == null) return;
             changeColor(_normalColor);
         }
         void INButtonListener.onButtonDown()
         {
+            if (!enabled) return;
             if (_target == null) return;
             changeColor(_downColor);
         }
         void INButtonListener.onInteractableChanged(bool isInteractable)
         {
+            if (!enabled) return;
             if (_target == null) return;
             if (isInteractable)
             {
@@ -80,6 +84,13 @@ namespace Nextension.UI
                 _colorTweener.cancel();
                 _colorTweener = null;
             }
+#if UNITY_EDITOR
+            if (!NStartRunner.IsPlaying)
+            {
+                _target.SetColor(color);
+                return;
+            }
+#endif
             if (_duration <= 0)
             {
                 _target.SetColor(color);
@@ -90,6 +101,13 @@ namespace Nextension.UI
                 {
                     _target.SetColor(resultColor);
                 }, _duration);
+            }
+        }
+        private void OnDestroy()
+        {
+            if (_nButton)
+            {
+                _nButton.removeNButtonListener(this);
             }
         }
     }

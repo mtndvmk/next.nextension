@@ -46,6 +46,8 @@ namespace Nextension
 
         private List<T> _instanceList;
 
+        public T Prefab => _prefab;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void requireCall()
         {

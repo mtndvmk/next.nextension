@@ -10,19 +10,24 @@ namespace Nextension
 
         internal void setPoolId(int id, bool isUniquePool)
         {
-            Id = id;
-            IsUniquePool = isUniquePool;
 #if UNITY_EDITOR
+            var notSupport = GetComponent<INotAllowInstancesPool>();
+            if (notSupport != null)
+            {
+                Debug.LogError($"Found [INotAllowInstancesPool] in {gameObject}, removed OriginInstance", gameObject);
+            }
             isOrigin = true;
 #endif
+            Id = id;
+            IsUniquePool = isUniquePool;
         }
 
         private void OnDestroy()
         {
+#if UNITY_EDITOR
             if (NStartRunner.IsPlaying)
-            {
+#endif
                 Debug.LogWarning("Origin instance has been destroyed");
-            }
         }
 
 #if UNITY_EDITOR
@@ -43,4 +48,6 @@ namespace Nextension
         }
 #endif
     }
+
+    public interface INotAllowInstancesPool { }
 }

@@ -45,11 +45,10 @@ namespace Nextension
     public class InstancesPool<T> : ISerializationCallbackReceiver
         where T : Object
     {
-        private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"InstancesPool of {type} is not supported");
-
         [SerializeField] private T _prefab;
         [SerializeField] private bool _isUniquePool;
         [SerializeField] private int _startupInstanceCount = 0;
+        [SerializeField] private bool _useOriginPrefab; 
 
         private int _currentStartupInstanceCount;
         private uint _clonedCount;
@@ -64,31 +63,32 @@ namespace Nextension
             if (_instancePool == null)
             {
                 _instancePool = new HashSet<T>(_startupInstanceCount);
-                Id = getGameObject(_prefab).GetInstanceID();
+                Id = InstancePoolUtil.computePoolId(_prefab);
             }
         }
 
-        private readonly static bool IS_GENERIC_OF_GAMEOBJECT = typeof(T).Equals(typeof(GameObject));
+        internal readonly static bool IS_GENERIC_OF_GAMEOBJECT = typeof(T).Equals(typeof(GameObject));
 
         public uint MaxPoolInstanceCount { get; set; }
         public int Id { get; private set; }
 
-#if UNITY_EDITOR
-        private T _copiedPrefabInEditor;
-#endif
+        private T _copiedPrefab;
+        public T Prefab => getPrefab();
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private T getPrefab()
         {
-#if UNITY_EDITOR
-            if (!_copiedPrefabInEditor)
+            InternalCheck.checkEditorMode();
+            if (_useOriginPrefab)
             {
-                _copiedPrefabInEditor = Object.Instantiate(_prefab, InstancesPoolContainer.EditorPrefabContainer, true);
-                _copiedPrefabInEditor.name = _prefab.name;
+                return _prefab;
             }
-            return _copiedPrefabInEditor;
-#else
-            return _prefab;
-#endif
+            if (!_copiedPrefab)
+            {
+                _copiedPrefab = Object.Instantiate(_prefab, InstancesPoolContainer.CopiedPrefabContainer, true);
+                _copiedPrefab.name = _prefab.name;
+            }
+            return _copiedPrefab;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void updateStartupInstances()
@@ -129,7 +129,7 @@ namespace Nextension
                 else
                 {
                     _origin = go.AddComponent<OriginInstance>();
-                    _origin.setPoolId(_prefab.GetInstanceID(), _isUniquePool);
+                    _origin.setPoolId(Id, _isUniquePool);
                 }
                 if (MaxPoolInstanceCount == 0)
                 {
@@ -149,35 +149,8 @@ namespace Nextension
         }
         private static GameObject getGameObject(T prefab)
         {
-            if (prefab is GameObject go)
-            {
-                return go;
-            }
-            else if (prefab is Component com)
-            {
-                return com.gameObject;
-            }
-            else
-            {
-                throw NOT_SUPPORT_EXCEPTION(typeof(T));
-            }
+            return InstancePoolUtil.getGameObject(prefab);
         }
-        private static T getInstanceFromGO(GameObject go)
-        {
-            if (IS_GENERIC_OF_GAMEOBJECT)
-            {
-                return go as T;
-            }
-            else
-            {
-                if (go.TryGetComponent<T>(out var com))
-                {
-                    return com;
-                }
-                throw NOT_SUPPORT_EXCEPTION(typeof(T));
-            }
-        }
-
         public InstancesPool(T prefab, int startupInstanceCount = 0, bool isUniquePool = false)
         {
             InternalCheck.checkEditorMode();
@@ -213,7 +186,7 @@ namespace Nextension
                 }
                 return ins;
             }
-            return getInstanceFromGO(SharedPool.get(parent, worldPositionStays));
+            return InstancePoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
         }
         public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true, bool invokeIPoolableEvent = false)
         {
@@ -357,13 +330,6 @@ namespace Nextension
                 }
                 _instancePool.Clear();
             }
-#if UNITY_EDITOR
-            if (_copiedPrefabInEditor)
-            {
-                NUtils.destroyObject(_copiedPrefabInEditor);
-                _copiedPrefabInEditor = null;
-            }
-#endif
         }
 
         public void OnBeforeSerialize()
@@ -390,84 +356,6 @@ namespace Nextension
                 }
             });
 #endif
-        }
-    }
-    internal static class SharedInstancesPool
-    {
-#if UNITY_EDITOR
-        [EditorQuittingMethod]
-        static void reset()
-        {
-            foreach (var sharedPool in _sharedPools.Values)
-            {
-                sharedPool.clearPool();
-            }
-            _sharedPools.Clear();
-        }
-#endif
-        private static Dictionary<int, InstancesPool<GameObject>> _sharedPools = new();
-        public static InstancesPool<GameObject> getOrCreatePool(GameObject prefab, int startupInstanceCount)
-        {
-            var insId = prefab.GetInstanceID();
-            InstancesPool<GameObject> pool;
-            if (!_sharedPools.ContainsKey(insId))
-            {
-                pool = new InstancesPool<GameObject>(prefab, startupInstanceCount, true);
-                _sharedPools.Add(insId, pool);
-            }
-            else
-            {
-                pool = _sharedPools[insId];
-            }
-            pool.updateStartupInstances(startupInstanceCount);
-            return pool;
-        }
-        public static InstancesPool<GameObject> getPool(int id)
-        {
-            if (_sharedPools.TryGetValue(id, out var pool)) return pool;
-            return null;
-        }
-        public static void clearSharedPool(int id)
-        {
-            if (_sharedPools.TryGetValue(id, out var pool))
-            {
-                pool.clearPool();
-                _sharedPools.Remove(id);
-            }
-        }
-    }
-    internal class InstancesPoolContainer : MonoBehaviour
-    {
-#if UNITY_EDITOR
-        private static Transform _editorPrefabContainer;
-        public static Transform EditorPrefabContainer
-        {
-            get
-            {
-                InternalCheck.checkEditorMode();
-                if (!_editorPrefabContainer)
-                {
-                    _editorPrefabContainer = new GameObject("___EditorPrefabContainer").transform;
-                    _editorPrefabContainer.SetParent(Container);
-                }
-                return _editorPrefabContainer;
-            }
-        }
-#endif
-        private static Transform _container;
-        public static Transform Container
-        {
-            get
-            {
-                InternalCheck.checkEditorMode();
-                if (!_container)
-                {
-                    _container = new GameObject("[InstancesPool.Container]").transform;
-                    _container.setActive(false);
-                    DontDestroyOnLoad(_container.gameObject);
-                }
-                return _container;
-            }
         }
     }
 }

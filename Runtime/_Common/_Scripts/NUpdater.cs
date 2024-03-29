@@ -26,8 +26,17 @@ namespace Nextension
         private static Action[] _staticEndOfFrameEvent;
 
         private static Stopwatch _stopwatch;
+        /// <summary>
+        /// time in milliseconds from initialization to latest frame
+        /// </summary>
         public static long LatestUpdatedTimeMs { get; private set; }
+        /// <summary>
+        /// time in milliseconds from initialization to now 
+        /// </summary>
         public static long CurrentTimeMs => _stopwatch.ElapsedMilliseconds;
+        /// <summary>
+        /// time in milliseconds between the last two frames
+        /// </summary>
         public static int DeltaTimeMs { get; private set; }
 
         public static uint UpdateCount => _isUpdatedInNewFrame ? _updateCount : (_updateCount + 1);

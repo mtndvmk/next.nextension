@@ -7,7 +7,7 @@ namespace Nextension
         private static EventSystem _eventSystem;
         public static bool isOverUI()
         {
-            _eventSystem ??= EventSystem.current;
+            _eventSystem = _eventSystem != null ? _eventSystem : EventSystem.current;
             if (_eventSystem) return false;
             return _eventSystem.IsPointerOverGameObject();
         }
