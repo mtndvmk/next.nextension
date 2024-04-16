@@ -3,7 +3,7 @@ using UnityEditor;
 namespace Nextension.UI.NEditor
 {
 
-    [CustomEditor(typeof(NButton))]
+    [CustomEditor(typeof(NButton)), CanEditMultipleObjects]
     public class NButtonEditor : Editor
     {
         private static bool _isShowEvent;

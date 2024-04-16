@@ -10,8 +10,9 @@ namespace Nextension.UI
     public class NButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [SerializeField] private float _betweenClickIntervalTime = 0.2f;
-        [SerializeField] private float _delayInvokeTime = 0.1f;
+        [SerializeField] private float _delayInvokeTime;
         [SerializeField] private bool _isInteractable = true;
+        [SerializeField] private bool _findListenerInChildren;
 
         public UnityEvent onButtonDownEvent = new();
         public UnityEvent onButtonUpEvent = new();
@@ -58,7 +59,15 @@ namespace Nextension.UI
         {
             if (!_isSetup)
             {
-                var listeners = GetComponents<INButtonListener>();
+                INButtonListener[] listeners;
+                if (_findListenerInChildren)
+                {
+                    listeners = GetComponentsInChildren<INButtonListener>(true);
+                }
+                else
+                {
+                    listeners = GetComponents<INButtonListener>();
+                }
                 if (listeners.Length > 0)
                 {
                     if (_listeners == null)
@@ -93,7 +102,16 @@ namespace Nextension.UI
             onInteractableChangedEvent?.Invoke();
             if (!_isSetup)
             {
-                foreach (var listener in GetComponents<INButtonListener>())
+                INButtonListener[] listeners;
+                if (_findListenerInChildren)
+                {
+                    listeners = GetComponentsInChildren<INButtonListener>(true);
+                }
+                else
+                {
+                    listeners = GetComponents<INButtonListener>();
+                }
+                foreach (var listener in listeners)
                 {
                     try
                     {

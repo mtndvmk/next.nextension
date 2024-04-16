@@ -5,7 +5,7 @@ namespace Nextension
 {
     public abstract class AbsAutoTransform : MonoBehaviour
     {
-        internal int autoIndex = -1;
+        internal AutoTransformHandle handler;
 
         [SerializeField] private bool _isLocalSpace = true;
         [SerializeField] private bool _isStartOnEnable = true;
@@ -13,7 +13,7 @@ namespace Nextension
         internal abstract float3 AutoValue { get; }
         internal abstract AutoTransformType AutoTransformType { get; }
         
-        public bool IsWorldSpace
+        public bool IsLocalSpace
         {
             get => _isLocalSpace;
             set
@@ -25,7 +25,7 @@ namespace Nextension
                 }
             }
         }
-        public bool IsStarted => autoIndex != -1;
+        public bool IsStarted => handler != null;
 
         protected virtual void OnEnable()
         {
@@ -44,7 +44,7 @@ namespace Nextension
         }
         protected void invokeAutoValueChanged()
         {
-            if (autoIndex != -1)
+            if (handler != null)
             {
                 AutoTransformSystem.updateAutoValue(this);
             }
@@ -52,17 +52,14 @@ namespace Nextension
 
         public void start()
         {
-            if (autoIndex == -1)
-            {
-                autoIndex = AutoTransformSystem.add(this);
-            }
+            handler ??= AutoTransformSystem.start(this);
         }
         public void stop()
         {
-            if (autoIndex >= 0)
+            if (handler != null)
             {
-                AutoTransformSystem.remove(autoIndex);
-                autoIndex = -1;
+                AutoTransformSystem.stop(handler);
+                handler = default;
             }
         }
     }

@@ -1003,6 +1003,11 @@ namespace Nextension
             rectTransform.pivot = pivot;
             rectTransform.localPosition -= deltaPosition;
         }
+        public static void setSizeWithCurrentAnchors(this RectTransform rectTransform, Vector2 size)
+        {
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size.x);
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, size.y);
+        }
         #endregion
 
         #region Camera matrix
@@ -1557,6 +1562,7 @@ namespace Nextension
                 self.RemoveAt(indices[i]);
             }
         }
+        
         public static void removeLast<T>(this List<T> self)
         {
             self.RemoveAt(self.Count - 1);
@@ -1569,6 +1575,7 @@ namespace Nextension
         {
             self.RemoveAt(self.Length - 1);
         }
+        
         public static T takeAndRemoveAt<T>(this List<T> self, int index)
         {
             var item = self[index];
@@ -1581,6 +1588,7 @@ namespace Nextension
             self.removeAt(index);
             return item;
         }
+        
         public static V takeAndRemove<K, V>(this IDictionary<K, V> self, K key)
         {
             if (!self.TryGetValue(key, out var v)) return default;
@@ -1593,6 +1601,7 @@ namespace Nextension
             self.Remove(key);
             return true;
         }
+        
         public static T takeAndRemoveLast<T>(this List<T> self)
         {
             var item = self[^1];
@@ -1611,13 +1620,7 @@ namespace Nextension
             self.removeLast();
             return item;
         }
-        public static bool removeSwapBack<T>(this List<T> self, T item)
-        {
-            var index = self.IndexOf(item);
-            if (index < 0) return false;
-            self.removeAtSwapBack(index);
-            return true;
-        }
+
         /// <summary>
         /// swap item to back and remove it
         /// </summary>
@@ -1627,6 +1630,41 @@ namespace Nextension
             self[index] = self[lastIndex];
             self.RemoveAt(lastIndex);
         }
+        public static void removeAtSwapBack<T>(this NPUArray<T> self, int index) where T : unmanaged
+        {
+            var lastIndex = self.Count - 1;
+            self[index] = self[lastIndex];
+            self.RemoveAt(lastIndex);
+        }
+        public static void removeAtSwapBack<T>(this NArray<T> self, int index)
+        {
+            var lastIndex = self.Count - 1;
+            self[index] = self[lastIndex];
+            self.RemoveAt(lastIndex);
+        }
+
+        public static bool removeSwapBack<T>(this List<T> self, T item)
+        {
+            var index = self.IndexOf(item);
+            if (index < 0) return false;
+            self.removeAtSwapBack(index);
+            return true;
+        }
+        public static bool removeSwapBack<T>(this NPUArray<T> self, T item) where T : unmanaged
+        {
+            var index = self.IndexOf(item);
+            if (index < 0) return false;
+            self.removeAtSwapBack(index);
+            return true;
+        }
+        public static bool removeSwapBack<T>(this NArray<T> self, T item)
+        {
+            var index = self.IndexOf(item);
+            if (index < 0) return false;
+            self.removeAtSwapBack(index);
+            return true;
+        }
+
         public static T takeAndRemoveSwapBack<T>(this List<T> self, int index)
         {
             var item = self[index];
@@ -1639,6 +1677,13 @@ namespace Nextension
             self.RemoveAtSwapBack(index);
             return item;
         }
+        public static T takeAndRemoveSwapBack<T>(this NPUArray<T> self, int index) where T : unmanaged
+        {
+            var item = self[index];
+            self.removeAtSwapBack(index);
+            return item;
+        }
+
         public static T takeAndRemoveFirst<T>(this HashSet<T> self)
         {
             var item = self.first();
@@ -1726,10 +1771,12 @@ namespace Nextension
         {
             return getBlock(src, startIndex, src.Length - startIndex);
         }
+        
         public static void clear(this Array self)
         {
             Array.Clear(self, 0, self.Length);
         }
+        
         public static T[] clone<T>(this T[] self)
         {
             return clone(self, 0, self.Length);
@@ -1834,6 +1881,11 @@ namespace Nextension
         public static T randItem<T>(this IList<T> list, Random rand)
         {
             return list.randItem(out _, rand);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this IList<T> list, ref Random rand)
+        {
+            return list[rand.NextInt(list.Count)];
         }
         /// <summary>
         /// get a random item in contain list, return default if self is empty
@@ -2461,8 +2513,8 @@ namespace Nextension
             return NGenericComparer<TEnum>.compare(a, b);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe static int unsafeCompareAsNumber<Type, TNumberType>(Type a, Type b)
-            where Type : unmanaged
+        public unsafe static int unsafeCompareAsNumber<TType, TNumberType>(TType a, TType b)
+            where TType : unmanaged
             where TNumberType : unmanaged, IComparable<TNumberType>
         {
             return (*(TNumberType*)&a).CompareTo(*(TNumberType*)&b);

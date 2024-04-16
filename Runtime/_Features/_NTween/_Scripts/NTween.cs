@@ -32,6 +32,15 @@ namespace Nextension.Tween
             tweener.schedule();
             return tweener;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="destination">Rad/s</param>
+        /// <param name="duration"></param>
+        /// <param name="isLocalSpace"></param>
+        /// <returns></returns>
         public static NRunnableTweener rotateTo(Transform target, float4 destination, float duration, bool isLocalSpace = true)
         {
             NRunnableTweener tweener;
@@ -67,6 +76,13 @@ namespace Nextension.Tween
             tweener.schedule();
             return tweener;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="punchDestination">Rad/s</param>
+        /// <param name="duration"></param>
+        /// <param name="isLocalSpace"></param>
         public static NRunnableTweener punchRotation(Transform target, float4 punchDestination, float duration, bool isLocalSpace = true)
         {
             NRunnableTweener tweener;
@@ -102,6 +118,14 @@ namespace Nextension.Tween
             tweener.schedule();
             return tweener;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="distance">Rad/s</param>
+        /// <param name="duration"></param>
+        /// <param name="isLocalSpace"></param>
+        /// <returns></returns>
         public static NRunnableTweener shakeRotation(Transform target, float distance, float duration, bool isLocalSpace = true)
         {
             NRunnableTweener tweener;
@@ -127,6 +151,12 @@ namespace Nextension.Tween
         #region ValueTween
         public static NRunnableTweener fromTo<T>(T from, T destination, Action<T> onChanged, float duration) where T : unmanaged
         {
+#if UNITY_EDITOR
+            if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
+            {
+                throw new NotSupportedException();
+            }
+#endif
             NRunnableTweener tweener = NTweenerCreator.createFromToValueTweener(from, destination, onChanged, duration);
             tweener.schedule();
             return tweener;
@@ -134,6 +164,12 @@ namespace Nextension.Tween
 
         public static NRunnableTweener punchValue<T>(T from, T destination, Action<T> onChanged, float duration) where T : unmanaged
         {
+#if UNITY_EDITOR
+            if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
+            {
+                throw new NotSupportedException();
+            }
+#endif
             NRunnableTweener tweener = NTweenerCreator.createPunchValueTweener(from, destination, onChanged, duration);
             tweener.schedule();
             return tweener;
@@ -141,6 +177,12 @@ namespace Nextension.Tween
 
         public static NRunnableTweener shakeValue<T>(T from, float range, Action<T> onChanged, float duration) where T : unmanaged
         {
+#if UNITY_EDITOR
+            if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
+            {
+                throw new NotSupportedException();
+            }
+#endif
             NRunnableTweener tweener = NTweenerCreator.createShakeValueTweener(from, range, onChanged, duration);
             tweener.schedule();
             return tweener;

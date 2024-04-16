@@ -63,7 +63,7 @@ namespace Nextension
             if (_instancePool == null)
             {
                 _instancePool = new HashSet<T>(_startupInstanceCount);
-                Id = InstancePoolUtil.computePoolId(_prefab);
+                Id = InstancesPoolUtil.computePoolId(_prefab);
             }
         }
 
@@ -149,7 +149,7 @@ namespace Nextension
         }
         private static GameObject getGameObject(T prefab)
         {
-            return InstancePoolUtil.getGameObject(prefab);
+            return InstancesPoolUtil.getGameObject(prefab);
         }
         public InstancesPool(T prefab, int startupInstanceCount = 0, bool isUniquePool = false)
         {
@@ -186,7 +186,7 @@ namespace Nextension
                 }
                 return ins;
             }
-            return InstancePoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
+            return InstancesPoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
         }
         public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true, bool invokeIPoolableEvent = false)
         {

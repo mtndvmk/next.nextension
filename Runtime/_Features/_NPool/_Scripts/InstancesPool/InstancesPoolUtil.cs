@@ -4,11 +4,12 @@ using Object = UnityEngine.Object;
 
 namespace Nextension
 {
-    internal static class InstancePoolUtil
+    internal static class InstancesPoolUtil
     {
         private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"InstancesPool of {type} is not supported");
         public static GameObject getGameObject<T>(T prefab) where T : Object
         {
+            if (prefab == null) throw new ArgumentNullException(nameof(prefab));
             if (prefab is GameObject go)
             {
                 return go;

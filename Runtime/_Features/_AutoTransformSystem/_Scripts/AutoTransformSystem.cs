@@ -50,7 +50,7 @@ namespace Nextension
 
         private static TransformAccessArray _transformAccessArray;
         private static Job _job;
-        private static List<AbsAutoTransform> _autoTransformList;
+        private static List<AutoTransformHandle> _handlers;
 
         private readonly static SharedStatic<float> _deltaTime = SharedStatic<float>.GetOrCreate<Job>();
 
@@ -62,61 +62,72 @@ namespace Nextension
             {
                 _transformAccessArray.Dispose();
                 _job.autoTransformDatas.Dispose();
-                _autoTransformList.Clear();
+                _handlers.Clear();
                 NUpdater.onUpdateEvent.remove(update);
             }
         }
 #endif
         private static void ensureSetup()
         {
+            InternalCheck.checkEditorMode();
             if (!_transformAccessArray.isCreated)
             {
                 _transformAccessArray = new TransformAccessArray(4);
                 _job.autoTransformDatas = new NativeList<AutoTransformData>(4, AllocatorManager.Persistent);
-                _autoTransformList = new List<AbsAutoTransform>(4);
+                _handlers = new(4);
                 NUpdater.onUpdateEvent.add(update);
             }
         }
         private static void update()
         {
-            if (_autoTransformList.Count > 0)
+            if (_handlers.Count > 0)
             {
                 _deltaTime.Data = Time.deltaTime;
                 _job.Schedule(_transformAccessArray).Complete();
             }
         }
 
-        public static int add(AbsAutoTransform autoTransform)
+        public static AutoTransformHandle start(AbsAutoTransform autoTransform)
         {
-            InternalCheck.checkEditorMode();
+            return start(autoTransform.transform, autoTransform.AutoTransformType, autoTransform.AutoValue, autoTransform.IsLocalSpace);
+        }
+        public static AutoTransformHandle start(Transform transform, AutoTransformType type, float3 data, bool isLocalSpace)
+        {
             ensureSetup();
-            _transformAccessArray.Add(autoTransform.transform);
+            _transformAccessArray.Add(transform);
             _job.autoTransformDatas.Add(new()
             {
-                type = autoTransform.AutoTransformType,
-                data = autoTransform.AutoValue,
-                isLocalSpace = autoTransform.IsWorldSpace
+                type = type,
+                data = data,
+                isLocalSpace = isLocalSpace
             });
-            _autoTransformList.Add(autoTransform);
-            return _transformAccessArray.length - 1;
+            var handler = new AutoTransformHandle(_transformAccessArray.length - 1);
+            _handlers.Add(handler);
+            return handler;
         }
-        public static void remove(int autoIndex)
+
+        public static void stop(AutoTransformHandle handler)
         {
             if (_transformAccessArray.isCreated)
             {
-                _autoTransformList[^1].autoIndex = autoIndex;
-                _job.autoTransformDatas.RemoveAtSwapBack(autoIndex);
-                _transformAccessArray.RemoveAtSwapBack(autoIndex);
-                _autoTransformList.removeAtSwapBack(autoIndex);
+                var index = handler.Index;
+                _handlers[^1].Index = index;
+                _job.autoTransformDatas.RemoveAtSwapBack(index);
+                _transformAccessArray.RemoveAtSwapBack(index);
+                _handlers.removeAtSwapBack(index);
             }
         }
         public static void updateAutoValue(AbsAutoTransform autoTransform)
         {
-            _job.autoTransformDatas[autoTransform.autoIndex] = new()
+            updateAutoValue(autoTransform.handler, autoTransform.AutoTransformType, autoTransform.AutoValue, autoTransform.IsLocalSpace);
+        }
+        public static void updateAutoValue(AutoTransformHandle handler, AutoTransformType type, float3 data, bool isLocalSpace)
+        {
+            _job.autoTransformDatas[handler.Index] = new()
             {
-                type = autoTransform.AutoTransformType,
-                data = autoTransform.AutoValue,
-                isLocalSpace = autoTransform.IsWorldSpace
+                type = type,
+                data = data,
+                isLocalSpace = isLocalSpace
             };
         }
     }

@@ -43,6 +43,7 @@ namespace Nextension
         [SerializeField] private T _prefab;
         [SerializeField] private Transform _container;
         [SerializeField] private int _startupInstanceCount = 0;
+        [SerializeField] private bool _useSharedInstancesPool;
 
         private List<T> _instanceList;
 
@@ -69,7 +70,16 @@ namespace Nextension
         {
             while (_instanceList.Count < count)
             {
-                var ins = Object.Instantiate(_prefab, _container);
+                T ins;
+                if (_useSharedInstancesPool)
+                {
+                    var pool = SharedInstancesPool.getOrCreatePool(_prefab, _startupInstanceCount);
+                    ins = InstancesPoolUtil.getInstanceFromGO<T>(pool.get(_container));
+                }
+                else
+                {
+                    ins = Object.Instantiate(_prefab, _container);
+                }
 #if UNITY_EDITOR
                 ins.name = _prefab.name + $" [Clone_{_instanceList.Count}]";
 #endif
@@ -86,20 +96,39 @@ namespace Nextension
 
         public void beginGetInstance()
         {
-            beginGetInstanceAt(0);
+            beginGetInstanceFrom(0);
         }
-        public void beginGetInstanceAt(int index)
+        public Span<T> getInstances(int count, int fromIndex = 0)
         {
-            _activatedCount = index;
+            beginGetInstanceFrom(fromIndex);
+            var result = getNext(count);
+            endGetInstance();
+            return result;
+        }
+        public void beginGetInstanceFrom(int fromIndex)
+        {
+            _activatedCount = fromIndex;
         }
         public void endGetInstance()
         {
             requireCall();
             var span = _instanceList.asSpan();
             int instanceCount = span.Length;
-            for (int i = _activatedCount; i < instanceCount; ++i)
+            if (_useSharedInstancesPool)
             {
-                span[i].setActive(false);
+                var pool = SharedInstancesPool.getPool(InstancesPoolUtil.computePoolId(_prefab));
+                for (int i = _activatedCount; i < instanceCount; ++i)
+                {
+                    pool.release(InstancesPoolUtil.getGameObject(span[i]));
+                }
+                _instanceList.RemoveRange(_activatedCount, instanceCount - _activatedCount);
+            }
+            else
+            {
+                for (int i = _activatedCount; i < instanceCount; ++i)
+                {
+                    span[i].setActive(false);
+                }
             }
         }
         public T getNext()
@@ -122,7 +151,7 @@ namespace Nextension
             }
             return _instanceList.asSpan()[start.._activatedCount];
         }
-        public Span<T> asActivatedItemSpan(bool onlyActivatedItem = false)
+        public Span<T> asActivatedItemSpan()
         {
             requireCall();
             return _instanceList.asSpan()[.._activatedCount];
@@ -145,9 +174,20 @@ namespace Nextension
             {
                 return;
             }
-            foreach (var ins in _instanceList.asSpan())
+            if (_useSharedInstancesPool)
             {
-                NUtils.destroyObject(ins);
+                var pool = SharedInstancesPool.getPool(InstancesPoolUtil.computePoolId(_prefab));
+                foreach (var ins in _instanceList.asSpan())
+                {
+                    pool.release(InstancesPoolUtil.getGameObject(ins));
+                }
+            }
+            else
+            {
+                foreach (var ins in _instanceList.asSpan())
+                {
+                    NUtils.destroyObject(ins);
+                }
             }
             _instanceList.Clear();
         }
@@ -162,9 +202,20 @@ namespace Nextension
             if (removeCount > 0)
             {
                 var span = _instanceList.asSpan();
-                for (int i = keepCount; i < listCount; ++i)
+                if (_useSharedInstancesPool)
                 {
-                    NUtils.destroyObject(span[i]);
+                    var pool = SharedInstancesPool.getPool(InstancesPoolUtil.computePoolId(_prefab));
+                    for (int i = keepCount; i < listCount; ++i)
+                    {
+                        pool.release(InstancesPoolUtil.getGameObject(span[i]));
+                    }
+                }
+                else
+                {
+                    for (int i = keepCount; i < listCount; ++i)
+                    {
+                        NUtils.destroyObject(span[i]);
+                    }
                 }
                 _instanceList.RemoveRange(keepCount, removeCount);
             }

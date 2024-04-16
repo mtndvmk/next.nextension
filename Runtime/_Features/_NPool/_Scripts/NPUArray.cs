@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
@@ -46,7 +47,7 @@ namespace Nextension
 
         public bool IsReadOnly => _array.IsReadOnly;
 
-        public unsafe T this[int index]
+        public T this[int index]
         {
             get
             {
@@ -54,7 +55,7 @@ namespace Nextension
                 {
                     throw new IndexOutOfRangeException();
                 }
-                return NConverter.fromBytesWithoutChecks<T>(_array.Collection.i_Items, index * NUtils.sizeOf<T>());
+                return GetWithoutChecks(index);
             }
             set
             {
@@ -62,12 +63,21 @@ namespace Nextension
                 {
                     throw new IndexOutOfRangeException();
                 }
-                var collection = _array.Collection;
-                fixed (byte* bPtr = collection.i_Items)
-                {
-                    T* ptr = (T*)bPtr;
-                    ptr[index] = value;
-                }
+                SetWithoutChecks(index, value);
+            }
+        }
+
+        public T GetWithoutChecks(int index)
+        {
+            return NConverter.fromBytesWithoutChecks<T>(_array.Collection.i_Items, index * NUtils.sizeOf<T>());
+        }
+        public unsafe void SetWithoutChecks(int index, T value)
+        {
+            var collection = _array.Collection;
+            fixed (byte* bPtr = collection.i_Items)
+            {
+                T* ptr = (T*)bPtr;
+                ptr[index] = value;
             }
         }
 
@@ -139,6 +149,7 @@ namespace Nextension
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
             _array.Clear();
@@ -237,6 +248,7 @@ namespace Nextension
             }
             _array.Collection.InsertRangeWithoutChecks(index * NUtils.sizeOf<T>(), span);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
             _array.Dispose();
@@ -250,14 +262,17 @@ namespace Nextension
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return GetUnsafeArrayEnumerator();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetUnsafeArrayEnumerator();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public UnsafeArrayEnumerator<T> GetEnumerator()
         {
             return GetUnsafeArrayEnumerator();

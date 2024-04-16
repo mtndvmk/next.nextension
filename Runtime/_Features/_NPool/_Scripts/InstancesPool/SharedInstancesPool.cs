@@ -17,6 +17,10 @@ namespace Nextension
         }
 #endif
         private static Dictionary<int, InstancesPool<GameObject>> _sharedPools = new();
+        public static InstancesPool<GameObject> getOrCreatePool<T>(T component, int startupInstanceCount) where T : Object
+        {
+            return getOrCreatePool(InstancesPoolUtil.getGameObject(component), startupInstanceCount);
+        }
         public static InstancesPool<GameObject> getOrCreatePool(GameObject prefab, int startupInstanceCount)
         {
             var insId = prefab.GetInstanceID();

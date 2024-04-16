@@ -32,9 +32,9 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
-        public static NRunnableTweener rotateTo(this Transform target, Vector3 destination, float duration, bool isLocalSpace = true)
+        public static NRunnableTweener rotateTo(this Transform target, Vector3 destinationDegrees, float duration, bool isLocalSpace = true)
         {
-            return rotateTo(target, Quaternion.Euler(destination), duration, isLocalSpace);
+            return rotateTo(target, Quaternion.Euler(destinationDegrees), duration, isLocalSpace);
         }
         public static NRunnableTweener rotateTo(this Transform target, Quaternion destination, float duration, bool isLocalSpace = true)
         {

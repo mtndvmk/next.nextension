@@ -1,83 +1,42 @@
-using Nextension.Tween;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace Nextension
+namespace Nextension.Tween
 {
     [DisallowMultipleComponent]
-    public class AutoAlternatePosition : MonoBehaviour
+    public sealed class AutoAlternatePosition : AbsAutoAlternate<float3>
     {
-        [SerializeField] private float3 _fromPosition;
-        [SerializeField] private float3 _toPosition;
-        [SerializeField] private float _timePerHalfCycle = 0.5f;
-        [SerializeField] private bool _isLocalSpace = true;
-        [SerializeField] private bool _isStartOnEnable = true;
-        [SerializeField] private bool _isResetFromPositionOnEnable = true;
+        [SerializeField] private bool _isLocalSpace;
 
-        private NTweener _tweener;
-
-        private void OnEnable()
+        protected override void setValue(float3 value)
         {
-            if (_isResetFromPositionOnEnable)
+            if (_isLocalSpace)
             {
-                if (_isLocalSpace)
-                {
-                    transform.localPosition = _fromPosition;
-                }
-                else
-                {
-                    transform.position = _fromPosition;
-                }
+                transform.localPosition = value;
             }
-            if (_isStartOnEnable)
+            else
             {
-                start();
+                transform.position = value;
             }
         }
-        private void OnDisable()
+        protected override float3 getCurrentValue()
         {
-#if UNITY_EDITOR
-            if (NStartRunner.IsPlaying)
-#endif
-                stop();
-        }
-
-#if UNITY_EDITOR
-        [ContextMenu("Capture FromPosition")]
-        private void captureFromPosition()
-        {
-            _fromPosition = _isLocalSpace ? transform.localPosition : transform.position;
-            NAssetUtils.setDirty(this);
-        }
-        [ContextMenu("Capture ToPosition")]
-        private void captureToPosition()
-        {
-            _toPosition = _isLocalSpace ? transform.localPosition : transform.position; 
-            NAssetUtils.setDirty(this);
-        }
-#endif
-
-        public void start()
-        {
-            _tweener?.cancel();
-            moveToTo();
-        }
-        public void stop()
-        {
-            if (_tweener != null)
+            if (_isLocalSpace)
             {
-                _tweener.cancel();
-                _tweener = null;
+                return transform.localPosition;
+            }
+            else
+            {
+                return transform.position;
             }
         }
-
-        private void moveToTo()
+        protected override NTweener onFromTo()
         {
-            _tweener = NTween.moveTo(transform, _toPosition, _timePerHalfCycle, _isLocalSpace).onCompleted(moveToFrom);
+            return NTween.moveTo(transform, _toValue, _timePerHalfCycle, _isLocalSpace);
         }
-        private void moveToFrom()
+        protected override NTweener onToFrom()
         {
-            _tweener = NTween.moveTo(transform, _fromPosition, _timePerHalfCycle, _isLocalSpace).onCompleted(moveToTo);
+            return NTween.moveTo(transform, _fromValue, _timePerHalfCycle, _isLocalSpace);
         }
     }
 }

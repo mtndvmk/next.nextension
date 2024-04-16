@@ -228,4 +228,24 @@ namespace Nextension
             }
         }
     }
+
+    public static class S_<T> where T : class
+    {
+        private static T s_Instance;
+        public static T Instance => get();
+        public static T get()
+        {
+            if (s_Instance != null) return s_Instance;
+            var tType = typeof(T);
+            if (NUtils.isInherited(tType, typeof(MonoBehaviour)))
+            {
+                s_Instance = UnityEngine.Object.FindFirstObjectByType(tType, FindObjectsInactive.Include) as T;
+            }
+            else
+            {
+                s_Instance = NUtils.createInstance<T>(tType);
+            }
+            return s_Instance;
+        }
+    }
 }
