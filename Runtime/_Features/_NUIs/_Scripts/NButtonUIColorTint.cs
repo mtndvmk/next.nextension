@@ -20,10 +20,8 @@ namespace Nextension.UI
         {
             _target = _target != null ? _target : GetComponent<CanvasRenderer>();
             _nButton = _nButton != null ? _nButton : GetComponent<NButton>();
-
             OnEnable();
         }
-
         private void OnEnable()
         {
             if (_nButton && _target)
@@ -36,6 +34,20 @@ namespace Nextension.UI
                 {
                     _target.SetColor(_disableColor);
                 }
+            }
+        }
+        private void OnDisable()
+        {
+            if (_target)
+            {
+                _target.SetColor(_normalColor);
+            }
+        }
+        private void OnDestroy()
+        {
+            if (_nButton)
+            {
+                _nButton.removeNButtonListener(this);
             }
         }
 
@@ -101,13 +113,6 @@ namespace Nextension.UI
                 {
                     _target.SetColor(resultColor);
                 }, _duration);
-            }
-        }
-        private void OnDestroy()
-        {
-            if (_nButton)
-            {
-                _nButton.removeNButtonListener(this);
             }
         }
     }

@@ -190,12 +190,12 @@ namespace Nextension
             }
             else
             {
-                filePath = System.IO.Path.Combine(MAIN_RESOURCE_PATH, fileName);
+                filePath = Path.Combine(MAIN_RESOURCE_PATH, fileName);
             }
             ScriptableObject scriptable;
-            if (System.IO.File.Exists(filePath))
+            if (File.Exists(filePath))
             {
-                scriptable = getObjectOnResources<ScriptableObject>(fileName);
+                scriptable = getMainObjectOnResources<ScriptableObject>(fileName);
                 if (scriptable == null)
                 {
                     throw new System.Exception($"`{fileName}` exists but can't be loaded");
@@ -203,16 +203,33 @@ namespace Nextension
             }
             else
             {
-                var dir = System.IO.Path.GetDirectoryName(filePath);
-                if (!System.IO.Directory.Exists(dir))
+                var dir = Path.GetDirectoryName(filePath);
+                if (!Directory.Exists(dir))
                 {
-                    System.IO.Directory.CreateDirectory(dir);
+                    Directory.CreateDirectory(dir);
                 }
                 scriptable = ScriptableObject.CreateInstance(type);
                 AssetDatabase.CreateAsset(scriptable, filePath);
                 Debug.Log($"Create asset at `{filePath}`");
             }
             return scriptable;
+        }
+        public static string getGUID(Object @object)
+        {
+            return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(@object));
+        }
+        public static Object loadMainAssetFromGUID(string guid)
+        {
+            return loadMainAssetFromGUID(guid, out _);
+        }
+        public static Object loadMainAssetFromGUID(string guid, out string path)
+        {
+            path = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrEmpty(path))
+            {
+                return null;
+            }
+            return AssetDatabase.LoadMainAssetAtPath(path);
         }
 #endif
         #endregion
@@ -226,13 +243,13 @@ namespace Nextension
         }
         public static bool hasObjectOnResources(string fileName)
         {
-            return getObjectOnResources<Object>(fileName);
+            return getMainObjectOnResources<Object>(fileName);
         }
-        public static T getObjectOnResources<T>(string fileName) where T : Object
+        public static T getMainObjectOnResources<T>(string fileName) where T : Object
         {
 #if UNITY_EDITOR
             var dir = MAIN_RESOURCE_PATH;
-            if (!System.IO.Directory.Exists(dir))
+            if (!Directory.Exists(dir))
             {
                 return null;
             }
@@ -247,14 +264,19 @@ namespace Nextension
                 fileName += SCRIPTABLE_OBJECT_EXTENSION;
             }
             var path = fileName;
-            if (!System.IO.File.Exists(path))
+            if (!File.Exists(path))
             {
                 return null;
             }
             var @object = AssetDatabase.LoadAssetAtPath<T>(path);
             if (@object == null)
             {
-                return Resources.Load<T>(fileName.removeExtension());
+                @object = Resources.Load<T>(fileName.removeExtension());
+                if (@object == null)
+                {
+                    @object = AssetDatabase.LoadMainAssetAtPath(path) as T;
+                }
+                return @object;
             }
 #else
             var @object = Resources.Load<T>(fileName.removeExtension());
@@ -269,7 +291,7 @@ namespace Nextension
             NAssetUtils.setDirty(@object);
             if (isImmediate)
             {
-                AssetDatabase.SaveAssets();
+                AssetDatabase.SaveAssetIfDirty(@object);
             }
             else
             {

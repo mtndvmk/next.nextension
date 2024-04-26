@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NParameter))]
-    public class NParameterEditor : PropertyDrawer
+    public class NParameterDrawer : PropertyDrawer
     {
         private const int ROW_COUNT = 3;
 

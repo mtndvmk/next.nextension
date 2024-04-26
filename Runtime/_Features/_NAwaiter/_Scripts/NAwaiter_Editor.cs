@@ -52,7 +52,7 @@ namespace Nextension
 
         Func<NWaitableResult> IWaitable_Editor.buildCompleteFunc()
         {
-            var targetFrame = NAwaiter_EdtitorLoop.UpdateCount + waitFrame;
+            var targetFrame = NAwaiter_EdtitorLoop.UpdateCount + (waitFrame == 0 ? 1 : waitFrame);
             NWaitableResult func()
             {
                 if (NAwaiter_EdtitorLoop.UpdateCount >= targetFrame)

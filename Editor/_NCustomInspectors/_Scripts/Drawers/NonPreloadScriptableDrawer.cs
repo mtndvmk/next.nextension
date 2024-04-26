@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NonPreloadScriptable))]
-    public class NonPreloadScriptable_Editor : PropertyDrawer
+    public class NonPreloadScriptableDrawer : PropertyDrawer
     {
         private ScriptableObject _scriptableObject;
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -29,7 +29,7 @@ namespace Nextension.NEditor
                 base.OnGUI(position, property, label);
             }
         }
-        ~NonPreloadScriptable_Editor()
+        ~NonPreloadScriptableDrawer()
         {
             if (_scriptableObject != null)
             {

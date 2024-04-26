@@ -1,6 +1,6 @@
 using Nextension.Tween;
-using System;
 using UnityEditor;
+using UnityEngine;
 
 namespace Nextension.NEditor
 {
@@ -9,6 +9,10 @@ namespace Nextension.NEditor
     {
         public override void OnInspectorGUI()
         {
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
+            EditorGUI.EndDisabledGroup();
+
             SerializedProperty iterator = serializedObject.GetIterator();
             iterator.NextVisible(true);
 
@@ -74,6 +78,16 @@ namespace Nextension.NEditor
                 }
             }
 
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Capture fromValue"))
+            {
+                ((IAutoAlternate)target).captureFromValue();
+            }
+            if (GUILayout.Button("Capture toValue"))
+            {
+                ((IAutoAlternate)target).captureToValue();
+            }
+            EditorGUILayout.EndHorizontal();
             serializedObject.ApplyModifiedProperties();
         }
     }

@@ -100,6 +100,7 @@ mergeInto(LibraryManager.library,
             var urlStr = UTF8ToString(url);
             var img = new Image();
             img.decoding = "async";
+            img.setAttribute('crossOrigin', '');
             img.src = urlStr;
 
             img.onload = function () {
@@ -145,6 +146,8 @@ mergeInto(LibraryManager.library,
         processWithUrl: function (id, url, maxWidth, maxHeight) {
             var urlStr = UTF8ToString(url);
             var img = new Image();
+            img.decoding = "async";
+            img.setAttribute('crossOrigin', '');
             img.src = urlStr;
 
             img.onload = function () {
@@ -194,6 +197,8 @@ mergeInto(LibraryManager.library,
         loadTextureAtNative: function (id, url, inSampleSize, tex) {
             var urlStr = UTF8ToString(url);
             var img = new Image();
+            img.decoding = "async";
+            img.setAttribute('crossOrigin', '');
             img.src = urlStr;
 
             img.onload = function () {

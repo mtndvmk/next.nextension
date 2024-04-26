@@ -6,7 +6,7 @@ namespace Nextension.Tween
     [DisallowMultipleComponent]
     public sealed class AutoAlternatePosition : AbsAutoAlternate<float3>
     {
-        [SerializeField] private bool _isLocalSpace;
+        [SerializeField] private bool _isLocalSpace = true;
 
         protected override void setValue(float3 value)
         {

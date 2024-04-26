@@ -2,7 +2,7 @@
 
 namespace Nextension.Tween
 {
-    public abstract class AbsAutoAlternate<T> : MonoBehaviour
+    public abstract class AbsAutoAlternate<T> : MonoBehaviour, IAutoAlternate
     {
         [SerializeField] protected T _fromValue;
         [SerializeField] protected T _toValue;
@@ -37,14 +37,12 @@ namespace Nextension.Tween
         }
 
 #if UNITY_EDITOR
-        [ContextMenu("Capture FromValue")]
-        private void captureFromValue()
+        public void captureFromValue()
         {
             _fromValue = getCurrentValue();
             NAssetUtils.setDirty(this);
         }
-        [ContextMenu("Capture ToValue")]
-        private void captureToValue()
+        public void captureToValue()
         {
             _toValue = getCurrentValue();
             NAssetUtils.setDirty(this);
@@ -57,6 +55,7 @@ namespace Nextension.Tween
             {
                 return;
             }
+            IsRunning = true;
             runFromTo();
         }
         public void stop()
@@ -65,6 +64,7 @@ namespace Nextension.Tween
             {
                 return;
             }
+            IsRunning = false;
             if (_waitable != null)
             {
                 _waitable.cancel();
@@ -122,5 +122,12 @@ namespace Nextension.Tween
         protected abstract void setValue(T value);
         protected abstract NTweener onFromTo();
         protected abstract NTweener onToFrom();
+    }
+    public interface IAutoAlternate
+    {
+#if UNITY_EDITOR
+        void captureFromValue();
+        void captureToValue();
+#endif
     }
 }

@@ -139,6 +139,10 @@ namespace Nextension
                 createInstances(_activatedCount + 1, true);
             }
             var ins = _instanceList[_activatedCount++];
+            if (_useSharedInstancesPool)
+            {
+                InstancesPoolUtil.getGameObject(ins).transform.resetTransform();
+            }
             ins.setActive(true);
             return ins;
         }
@@ -168,6 +172,11 @@ namespace Nextension
         }
         public T this[int index] => getInstanceAt(index);
 
+        public void deactiveAll()
+        {
+            beginGetInstance();
+            endGetInstance();
+        }
         public void clearInstances()
         {
             if (_instanceList == null || _instanceList.Count == 0)

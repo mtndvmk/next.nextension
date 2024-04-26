@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NMinMax01))]
-    public class NMinMax01Editor : PropertyDrawer
+    public class NMinMax01Drawer : PropertyDrawer
     {
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

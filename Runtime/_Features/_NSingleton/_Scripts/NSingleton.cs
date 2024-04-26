@@ -41,7 +41,7 @@ namespace Nextension
             {
                 if (!IsInitialized)
                 {
-                    if (s_Instance == null)
+                    if (s_Instance.isNull())
                     {
                         localInitialize();
                     }
@@ -169,7 +169,7 @@ namespace Nextension
         {
             get
             {
-                if (s_Instance == null)
+                if (s_Instance.isNull())
                 {
                     try
                     {
@@ -201,15 +201,15 @@ namespace Nextension
         public static bool IsPlaying => NStartRunner.IsPlaying;
         public static bool IsDestroyedAndUnused { get; protected set; }
         public static bool IsInitialized => s_Instance != null;
-        public static void initialize()
+        public static void initialize(bool? isDontDestroyOnLoad = default)
         {
             if (IsPlaying && !IsDestroyedAndUnused)
             {
-                if (s_Instance == null)
+                if (s_Instance.isNull())
                 {
                     s_Instance = FindFirstObjectByType<T>(FindObjectsInactive.Include);
                     NSingleton<T> singleton;
-                    if (s_Instance == null)
+                    if (s_Instance.isNull())
                     {
                         var go = new GameObject("[Generated] " + getSingletonName());
                         s_Instance = go.AddComponent<T>();
@@ -224,6 +224,11 @@ namespace Nextension
                     {
                         singleton.localInitialize();
                     }
+                    if (isDontDestroyOnLoad.HasValue && isDontDestroyOnLoad.Value)
+                    {
+                        singleton.gameObject.transform.SetParent(null);
+                        DontDestroyOnLoad(singleton.gameObject);
+                    }
                 }
             }
         }
@@ -235,15 +240,17 @@ namespace Nextension
         public static T Instance => get();
         public static T get()
         {
-            if (s_Instance != null) return s_Instance;
-            var tType = typeof(T);
-            if (NUtils.isInherited(tType, typeof(MonoBehaviour)))
+            if (s_Instance.isNull())
             {
-                s_Instance = UnityEngine.Object.FindFirstObjectByType(tType, FindObjectsInactive.Include) as T;
-            }
-            else
-            {
-                s_Instance = NUtils.createInstance<T>(tType);
+                var tType = typeof(T);
+                if (NUtils.isInherited(tType, typeof(MonoBehaviour)))
+                {
+                    s_Instance = UnityEngine.Object.FindFirstObjectByType(tType, FindObjectsInactive.Include) as T;
+                }
+                else
+                {
+                    s_Instance = NUtils.createInstance<T>(tType);
+                }
             }
             return s_Instance;
         }

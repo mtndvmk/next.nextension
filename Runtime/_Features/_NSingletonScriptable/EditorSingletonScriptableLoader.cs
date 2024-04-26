@@ -13,7 +13,7 @@ namespace Nextension.NEditor
         private static EditorSingletonScriptableContainer _editorContainer;
         private static void loadEditorContainer()
         {
-            _editorContainer = NAssetUtils.getObjectOnResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
+            _editorContainer = NAssetUtils.getMainObjectOnResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
         }
         private static EditorSingletonScriptableContainer getEditorContainer()
         {

@@ -79,7 +79,7 @@ namespace Nextension.NEditor
                         var length = arrValue.Length;
                         for (int i = 0; i < length; ++i)
                         {
-                            var enumType = arrValue.getEnumAtIndex(i);
+                            var enumType = arrValue.getEnumAtIndexAsObject(i);
                             var enumName = getEnumDisplayName(enumType);
                             var vPro = values.GetArrayElementAtIndex(i);
                             var h = EditorGUI.GetPropertyHeight(vPro);
@@ -94,6 +94,10 @@ namespace Nextension.NEditor
                         arrValue.refreshEditorCache();
                     }
                 }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
                 finally
                 {
                     EditorGUI.indentLevel--;
@@ -102,28 +106,36 @@ namespace Nextension.NEditor
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (!property.isExpanded)
+            try
             {
-                return EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                if (!property.isExpanded)
+                {
+                    return EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                }
+
+                var arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
+                var values = property.FindPropertyRelative("enumValues");
+
+                if (values == null)
+                {
+                    Debug.LogError("Don't support type: " + arrValue.getTypeOfValue());
+                    return EditorGUIUtility.singleLineHeight;
+                }
+
+                var height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
+                var length = arrValue.Length;
+                for (int i = 0; i < length; ++i)
+                {
+                    height += EditorGUI.GetPropertyHeight(values.GetArrayElementAtIndex(i));
+                }
+
+                return height;
             }
-
-            var arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
-            var values = property.FindPropertyRelative("enumValues");
-
-            if (values == null)
+            catch (Exception e)
             {
-                Debug.LogError("Don't support type: " + arrValue.getTypeOfValue());
-                return EditorGUIUtility.singleLineHeight;
+                Debug.LogException(e);
+                return 0;
             }
-
-            var height = EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-            var length = arrValue.Length;
-            for (int i = 0; i < length; ++i)
-            {
-                height += EditorGUI.GetPropertyHeight(values.GetArrayElementAtIndex(i));
-            }
-
-            return height;
         }
 
 

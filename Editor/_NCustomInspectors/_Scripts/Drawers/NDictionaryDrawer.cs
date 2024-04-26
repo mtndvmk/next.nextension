@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NDictionary), true)]
-    public class NDictionaryEditor : PropertyDrawer
+    public class NDictionaryDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {

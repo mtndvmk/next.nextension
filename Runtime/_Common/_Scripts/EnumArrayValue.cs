@@ -14,8 +14,8 @@ namespace Nextension
         int EnumCount { get; }
         Type getTypeOfEnum();
         Type getTypeOfValue();
-        object getEnumAtIndex(int index);
-        object getValueAtIndex(int index);
+        object getEnumAtIndexAsObject(int index);
+        object getValueAtIndexAsObject(int index);
 
 #if UNITY_EDITOR
         bool refreshEditorCache();
@@ -35,6 +35,7 @@ namespace Nextension
 #if UNITY_EDITOR
         public bool refreshEditorCache()
         {
+            if (NStartRunner.IsPlaying) return false;
             if (enumArrayCache == null || enumArrayCache.Length == 0 || hash != EnumIndex<TEnum>.Hash)
             {
                 hash = EnumIndex<TEnum>.Hash;
@@ -96,16 +97,29 @@ namespace Nextension
 #endif
             return enumValues[EnumIndex<TEnum>.getIndex(enumType)];
         }
+        public TValue get(int index)
+        {
+            return enumValues[index];
+        }
         public void set(TEnum enumType, TValue val)
         {
             var index = EnumIndex<TEnum>.getIndex(enumType);
             if (index < 0) return;
             enumValues[index] = val;
         }
+        public void set(int index, TValue val)
+        {
+            enumValues[index] = val;
+        }
         public TValue this[TEnum enumType]
         {
             get => get(enumType);
             set => set(enumType, value);
+        }
+        public TValue this[int index]
+        {
+            get => enumValues[index];
+            set => enumValues[index] = value;
         }
         public ArrayEnumerator<TValue> GetEnumerator()
         {
@@ -173,20 +187,14 @@ namespace Nextension
             return typeof(TValue);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object getEnumAtIndex(int index)
+        public object getEnumAtIndexAsObject(int index)
         {
             return getEnum(index);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object getValueAtIndex(int index)
+        public object getValueAtIndexAsObject(int index)
         {
             return enumValues[index];
-        }
-
-        public TValue this[int index]
-        {
-            get => enumValues[index];
-            set => enumValues[index] = value;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TEnum getEnum(int index)

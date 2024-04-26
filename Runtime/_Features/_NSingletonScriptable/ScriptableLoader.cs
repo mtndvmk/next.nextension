@@ -45,7 +45,7 @@ namespace Nextension
 
         private static void loadContainer()
         {
-            _container = NAssetUtils.getObjectOnResources<SingletonScriptableContainer>(SingletonScriptableContainer.FileNameOnResource);
+            _container = NAssetUtils.getMainObjectOnResources<SingletonScriptableContainer>(SingletonScriptableContainer.FileNameOnResource);
         }
         internal static SingletonScriptableContainer getContainer()
         {

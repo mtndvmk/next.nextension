@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -19,10 +18,11 @@ namespace Nextension.UI
         public UnityEvent onButtonClickEvent = new();
         public UnityEvent onButtonEnterEvent = new();
         public UnityEvent onButtonExitEvent = new();
-        public UnityEvent onInteractableChangedEvent = new();
+        public UnityEvent onEnableInteractableEvent = new();
+        public UnityEvent onDisableInteractableEvent = new();
 
-        [NonSerialized] private List<INButtonListener> _listeners;
-        protected float _lastClickTime;
+        private NArray<INButtonListener> _listeners = new();
+        protected float _nextClickableTime;
         protected bool _isSetup;
 
 #if UNITY_EDITOR
@@ -70,14 +70,11 @@ namespace Nextension.UI
                 }
                 if (listeners.Length > 0)
                 {
-                    if (_listeners == null)
-                    {
-                        _listeners = new(listeners);
-                    }
-                    else
-                    {
-                        _listeners.AddRange(listeners);
-                    }
+                    _listeners.AddRange(listeners);
+                }
+                if (_betweenClickIntervalTime < 0)
+                {
+                    _betweenClickIntervalTime = 0;
                 }
                 _isSetup = true;
             }
@@ -99,7 +96,14 @@ namespace Nextension.UI
         }
         private void invokeInteractableChangedEvent()
         {
-            onInteractableChangedEvent?.Invoke();
+            if (_isInteractable)
+            {
+                onEnableInteractableEvent?.Invoke();
+            }
+            else
+            {
+                onDisableInteractableEvent?.Invoke();
+            }
             if (!_isSetup)
             {
                 INButtonListener[] listeners;
@@ -144,11 +148,11 @@ namespace Nextension.UI
 
         public void addNButtonListener(INButtonListener listener)
         {
-            (_listeners ??= new(1)).addIfNotPresent(listener);
+            _listeners.addIfNotPresent(listener);
         }
         public void removeNButtonListener(INButtonListener listener)
         {
-            _listeners?.Remove(listener);
+            _listeners.Remove(listener);
         }
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -157,18 +161,15 @@ namespace Nextension.UI
                 return;
             }
 
-            if (_listeners != null)
+            foreach (var listener in _listeners)
             {
-                foreach (var listener in _listeners)
+                try
                 {
-                    try
-                    {
-                        listener?.onButtonDown();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    listener?.onButtonDown();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
             invokeEvent(onButtonDownEvent);
@@ -180,18 +181,15 @@ namespace Nextension.UI
                 return;
             }
 
-            if (_listeners != null)
+            foreach (var listener in _listeners)
             {
-                foreach (var listener in _listeners)
+                try
                 {
-                    try
-                    {
-                        listener?.onButtonUp();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    listener?.onButtonUp();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
             invokeEvent(onButtonUpEvent);
@@ -203,18 +201,15 @@ namespace Nextension.UI
                 return;
             }
 
-            if (_listeners != null)
+            foreach (var listener in _listeners)
             {
-                foreach (var listener in _listeners)
+                try
                 {
-                    try
-                    {
-                        listener?.onButtonEnter();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    listener?.onButtonEnter();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
             invokeEvent(onButtonEnterEvent);
@@ -226,18 +221,15 @@ namespace Nextension.UI
                 return;
             }
 
-            if (_listeners != null)
+            foreach (var listener in _listeners)
             {
-                foreach (var listener in _listeners)
+                try
                 {
-                    try
-                    {
-                        listener?.onButtonExit();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    listener?.onButtonExit();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
             invokeEvent(onButtonExitEvent);
@@ -248,24 +240,23 @@ namespace Nextension.UI
             {
                 return;
             }
-            if (Time.time - _lastClickTime < _betweenClickIntervalTime)
+
+            var currentTime = Time.time;
+            if (currentTime < _nextClickableTime)
             {
                 return;
             }
-            _lastClickTime = Time.time;
+            _nextClickableTime = currentTime + _betweenClickIntervalTime;
 
-            if (_listeners != null)
+            foreach (var listener in _listeners)
             {
-                foreach (var listener in _listeners)
+                try
                 {
-                    try
-                    {
-                        listener?.onButtonClick();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
+                    listener?.onButtonClick();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
                 }
             }
             invokeEvent(onButtonClickEvent);

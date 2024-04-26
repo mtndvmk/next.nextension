@@ -21,13 +21,15 @@ namespace Nextension.UI.NEditor
             _isShowEvent = EditorGUILayout.Foldout(_isShowEvent, " Events", true);
             if (_isShowEvent)
             {
+                var button = (NButton)target;
                 EditorGUI.indentLevel++;
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("onButtonDownEvent"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("onButtonUpEvent"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("onButtonClickEvent"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("onButtonEnterEvent"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("onButtonExitEvent"));
-                EditorGUILayout.PropertyField(serializedObject.FindProperty("onInteractableChangedEvent"));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onButtonDownEvent)));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onButtonUpEvent)));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onButtonClickEvent)));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onButtonEnterEvent)));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onButtonExitEvent)));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onEnableInteractableEvent)));
+                EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(button.onDisableInteractableEvent)));
                 EditorGUI.indentLevel--;
             }
 

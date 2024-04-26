@@ -74,6 +74,50 @@ namespace Nextension.NEditor
                 return default;
             }
         }
+        public static object getParentValue(SerializedProperty property)
+        {
+            try
+            {
+                var path = property.propertyPath.Replace(".Array.data[", "[");
+                var elements = path.Split('.');
+                FieldInfo fieldInfo = null;
+                object qObject = property.serializedObject.targetObject;
+
+                if (elements.Length == 1)
+                {
+                    return qObject;
+                }
+                else
+                {
+
+                    for (int i = 0; i < elements.Length - 1; ++i)
+                    {
+                        var element = elements[i];
+                        if (element.Contains("["))
+                        {
+                            var elementName = element.Substring(0, element.IndexOf("["));
+                            var index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+
+                            var qType = qObject.GetType();
+                            fieldInfo = qType.getField(elementName, NUtils.getAllBindingFlags());
+                            qObject = (fieldInfo.GetValue(qObject) as IList)[index];
+                        }
+                        else
+                        {
+                            fieldInfo = qObject.GetType().getField(element, NUtils.getAllBindingFlags());
+                            qObject = fieldInfo.GetValue(qObject);
+                        }
+                    }
+
+                    return qObject;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                return default;
+            }
+        }
         public static void clearLog()
         {
             var assembly = Assembly.GetAssembly(typeof(Editor));

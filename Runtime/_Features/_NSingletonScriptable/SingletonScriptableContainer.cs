@@ -43,7 +43,7 @@ namespace Nextension
 
             if (_nonPreloadScriptablePaths.TryGetValue(typeOfT, out var path))
             {
-                return NAssetUtils.getObjectOnResources<T>(path);
+                return NAssetUtils.getMainObjectOnResources<T>(path);
             }
             return null;
         }

@@ -12,7 +12,7 @@ using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.UI;
 using Random = Unity.Mathematics.Random;
 
 namespace Nextension
@@ -916,6 +916,67 @@ namespace Nextension
             self.localScale = new Vector3(uniformScale, uniformScale, uniformScale);
         }
 
+        public static RectTransform asRectTransform(this Transform self)
+        {
+            return self as RectTransform;
+        }
+        public static void markLayoutForRebuild(this RectTransform self)
+        {
+            LayoutRebuilder.MarkLayoutForRebuild(self);
+        }
+        public static void markLayoutForRebuild(this RectTransform self, bool isImmediate)
+        {
+            if (isImmediate)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(self);
+            }
+            else
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(self);
+            }
+        }
+        public static void resetPosition(this Transform self, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = Vector3.zero;
+            }
+            else
+            {
+                self.position = Vector3.zero;
+            }
+        }
+        public static void resetAnchorPosition(this RectTransform self)
+        {
+            self.anchoredPosition = Vector2.zero;
+        }
+        public static void resetRotation(this Transform self, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localRotation = Quaternion.identity;
+            }
+            else
+            {
+                self.rotation = Quaternion.identity;
+            }
+        }
+        public static void resetScale(this Transform self)
+        {
+            self.localScale = Vector3.one;
+        }
+        public static void resetPosAndScale(this Transform self, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = Vector3.zero;
+            }
+            else
+            {
+                self.position = Vector3.zero;
+            }
+            self.localScale = Vector3.one;
+        }
         public static void resetTransform(this Transform self, bool isLocal = true)
         {
             if (!isLocal)
@@ -1005,6 +1066,12 @@ namespace Nextension
         }
         public static void setSizeWithCurrentAnchors(this RectTransform rectTransform, Vector2 size)
         {
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size.x);
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, size.y);
+        }
+        public static void setSizFitToOther(this RectTransform rectTransform, RectTransform other)
+        {
+            var size = other.rect.size;
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size.x);
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, size.y);
         }
@@ -1209,6 +1276,28 @@ namespace Nextension
             var m = totalSeconds / 60;
             var s = totalSeconds % 60;
             return $"{m:0#}:{s:0#}";
+        }
+        public static string formatToMMSS(this long totalSeconds)
+        {
+            var m = totalSeconds / 60;
+            var s = totalSeconds % 60;
+            return $"{m:0#}:{s:0#}";
+        }
+        public static string formatToHHMMSS(this int totalSeconds)
+        {
+            var h = totalSeconds / 3600;
+            var remainingM = totalSeconds % 3600;
+            var m = remainingM / 60;
+            var s = remainingM % 60;
+            return $"{h:0#}:{m:0#}:{s:0#}";
+        }
+        public static string formatToHHMMSS(this long totalSeconds)
+        {
+            var h = totalSeconds / 3600;
+            var remainingM = totalSeconds % 3600;
+            var m = remainingM / 60;
+            var s = remainingM % 60;
+            return $"{h:0#}:{m:0#}:{s:0#}";
         }
         public static bool isHex(this string str)
         {
@@ -2240,6 +2329,11 @@ namespace Nextension
             {
                 SceneManager.MoveGameObjectToScene(transform.gameObject, SceneManager.GetActiveScene());
             }
+        }
+        public static bool isNull<T>(this T self) where T : class
+        {
+            if (self == null || self.Equals(null)) return true;
+            return false;
         }
 
         #endregion

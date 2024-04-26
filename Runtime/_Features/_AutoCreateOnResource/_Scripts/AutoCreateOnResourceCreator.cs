@@ -10,8 +10,9 @@ namespace Nextension
     internal class AutoCreateOnResourceCreator : IErrorCheckable, IAssetImportedCallback
     {
         static int Priority => 1;
-        static void onLoadOrRecompiled()
+        static async void onLoadOrRecompiled()
         {
+            await new NWaitFrame_Editor(1);
             var types = NUtils.getCustomTypes();
             foreach (var type in types)
             {
@@ -52,7 +53,14 @@ namespace Nextension
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"Failed to create `{type.FullName}`, reason: {ex}");
+                    if (ex.Message.Contains("exists but can't be loaded"))
+                    {
+                        Debug.LogWarning($"Warning: Cannot create `{type.FullName}`, reason: {ex}");
+                    }
+                    else
+                    {
+                        Debug.LogError($"Failed to create `{type.FullName}`, reason: {ex}");
+                    }
                     continue;
                 }
             }

@@ -68,7 +68,7 @@ namespace Nextension
 
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
         {
-            var targetFrame = NUpdater.UpdateCount + waitFrame;
+            var targetFrame = NUpdater.UpdateCount + (waitFrame == 0 ? 1 : waitFrame);
             NWaitableResult func()
             {
                 if (NUpdater.UpdateCount >= targetFrame)

@@ -27,7 +27,7 @@ namespace Nextension
 #if UNITY_EDITOR
             if (NStartRunner.IsPlaying)
 #endif
-                Debug.LogWarning("Origin instance has been destroyed");
+                Debug.LogWarning($"Origin instance has been destroyed: {NUtils.getPathFromRoot(transform, null)}");
         }
 
 #if UNITY_EDITOR
