@@ -31,7 +31,7 @@ namespace Nextension
         protected void startTracking()
         {
 #if !NNEXT_DISABLE_NPOOL_TRACKING
-            _poolTrackable.setUpdateNumber();
+            _poolTrackable.start();
 #endif
         }
 
@@ -56,9 +56,16 @@ namespace Nextension
         private PoolTracker _poolTrackable;
         void IPoolable.onDespawned()
         {
-            _poolTrackable.resetUpdateNumber();
+            _poolTrackable.stop();
         }
 #endif
+        public void stopTracking()
+        {
+#if !NNEXT_DISABLE_NPOOL_TRACKING
+            _poolTrackable.stop();
+#endif
+        }
+
         public void Dispose()
         {
             release(this as TPool);

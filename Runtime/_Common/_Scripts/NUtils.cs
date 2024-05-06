@@ -1993,6 +1993,24 @@ namespace Nextension
             index = randInt32(0, self.Count, exclusiveIndices, rand);
             return self[index];
         }
+        public static T randItem<T>(this Span<T> self, out int index, Func<T,bool> exclusivePredicate, Random rand)
+        {
+            using var validIndices = NPUArray<int>.getWithoutTracking();
+            for (int i = self.Length - 1; i >= 0; i--)
+            {
+                if (!exclusivePredicate(self[i])) validIndices.Add(i);
+            }
+            index = validIndices[rand.NextInt(validIndices.Count)];
+            return self[index];
+        }
+        public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, uint seed = 0)
+        {
+            return randItem(self, out index, exclusivePredicate, getRandom(seed));
+        }
+        public static T randItem<T>(this Span<T> self, Func<T, bool> exclusivePredicate, uint seed = 0)
+        {
+            return randItem(self, out _, exclusivePredicate, getRandom(seed));
+        }
         public static void shuffle<T>(this IList<T> list, int startIndex, int count, Random rand)
         {
             int n = startIndex + count;

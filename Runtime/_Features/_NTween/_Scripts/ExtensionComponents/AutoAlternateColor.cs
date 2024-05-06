@@ -50,11 +50,11 @@ namespace Nextension.Tween
                 _ => throw new NotSupportedException()
             };
         }
-        protected override NTweener onFromTo()
+        protected override NRunnableTweener onFromTo()
         {
             return NTween.fromTo(getCurrentValue().toFloat4(), _toValue.toFloat4(), setValue, _timePerHalfCycle);
         }
-        protected override NTweener onToFrom()
+        protected override NRunnableTweener onToFrom()
         {
             return NTween.fromTo(getCurrentValue().toFloat4(), _fromValue.toFloat4(), setValue, _timePerHalfCycle);
         }

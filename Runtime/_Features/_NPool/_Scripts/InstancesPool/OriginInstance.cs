@@ -22,14 +22,6 @@ namespace Nextension
             IsUniquePool = isUniquePool;
         }
 
-        private void OnDestroy()
-        {
-#if UNITY_EDITOR
-            if (NStartRunner.IsPlaying)
-#endif
-                Debug.LogWarning($"Origin instance has been destroyed: {NUtils.getPathFromRoot(transform, null)}");
-        }
-
 #if UNITY_EDITOR
         [NonSerialized] private bool isOrigin;
 

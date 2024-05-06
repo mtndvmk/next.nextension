@@ -30,11 +30,11 @@ namespace Nextension.Tween
                 return transform.position;
             }
         }
-        protected override NTweener onFromTo()
+        protected override NRunnableTweener onFromTo()
         {
             return NTween.moveTo(transform, _toValue, _timePerHalfCycle, _isLocalSpace);
         }
-        protected override NTweener onToFrom()
+        protected override NRunnableTweener onToFrom()
         {
             return NTween.moveTo(transform, _fromValue, _timePerHalfCycle, _isLocalSpace);
         }

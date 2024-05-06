@@ -56,7 +56,7 @@ namespace Nextension
             _id = id;
         }
 
-        public void setUpdateNumber()
+        public void start()
         {
             _usingPool.Add(this);
 #if NPOOL_TRACKING_PRINT_STACK_TRACE
@@ -64,7 +64,7 @@ namespace Nextension
 #endif
             updateAccessInfo();
         }
-        public void resetUpdateNumber()
+        public void stop()
         {
             _usingPool.Remove(this);
 #if NPOOL_TRACKING_PRINT_STACK_TRACE

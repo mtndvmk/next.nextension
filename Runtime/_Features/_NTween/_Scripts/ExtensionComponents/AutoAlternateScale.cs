@@ -14,11 +14,11 @@ namespace Nextension.Tween
         {
             transform.localScale = value;
         }
-        protected override NTweener onFromTo()
+        protected override NRunnableTweener onFromTo()
         {
             return NTween.scaleTo(transform, _toValue, _timePerHalfCycle);
         }
-        protected override NTweener onToFrom()
+        protected override NRunnableTweener onToFrom()
         {
             return NTween.scaleTo(transform, _fromValue, _timePerHalfCycle);
         }

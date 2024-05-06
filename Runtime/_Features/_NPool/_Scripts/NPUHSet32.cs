@@ -60,7 +60,13 @@ namespace Nextension
         private NPHSet<int> _hashset;
         public int Count => _hashset.Count;
 
+        public bool IsCreated => _hashset != null;
         public bool IsReadOnly => _hashset.IsReadOnly;
+
+        public void stopTracking()
+        {
+            _hashset.stopTracking();
+        }
 
         public bool Add(T item)
         {

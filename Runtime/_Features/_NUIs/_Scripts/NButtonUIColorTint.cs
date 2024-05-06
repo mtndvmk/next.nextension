@@ -6,7 +6,6 @@ namespace Nextension.UI
     [DisallowMultipleComponent]
     public class NButtonUIColorTint : MonoBehaviour, INButtonListener
     {
-        [SerializeField] NButton _nButton;
         [SerializeField] private CanvasRenderer _target;
         [SerializeField] private Color _normalColor = Color.white;
         [SerializeField] private Color _enterColor = new Color32(0xF5, 0xF5, 0xF5, 0xFF);
@@ -15,13 +14,26 @@ namespace Nextension.UI
         [SerializeField] private float _duration = 0.1f;
 
         private NTweener _colorTweener;
+        private NButton _nButton;
 
         private void OnValidate()
         {
             _target = _target != null ? _target : GetComponent<CanvasRenderer>();
-            _nButton = _nButton != null ? _nButton : GetComponent<NButton>();
+            if (_nButton.isNull())
+            {
+                _nButton = GetComponentInParent<NButton>();
+            }
             OnEnable();
         }
+
+        private void Awake()
+        {
+            if (_nButton.isNull())
+            {
+                _nButton = GetComponentInParent<NButton>();
+            }
+        }
+
         private void OnEnable()
         {
             if (_nButton && _target)
@@ -113,6 +125,7 @@ namespace Nextension.UI
                 {
                     _target.SetColor(resultColor);
                 }, _duration);
+                _colorTweener.setCancelControlKey(_target);
             }
         }
     }

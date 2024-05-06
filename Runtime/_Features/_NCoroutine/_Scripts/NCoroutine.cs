@@ -225,7 +225,9 @@ namespace Nextension
         {
             NUtils.destroyObject(_runner);
             _runningCoroutines.Clear();
+#if UNITY_EDITOR
             SceneManager.sceneUnloaded -= onSceneUnloaded;
+#endif
             SceneManager.sceneUnloaded += onSceneUnloaded;
             _runner = new GameObject("NCoroutineRunner").AddComponent<Runner>();
             _runner.gameObject.hideFlags = HideFlags.DontSave | HideFlags.NotEditable | HideFlags.HideInInspector;

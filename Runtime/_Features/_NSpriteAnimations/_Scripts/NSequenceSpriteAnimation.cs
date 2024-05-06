@@ -10,6 +10,7 @@ namespace Nextension
         [SerializeField] private bool _isLoop;
         [SerializeField] private bool _autoPlayOnEnable;
         [SerializeField] private bool _autoDisableOnEndOfFrames;
+        [SerializeField] private bool _autoClearSpriteOnEndOfFrames;
 
         private int _currentFrameIndex = 0;
         private int _requestFrameIndex = -1;
@@ -40,9 +41,13 @@ namespace Nextension
         {
             if (_requestFrameIndex == _spriteFrames.Length - 1)
             {
+                if (_autoClearSpriteOnEndOfFrames)
+                {
+                    _spriteRenderer.sprite = null;
+                }
                 if (_autoDisableOnEndOfFrames)
                 {
-                    gameObject.setActive(false);
+                    enabled = false;
                 }
                 else if (!_isLoop)
                 {

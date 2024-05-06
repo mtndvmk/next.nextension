@@ -143,18 +143,20 @@ namespace Nextension.Tween
             (cancelWhenFuncList ??= new List<Func<bool>>(1)).Add(condition);
             return this;
         }
-        public void setCancelControlKey(UnityEngine.Object target)
+        public NTweener setCancelControlKey(UnityEngine.Object target)
         {
             if (!target)
             {
                 Debug.LogError("Object target is null");
-                return;
+                return this;
             }
             innerSetCancelControlKey(NTweenManager.createKey(target));
+            return this;
         }
-        public void setCancelControlKey(uint uintKey)
+        public NTweener setCancelControlKey(uint uintKey)
         {
             innerSetCancelControlKey(NTweenManager.createKey(uintKey));
+            return this;
         }
         private void innerSetCancelControlKey(CancelControlKey cancelControlKey)
         {

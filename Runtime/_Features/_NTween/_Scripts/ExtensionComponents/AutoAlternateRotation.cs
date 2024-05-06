@@ -30,11 +30,11 @@ namespace Nextension.Tween
                 transform.eulerAngles = value;
             }
         }
-        protected override NTweener onFromTo()
+        protected override NRunnableTweener onFromTo()
         {
             return NTween.rotateTo(transform, quaternion.EulerXYZ(Mathf.Deg2Rad * _toValue).value, _timePerHalfCycle, _isLocalSpace);
         }
-        protected override NTweener onToFrom()
+        protected override NRunnableTweener onToFrom()
         {
             return NTween.rotateTo(transform, quaternion.EulerXYZ(Mathf.Deg2Rad * _fromValue).value, _timePerHalfCycle, _isLocalSpace);
         }

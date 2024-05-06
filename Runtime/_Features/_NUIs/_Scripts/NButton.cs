@@ -11,7 +11,7 @@ namespace Nextension.UI
         [SerializeField] private float _betweenClickIntervalTime = 0.2f;
         [SerializeField] private float _delayInvokeTime;
         [SerializeField] private bool _isInteractable = true;
-        [SerializeField] private bool _findListenerInChildren;
+        [SerializeField] private bool _includeListenersInChildren;
 
         public UnityEvent onButtonDownEvent = new();
         public UnityEvent onButtonUpEvent = new();
@@ -60,7 +60,7 @@ namespace Nextension.UI
             if (!_isSetup)
             {
                 INButtonListener[] listeners;
-                if (_findListenerInChildren)
+                if (_includeListenersInChildren)
                 {
                     listeners = GetComponentsInChildren<INButtonListener>(true);
                 }
@@ -107,7 +107,7 @@ namespace Nextension.UI
             if (!_isSetup)
             {
                 INButtonListener[] listeners;
-                if (_findListenerInChildren)
+                if (_includeListenersInChildren)
                 {
                     listeners = GetComponentsInChildren<INButtonListener>(true);
                 }

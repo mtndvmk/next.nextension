@@ -29,13 +29,6 @@ namespace Nextension.NEditor
                     isFromToOnly = iterator.boolValue;
                     EditorGUILayout.PropertyField(iterator);
                 }
-                else if (iteratorName == "_delayOnlyFromTo")
-                {
-                    if (isFromToOnly)
-                    {
-                        EditorGUILayout.PropertyField(iterator);
-                    }
-                }
                 else
                 {
                     if (isAutoAlternateColor)
@@ -86,6 +79,16 @@ namespace Nextension.NEditor
             if (GUILayout.Button("Capture toValue"))
             {
                 ((IAutoAlternate)target).captureToValue();
+            }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Reset to fromValue"))
+            {
+                ((IAutoAlternate)target).resetToFromValue();
+            }
+            if (GUILayout.Button("Reset to toValue"))
+            {
+                ((IAutoAlternate)target).resetToToValue();
             }
             EditorGUILayout.EndHorizontal();
             serializedObject.ApplyModifiedProperties();
