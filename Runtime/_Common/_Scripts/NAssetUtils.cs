@@ -42,7 +42,7 @@ namespace Nextension
             }
         }
 
-        private static List<Object> _needSaves = new List<Object>();
+        private static HashSet<Object> _needSaves = new();
         private static bool _isWaitingForSave;
         private async static void saveInNext()
         {
@@ -295,7 +295,7 @@ namespace Nextension
             }
             else
             {
-                _needSaves.addIfNotPresent(@object);
+                _needSaves.Add(@object);
                 saveInNext();
             }
 #endif

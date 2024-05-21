@@ -53,7 +53,7 @@ namespace Nextension
                     }
                 }
 
-                var enumArr = EnumIndex<TEnum>.IndexToEnumTable;
+                var enumArr = EnumIndex<TEnum>.indexToEnumTable;
                 enumValues = new TValue[enumArr.Length];
                 enumArrayCache = new int[enumArr.Length];
                 for (int i = 0; i < enumArr.Length; i++)
@@ -90,14 +90,14 @@ namespace Nextension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue get(TEnum enumType)
+        public TValue getValue(TEnum enumType)
         {
 #if UNITY_EDITOR
             refreshEditorCache();
 #endif
             return enumValues[EnumIndex<TEnum>.getIndex(enumType)];
         }
-        public TValue get(int index)
+        public TValue getValueByIndex(int index)
         {
             return enumValues[index];
         }
@@ -107,13 +107,13 @@ namespace Nextension
             if (index < 0) return;
             enumValues[index] = val;
         }
-        public void set(int index, TValue val)
+        public void setByIndex(int index, TValue val)
         {
             enumValues[index] = val;
         }
         public TValue this[TEnum enumType]
         {
-            get => get(enumType);
+            get => getValue(enumType);
             set => set(enumType, value);
         }
         public TValue this[int index]
@@ -121,13 +121,13 @@ namespace Nextension
             get => enumValues[index];
             set => enumValues[index] = value;
         }
-        public ArrayEnumerator<TValue> GetEnumerator()
+        public Enumerator GetEnumerator()
         {
-            return new ArrayEnumerator<TValue>(enumValues);
+            return new Enumerator(this);
         }
         IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator()
         {
-            return GetEnumerator();
+            return new ArrayEnumerator<TValue>(enumValues);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -139,30 +139,22 @@ namespace Nextension
         {
             return enumValues;
         }
-        public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
-        {
-            int length = enumValues.Length;
-            for (int i = 0; i < length; ++i)
-            {
-                yield return (EnumIndex<TEnum>.getEnum(i), enumValues[i]);
-            }
-        }
         public EnumListValue<TEnum, TValue> toEnumListValue(bool isIgnoreDefaultValue = false)
         {
             EnumListValue<TEnum, TValue> enumListValue = new();
             if (isIgnoreDefaultValue)
             {
-                foreach (var (enumType, value) in enumerateTupleValues())
+                foreach (var item in this)
                 {
-                    if (value.equals(default)) continue;
-                    enumListValue.set(enumType, value);
+                    if (item.Value.equals(default)) continue;
+                    enumListValue.set(item.Key, item.Value);
                 }
             }
             else
             {
-                foreach (var (enumType, value) in enumerateTupleValues())
+                foreach (var item in this)
                 {
-                    enumListValue.set(enumType, value);
+                    enumListValue.set(item.Key, item.Value);
                 }
             }
             return enumListValue;
@@ -237,6 +229,46 @@ namespace Nextension
 #if !UNITY_EDITOR
             enumArrayCache = null;
 #endif
+        }
+
+        public struct Enumerator : IEnumerator<KeyValuePair<TEnum, TValue>>
+        {
+            public Enumerator(EnumArrayValue<TEnum, TValue> enumArrayValue)
+            {
+                _enumArrayValue = enumArrayValue;
+                _current = default;
+                _index = 0;
+            }
+
+            private readonly EnumArrayValue<TEnum, TValue> _enumArrayValue;
+            private KeyValuePair<TEnum, TValue> _current;
+            private int _index;
+
+            public KeyValuePair<TEnum, TValue> Current => _current;
+
+            object IEnumerator.Current => _current;
+
+            public void Dispose()
+            {
+                
+            }
+
+            public bool MoveNext()
+            {
+                if (_index < _enumArrayValue.Length)
+                {
+                    _current = new(EnumIndex<TEnum>.getEnum(_index), _enumArrayValue.enumValues[_index]);
+                    _index++;
+                    return true;
+                }
+                return false;
+            }
+
+            public void Reset()
+            {
+                _index = 0;
+                _current = default;
+            }
         }
     }
 }

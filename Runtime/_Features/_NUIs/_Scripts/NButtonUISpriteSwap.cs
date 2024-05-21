@@ -15,9 +15,14 @@ namespace Nextension.UI
 
         private void OnValidate()
         {
-            _target = _target != null ? _target : GetComponent<Image>();
-            _nButton = _nButton != null ? _nButton : GetComponent<NButton>();
-
+            if (_target.isNull())
+            {
+                _target = GetComponent<Image>();
+            }
+            if (_nButton.isNull())
+            {
+                _nButton = GetComponent<NButton>();
+            }
             OnEnable();
         }
 
@@ -25,7 +30,7 @@ namespace Nextension.UI
         {
             if (_nButton && _target)
             {
-                if (_nButton.IsInteractable)
+                if (_nButton.isInteractable())
                 {
                     _target.overrideSprite = _normalSprite;
                 }

@@ -920,6 +920,28 @@ namespace Nextension
         {
             return self as RectTransform;
         }
+        public static RectTransform rectTransform(this GameObject self)
+        {
+            return self.transform as RectTransform;
+        }
+        public static RectTransform rectTransform(this Component self)
+        {
+            return self.transform as RectTransform;
+        }
+        public static void markLayoutForRebuild(this GameObject self)
+        {
+            if (self.transform is RectTransform rectTf)
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(rectTf);
+            }
+        }
+        public static void markLayoutForRebuild(this Component self)
+        {
+            if (self.transform is RectTransform rectTf)
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(rectTf);
+            }
+        }
         public static void markLayoutForRebuild(this RectTransform self)
         {
             LayoutRebuilder.MarkLayoutForRebuild(self);
@@ -1002,58 +1024,62 @@ namespace Nextension
 
         public static Vector3 getBotomLeft(this RectTransform self, bool isWorldSpace = true)
         {
-            var poses = new Vector3[4];
+            Rect rect = self.rect;
+            float x = rect.x;
+            float y = rect.y;
+            var point = new Vector3(x, y, 0f);
             if (isWorldSpace)
             {
-                self.GetWorldCorners(poses);
-                return poses[0];
+                return self.TransformPoint(point);
             }
             else
             {
-                self.GetLocalCorners(poses);
-                return poses[0];
+                return point;
             }
         }
         public static Vector3 getTopLeft(this RectTransform self, bool isWorldSpace = true)
         {
-            var poses = new Vector3[4];
+            Rect rect = self.rect;
+            float x = rect.x;
+            float yMax = rect.yMax;
+            var point = new Vector3(x, yMax, 0f);
             if (isWorldSpace)
             {
-                self.GetWorldCorners(poses);
-                return poses[1];
+                return self.TransformPoint(point);
             }
             else
             {
-                self.GetLocalCorners(poses);
-                return poses[1];
+                return point;
             }
         }
         public static Vector3 getTopRight(this RectTransform self, bool isWorldSpace = true)
         {
-            var poses = new Vector3[4];
+            Rect rect = self.rect;
+            float xMax = rect.xMax;
+            float yMax = rect.yMax;
+            var point = new Vector3(xMax, yMax, 0f);
             if (isWorldSpace)
             {
-                self.GetWorldCorners(poses);
-                return poses[2];
+                return self.TransformPoint(point);
             }
             else
             {
-                self.GetLocalCorners(poses);
-                return poses[2];
+                return point;
             }
         }
         public static Vector3 getBotomRight(this RectTransform self, bool isWorldSpace = true)
         {
-            var poses = new Vector3[4];
+            Rect rect = self.rect;
+            float y = rect.y;
+            float xMax = rect.xMax;
+            var point = new Vector3(xMax, y, 0f);
             if (isWorldSpace)
             {
-                self.GetWorldCorners(poses);
-                return poses[3];
+                return self.TransformPoint(point);
             }
             else
             {
-                self.GetLocalCorners(poses);
-                return poses[3];
+                return point;
             }
         }
         public static void setPivotWithoutChangePosition(this RectTransform rectTransform, Vector2 pivot)
@@ -1066,14 +1092,66 @@ namespace Nextension
         }
         public static void setSizeWithCurrentAnchors(this RectTransform rectTransform, Vector2 size)
         {
-            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size.x);
-            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, size.y);
+            rectTransform.setSizeWithCurrentAnchors(size.x, size.y);
+        }
+        public static void setSizeWithCurrentAnchors(this RectTransform rectTransform, float width, float height)
+        {
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+            rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
         }
         public static void setSizFitToOther(this RectTransform rectTransform, RectTransform other)
         {
             var size = other.rect.size;
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size.x);
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, size.y);
+        }
+        public static void stretchToParent(this RectTransform rectTransform)
+        {
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = Vector2.zero;
+        }
+        public static void anchorToParent(this RectTransform self)
+        {
+            Span<Vector3> fourCornersArray = stackalloc Vector3[4];
+            var rect = self.rect;
+            var parentRect = self.parent.asRectTransform().rect;
+
+
+            float anchorXMin;
+            float anchorYMin;
+            float anchorXMax;
+            float anchorYMax;
+
+            if (parentRect.width == 0)
+            {
+                Debug.LogWarning("width is 0", self);
+                anchorXMin = self.anchorMin.x;
+                anchorXMax = self.anchorMax.x;
+            }
+            else
+            {
+                anchorXMin = (rect.x - parentRect.x) / parentRect.width;
+                anchorXMax = (rect.xMax - parentRect.x) / parentRect.width;
+            }
+
+            if (parentRect.height == 0)
+            {
+                Debug.LogWarning("height is 0", self);
+                anchorYMin = self.anchorMin.y;
+                anchorYMax = self.anchorMax.y;
+            }
+            else
+            {
+                anchorYMin = (rect.y - parentRect.y) / parentRect.height;
+                anchorYMax = (rect.yMax - parentRect.y) / parentRect.height;
+            }
+
+            self.anchorMin = new Vector2(anchorXMin, anchorYMin);
+            self.anchorMax = new Vector2(anchorXMax, anchorYMax);
+            self.anchoredPosition = Vector2.zero;
+            self.sizeDelta = Vector2.zero;
         }
         #endregion
 
@@ -1895,6 +1973,10 @@ namespace Nextension
             }
             return new Random(seed);
         }
+        public static Random getRandomFromState(uint state)
+        {
+            return new Random() { state = state };
+        }
         public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers, uint seed = 0)
         {
             return randInt32(min, max, exclusiveNumbers, getRandom(seed));
@@ -1984,16 +2066,16 @@ namespace Nextension
         /// <param name="index">index of returned item</param>
         /// <param name="exclusiveIndices">exclude indices if you didn't want it is returned</param>
         /// <returns></returns>
-        public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices, uint seed = 0)
+        public static T randItem<T>(this IList<T> self, out int index, ICollection<int> exclusiveIndices, uint seed = 0)
         {
             return randItem(self, out index, exclusiveIndices, getRandom(seed));
         }
-        public static T randItem<T>(this IList<T> self, out int index, IList<int> exclusiveIndices, Random rand)
+        public static T randItem<T>(this IList<T> self, out int index, ICollection<int> exclusiveIndices, Random rand)
         {
             index = randInt32(0, self.Count, exclusiveIndices, rand);
             return self[index];
         }
-        public static T randItem<T>(this Span<T> self, out int index, Func<T,bool> exclusivePredicate, Random rand)
+        public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, Random rand)
         {
             using var validIndices = NPUArray<int>.getWithoutTracking();
             for (int i = self.Length - 1; i >= 0; i--)
@@ -2353,7 +2435,6 @@ namespace Nextension
             if (self == null || self.Equals(null)) return true;
             return false;
         }
-
         #endregion
 
         #region Bounds and Collider

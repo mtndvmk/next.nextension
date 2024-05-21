@@ -18,14 +18,16 @@ namespace Nextension.UI
 
         private void OnValidate()
         {
-            _target = _target != null ? _target : GetComponent<CanvasRenderer>();
+            if (_target.isNull())
+            {
+                _target = GetComponent<CanvasRenderer>();
+            }
             if (_nButton.isNull())
             {
                 _nButton = GetComponentInParent<NButton>();
             }
             OnEnable();
         }
-
         private void Awake()
         {
             if (_nButton.isNull())
@@ -38,7 +40,7 @@ namespace Nextension.UI
         {
             if (_nButton && _target)
             {
-                if (_nButton.IsInteractable)
+                if (_nButton.isInteractable())
                 {
                     _target.SetColor(_normalColor);
                 }

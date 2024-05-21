@@ -59,7 +59,7 @@ namespace Nextension
 
         private NPHSet<long> _hashset;
         public int Count => _hashset.Count;
-
+        public bool IsCreated => _hashset != null;
         public bool IsReadOnly => _hashset.IsReadOnly;
 
         public bool Add(T item)

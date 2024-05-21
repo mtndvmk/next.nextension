@@ -1,12 +1,14 @@
 using Nextension.Tween;
 using UnityEditor;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Nextension.NEditor
 {
     [CustomEditor(typeof(AbsAutoAlternate<>), true), CanEditMultipleObjects]
     public class AbsAutoAlternate_Editor : Editor
     {
+        private static bool _isUniformScale;
         public override void OnInspectorGUI()
         {
             EditorGUI.BeginDisabledGroup(true);
@@ -20,6 +22,12 @@ namespace Nextension.NEditor
             AutoAlternateColor.AutoAlternateColorType? autoAlternateColorType = null;
 
             bool isAutoAlternateColor = target.GetType() == typeof(AutoAlternateColor);
+            bool isAutoAlterScale = !isAutoAlternateColor && target.GetType() == typeof(AutoAlternateScale);
+
+            if (isAutoAlterScale)
+            {
+                _isUniformScale = EditorGUILayout.Toggle("Uniform Scale", _isUniformScale);
+            }
 
             while (iterator.NextVisible(false))
             {
@@ -59,6 +67,58 @@ namespace Nextension.NEditor
                                 EditorGUILayout.PropertyField(iterator);
                             }
                         }
+                        else if (iteratorName == "_canvasRenderer")
+                        {
+                            if (autoAlternateColorType == AutoAlternateColor.AutoAlternateColorType.CanvasRenderer)
+                            {
+                                EditorGUILayout.PropertyField(iterator);
+                            }
+                        }
+                        else if (iteratorName == "_delayToFrom")
+                        {
+                            if (!isFromToOnly)
+                            {
+                                EditorGUILayout.PropertyField(iterator);
+                            }
+                        }
+                        else
+                        {
+                            EditorGUILayout.PropertyField(iterator);
+                        }
+                    }
+                    else if (isAutoAlterScale)
+                    {
+                        if (iteratorName == "_fromValue")
+                        {
+                            if (_isUniformScale)
+                            {
+                                var v = EditorGUILayout.FloatField("From value", ((float3)iterator.boxedValue).x);
+                                iterator.boxedValue = new float3(v);
+                            }
+                            else
+                            {
+                                EditorGUILayout.PropertyField(iterator);
+                            }
+                        }
+                        else if (iteratorName == "_toValue")
+                        {
+                            if (_isUniformScale)
+                            {
+                                var v = EditorGUILayout.FloatField("To value", ((float3)iterator.boxedValue).x);
+                                iterator.boxedValue = new float3(v);
+                            }
+                            else
+                            {
+                                EditorGUILayout.PropertyField(iterator);
+                            }
+                        }
+                        else if (iteratorName == "_delayToFrom")
+                        {
+                            if (!isFromToOnly)
+                            {
+                                EditorGUILayout.PropertyField(iterator);
+                            }
+                        }
                         else
                         {
                             EditorGUILayout.PropertyField(iterator);
@@ -66,7 +126,17 @@ namespace Nextension.NEditor
                     }
                     else
                     {
-                        EditorGUILayout.PropertyField(iterator);
+                        if (iteratorName == "_delayToFrom")
+                        {
+                            if (!isFromToOnly)
+                            {
+                                EditorGUILayout.PropertyField(iterator);
+                            }
+                        }
+                        else
+                        {
+                            EditorGUILayout.PropertyField(iterator);
+                        }
                     }
                 }
             }

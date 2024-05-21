@@ -88,7 +88,7 @@ namespace Nextension.UI
 
         protected void setClosableFromBgButton(bool isClosable)
         {
-            _closeBgButton.IsInteractable = isClosable;
+            _closeBgButton.Interactable = isClosable;
         }
 
         protected void innerShow(bool isImmediate = false)

@@ -71,6 +71,11 @@ namespace Nextension
             _index = startIndex;
             _current = default;
         }
+
+        public ArrayEnumerator<T> GetEnumerator()
+        {
+            return this;
+        }
     }
     public unsafe struct UnsafeArrayEnumerator<T> : IEnumerator<T> where T : unmanaged
     {

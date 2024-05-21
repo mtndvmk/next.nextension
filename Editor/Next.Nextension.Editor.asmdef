@@ -2,7 +2,8 @@
     "name": "Next.Nextension.Editor",
     "rootNamespace": "Nextension.NEditor",
     "references": [
-        "Next.Nextension.Runtime"
+        "Next.Nextension.Runtime",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

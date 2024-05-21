@@ -43,8 +43,9 @@ namespace Nextension
         }
 
         private NPArray<byte> _array;
-        public int Count => _array.Count / NUtils.sizeOf<T>();
 
+        public int Count => _array.Count / NUtils.sizeOf<T>();
+        public bool IsCreated => _array != null;
         public bool IsReadOnly => _array.IsReadOnly;
 
         public T this[int index]

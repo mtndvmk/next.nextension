@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -6,11 +7,11 @@ using UnityEngine.EventSystems;
 namespace Nextension.UI
 {
     [DisallowMultipleComponent]
-    public class NButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    public class NButton : UIBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         [SerializeField] private float _betweenClickIntervalTime = 0.2f;
         [SerializeField] private float _delayInvokeTime;
-        [SerializeField] private bool _isInteractable = true;
+        [SerializeField] private bool _interactable = true;
         [SerializeField] private bool _includeListenersInChildren;
 
         public UnityEvent onButtonDownEvent = new();
@@ -21,36 +22,71 @@ namespace Nextension.UI
         public UnityEvent onEnableInteractableEvent = new();
         public UnityEvent onDisableInteractableEvent = new();
 
-        private NArray<INButtonListener> _listeners = new();
+        private readonly NArray<INButtonListener> _listeners = new();
+        private readonly List<CanvasGroup> m_CanvasGroupCache = new();
+
         protected float _nextClickableTime;
+        private bool _groupsAllowInteraction = true;
         protected bool _isSetup;
 
 #if UNITY_EDITOR
         private bool? _editorInteractable;
-        private void OnValidate()
+        protected override void OnValidate()
         {
-            if (_editorInteractable != _isInteractable)
+            if (_editorInteractable != _interactable)
             {
-                _editorInteractable = _isInteractable;
+                _editorInteractable = _interactable;
                 invokeInteractableChangedEvent();
             }
         }
 #endif
-
-        public bool IsInteractable
+        protected override void OnCanvasGroupChanged()
         {
-            get => _isInteractable;
+            var parentGroupAllowsInteraction = this.parentGroupAllowsInteraction();
+
+            if (parentGroupAllowsInteraction != _groupsAllowInteraction)
+            {
+                _groupsAllowInteraction = parentGroupAllowsInteraction;
+            }
+        }
+        public bool parentGroupAllowsInteraction()
+        {
+            Transform t = transform;
+            while (t != null)
+            {
+                t.GetComponents(m_CanvasGroupCache);
+                for (var i = 0; i < m_CanvasGroupCache.Count; i++)
+                {
+                    if (m_CanvasGroupCache[i].enabled && !m_CanvasGroupCache[i].interactable)
+                        return false;
+
+                    if (m_CanvasGroupCache[i].ignoreParentGroups)
+                        return true;
+                }
+                t = t.parent;
+            }
+            return true;
+        }
+
+        public bool Interactable
+        {
+            get => _interactable;
             set
             {
-                if (_isInteractable != value)
+                if (_interactable != value)
                 {
-                    _isInteractable = value;
+                    _interactable = value;
                     invokeInteractableChangedEvent();
                 }
             }
         }
 
-        private void Awake()
+        public bool isInteractable()
+        {
+            return _interactable && _groupsAllowInteraction;
+        }
+
+        protected override void Awake()
         {
             setup();
         }
@@ -96,7 +132,7 @@ namespace Nextension.UI
         }
         private void invokeInteractableChangedEvent()
         {
-            if (_isInteractable)
+            if (_interactable)
             {
                 onEnableInteractableEvent?.Invoke();
             }
@@ -119,7 +155,7 @@ namespace Nextension.UI
                 {
                     try
                     {
-                        listener?.onInteractableChanged(_isInteractable);
+                        listener?.onInteractableChanged(_interactable);
                     }
                     catch (Exception e)
                     {
@@ -135,7 +171,7 @@ namespace Nextension.UI
                     {
                         try
                         {
-                            listener?.onInteractableChanged(_isInteractable);
+                            listener?.onInteractableChanged(_interactable);
                         }
                         catch (Exception e)
                         {
@@ -156,7 +192,7 @@ namespace Nextension.UI
         }
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isSetup)
+            if (!isInteractable() || !_isSetup)
             {
                 return;
             }
@@ -176,7 +212,7 @@ namespace Nextension.UI
         }
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isSetup)
+            if (!isInteractable() || !_isSetup)
             {
                 return;
             }
@@ -196,7 +232,7 @@ namespace Nextension.UI
         }
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isSetup)
+            if (!isInteractable() || !_isSetup)
             {
                 return;
             }
@@ -216,7 +252,7 @@ namespace Nextension.UI
         }
         public void OnPointerExit(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isSetup)
+            if (!isInteractable() || !_isSetup)
             {
                 return;
             }
@@ -236,7 +272,7 @@ namespace Nextension.UI
         }
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!_isInteractable || !_isSetup)
+            if (!isInteractable() || !_isSetup)
             {
                 return;
             }
@@ -263,7 +299,7 @@ namespace Nextension.UI
         }
         public void setInteractableWithoutNotify(bool isInteractable)
         {
-            _isInteractable = isInteractable;
+            _interactable = isInteractable;
         }
     }
 }

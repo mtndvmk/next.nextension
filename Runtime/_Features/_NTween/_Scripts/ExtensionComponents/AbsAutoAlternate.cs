@@ -52,10 +52,12 @@ namespace Nextension.Tween
         public void resetToFromValue()
         {
             setValue(_fromValue);
+            NAssetUtils.setDirty(this);
         }
         public void resetToToValue()
         {
             setValue(_toValue);
+            NAssetUtils.setDirty(this);
         }
 #endif
 

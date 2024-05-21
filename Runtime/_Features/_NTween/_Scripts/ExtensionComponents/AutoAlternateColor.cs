@@ -11,18 +11,76 @@ namespace Nextension.Tween
         public enum AutoAlternateColorType
         {
             Graphic,
+            CanvasRenderer,
             SpriteRenderer,
-            Material
+            Material,
         }
         [SerializeField] private AutoAlternateColorType _autoAlternateColorType;
         [SerializeField] private Graphic _graphic;
+        [SerializeField] private CanvasRenderer _canvasRenderer;
         [SerializeField] private SpriteRenderer _spriteRenderer;
         [SerializeField] private Material _material;
+
+        private void Reset()
+        {
+            switch (_autoAlternateColorType)
+            {
+                case AutoAlternateColorType.CanvasRenderer:
+                    {
+                        if (_canvasRenderer.isNull())
+                        {
+                            _canvasRenderer = GetComponent<CanvasRenderer>();
+                            _fromValue = _toValue = Color.white;
+                        }
+                        break;
+                    }
+                case AutoAlternateColorType.Graphic:
+                    {
+                        if (_graphic.isNull())
+                        {
+                            _graphic = GetComponent<Graphic>();
+                            if (_graphic.isNull())
+                            {
+                                _fromValue = _toValue = Color.white;
+                            }
+                            else
+                            {
+                                _fromValue = _toValue = _graphic.color;
+                            }
+                        }
+                        break;
+                    }
+                case AutoAlternateColorType.SpriteRenderer:
+                    {
+                        if (_spriteRenderer.isNull())
+                        {
+                            _spriteRenderer = GetComponent<SpriteRenderer>();
+                            if (_spriteRenderer.isNull())
+                            {
+                                _fromValue = _toValue = Color.white;
+                            }
+                            else
+                            {
+                                _fromValue = _toValue = _spriteRenderer.color;
+                            }
+                        }
+                        break;
+                    }
+                default:
+                    {
+                        _fromValue = _toValue = Color.white;
+                        break;
+                    }
+            }
+        }
 
         protected override void setValue(Color value)
         {
             switch (_autoAlternateColorType)
             {
+                case AutoAlternateColorType.CanvasRenderer:
+                    _canvasRenderer.SetColor(value);
+                    break;
                 case AutoAlternateColorType.Graphic:
                     _graphic.color = value;
                     break;
@@ -44,6 +102,7 @@ namespace Nextension.Tween
         {
             return _autoAlternateColorType switch
             {
+                AutoAlternateColorType.CanvasRenderer => _canvasRenderer.GetColor(),
                 AutoAlternateColorType.Graphic => _graphic.color,
                 AutoAlternateColorType.SpriteRenderer => _spriteRenderer.color,
                 AutoAlternateColorType.Material => _material.color,

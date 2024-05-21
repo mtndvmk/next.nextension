@@ -13,9 +13,8 @@ namespace Nextension.NEditor
             var objs = Selection.objects;
             foreach (var o in objs)
             {
-                NAssetUtils.setDirty(o);
+                NAssetUtils.saveAsset(o);
             }
-            NAssetUtils.saveAssets();
             Debug.Log($"Saved {objs.Length} objects");
         }
         [MenuItem("Nextension/Project/Force save project - *.asset")]
@@ -222,6 +221,32 @@ namespace Nextension.NEditor
                 sb.Append('"');
 
             return sb.ToString();
+        }
+
+        [MenuItem("Nextension/UI/Anchor to parent for selected items")]
+        public static void anchorToParentForSelected()
+        {
+            var objs = Selection.objects;
+            foreach (var o in objs)
+            {
+                if (o is GameObject go)
+                {
+                    var rectTf = go.rectTransform();
+                    if (rectTf)
+                    {
+                        rectTf.anchorToParent();
+                        NAssetUtils.setDirty(rectTf);
+                    }
+                }
+            }
+        }
+        [MenuItem("CONTEXT/RectTransform/Anchor to parent")]
+        public static void anchorToParent(MenuCommand menuCommand)
+        {
+            var rectTf = menuCommand.context as RectTransform;
+            rectTf.anchorToParent();
+            NAssetUtils.setDirty(rectTf);
+            Undo.RecordObject(rectTf, "Anchor to parent");
         }
     }
 

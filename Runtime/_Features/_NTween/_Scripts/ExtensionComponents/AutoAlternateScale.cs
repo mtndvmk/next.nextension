@@ -6,6 +6,10 @@ namespace Nextension.Tween
     [DisallowMultipleComponent]
     public class AutoAlternateScale : AbsAutoAlternate<float3>
     {
+        private void Reset()
+        {
+            _fromValue = _toValue = transform.localScale;
+        }
         protected override float3 getCurrentValue()
         {
             return transform.localScale;
