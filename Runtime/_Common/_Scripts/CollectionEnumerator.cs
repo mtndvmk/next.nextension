@@ -87,7 +87,7 @@ namespace Nextension
             _current = default;
             _index = startIndex = 0;
         }
-        public static unsafe UnsafeArrayEnumerator<T> createFromArrayEnumerator<TSrc>(ArrayEnumerator<TSrc> src) where TSrc : unmanaged
+        public static unsafe UnsafeArrayEnumerator<T> createFrom<TSrc>(ArrayEnumerator<TSrc> src) where TSrc : unmanaged
         {
             var sizeOfSrc = sizeof(TSrc);
 #if UNITY_EDITOR
@@ -101,6 +101,10 @@ namespace Nextension
             {
                 return new UnsafeArrayEnumerator<T>(srcPtr, src.maxIndex - src.startIndex);
             }
+        }
+        public static unsafe UnsafeArrayEnumerator<T> createFrom<TSrc>(TSrc[] src, uint startIndex = 0) where TSrc : unmanaged
+        {
+            return createFrom(new ArrayEnumerator<TSrc>(src, startIndex));
         }
 
         internal readonly T* array;
@@ -139,6 +143,11 @@ namespace Nextension
         {
             _index = startIndex;
             _current = default;
+        }
+
+        public UnsafeArrayEnumerator<T> GetEnumerator()
+        {
+            return this;
         }
     }
 }

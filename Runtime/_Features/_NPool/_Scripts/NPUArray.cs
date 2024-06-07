@@ -159,6 +159,14 @@ namespace Nextension
         {
             return IndexOf(item) >= 0;
         }
+        public int FirstIndexOf(Predicate<T> predicate)
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                if (predicate(GetWithoutChecks(i))) return i;
+            }
+            return -1;
+        }
         public unsafe void CopyTo(T[] array, int arrayIndex)
         {
             if (arrayIndex + Count > array.Length)

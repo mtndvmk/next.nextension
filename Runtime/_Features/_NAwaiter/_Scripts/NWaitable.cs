@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public abstract class AbsNWaitable : CustomYieldInstruction, IWaitable, ICancelable
+    public abstract class AbsNWaitable : CustomYieldInstruction, IWaitableFromCancelable, ICancelable
     {
         private List<ICancelable> _cancelables;
         private Action onCompleted;
@@ -17,8 +17,8 @@ namespace Nextension
         public Exception Exception { get; protected internal set; }
         public override bool keepWaiting => !_isFinalized;
 
-        NLoopType IWaitable.LoopType => NLoopType.Update;
-        bool IWaitable.IsIgnoreFirstFrameCheck => true;
+        NLoopType IWaitableFromCancelable.LoopType => NLoopType.Update;
+        bool IWaitableFromCancelable.IsIgnoreFirstFrameCheck => true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFinished() => Status.isFinished();
@@ -182,7 +182,7 @@ namespace Nextension
             onFinalized = null;
         }
 
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        (Func<NWaitableResult>, ICancelable) IWaitableFromCancelable.buildCompleteFunc()
         {
             NWaitableResult func()
             {
@@ -194,7 +194,7 @@ namespace Nextension
                     _ => NWaitableResult.None,
                 };
             }
-            return func;
+            return (func, this);
         }
         public async NWaitable waitCompletedOrException()
         {

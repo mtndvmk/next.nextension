@@ -229,9 +229,18 @@ namespace Nextension
                     }
                     else
                     {
-                        using var poolArray = NPArray<T>.get();
-                        poolArray.copyFrom(collection2);
-                        poolArray.asSpan().CopyTo(i_Items.AsSpan(index));
+                        if (NPArray<T>.PoolCount > 0)
+                        {
+                            using var poolArray = NPArray<T>.get();
+                            poolArray.copyFrom(collection2);
+                            poolArray.asSpan().CopyTo(i_Items.AsSpan(index));
+                        }
+                        else
+                        {
+                            var array = new NArray<T>();
+                            array.copyFrom(collection2);
+                            array.asSpan().CopyTo(i_Items.AsSpan(index));
+                        }
                     }
                     this.i_Count += count;
                 }
@@ -264,9 +273,18 @@ namespace Nextension
                     }
                     else
                     {
-                        using var poolArray = NPArray<T>.get();
-                        poolArray.copyFrom(collection2);
-                        poolArray.asSpan().CopyTo(i_Items.AsSpan(index));
+                        if (NPArray<T>.PoolCount > 0)
+                        {
+                            using var poolArray = NPArray<T>.get();
+                            poolArray.copyFrom(collection2);
+                            poolArray.asSpan().CopyTo(i_Items.AsSpan(index));
+                        }
+                        else
+                        {
+                            var array = new NArray<T>();
+                            array.copyFrom(collection2);
+                            array.asSpan().CopyTo(i_Items.AsSpan(index));
+                        }
                     }
                     this.i_Count += count;
                 }

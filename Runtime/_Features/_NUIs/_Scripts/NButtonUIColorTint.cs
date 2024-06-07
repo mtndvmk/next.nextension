@@ -16,16 +16,10 @@ namespace Nextension.UI
         private NTweener _colorTweener;
         private NButton _nButton;
 
-        private void OnValidate()
+        private void Reset()
         {
-            if (_target.isNull())
-            {
-                _target = GetComponent<CanvasRenderer>();
-            }
-            if (_nButton.isNull())
-            {
-                _nButton = GetComponentInParent<NButton>();
-            }
+            _target = GetComponent<CanvasRenderer>();
+            _nButton = GetComponentInParent<NButton>();
             OnEnable();
         }
         private void Awake()

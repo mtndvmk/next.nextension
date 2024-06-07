@@ -13,16 +13,10 @@ namespace Nextension.UI
         [SerializeField] private Sprite _downSprite;
         [SerializeField] private Sprite _disableSprite;
 
-        private void OnValidate()
+        private void Reset()
         {
-            if (_target.isNull())
-            {
-                _target = GetComponent<Image>();
-            }
-            if (_nButton.isNull())
-            {
-                _nButton = GetComponent<NButton>();
-            }
+            _target = GetComponent<Image>();
+            _nButton = GetComponent<NButton>();
             OnEnable();
         }
 

@@ -40,6 +40,11 @@ namespace Nextension.UI
             _effectTweener = NTween.scaleTo(_target, _originScale, _zoomTime);
         }
 
+        private void Reset()
+        {
+            _target = transform;
+        }
+
         private void OnDisable()
         {
             if (_effectTweener != null)

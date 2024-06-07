@@ -234,7 +234,26 @@ namespace Nextension.NEditor
                     var rectTf = go.rectTransform();
                     if (rectTf)
                     {
+                        Undo.RecordObject(rectTf, "Anchor to parent");
                         rectTf.anchorToParent();
+                        NAssetUtils.setDirty(rectTf);
+                    }
+                }
+            }
+        }
+        [MenuItem("Nextension/UI/Stretch to parent for selected items %q")]
+        public static void stretchToParentForSelected()
+        {
+            var objs = Selection.objects;
+            foreach (var o in objs)
+            {
+                if (o is GameObject go)
+                {
+                    var rectTf = go.rectTransform();
+                    if (rectTf)
+                    {
+                        Undo.RecordObject(rectTf, "Stretch to parent");
+                        rectTf.stretchToParent();
                         NAssetUtils.setDirty(rectTf);
                     }
                 }
@@ -244,9 +263,17 @@ namespace Nextension.NEditor
         public static void anchorToParent(MenuCommand menuCommand)
         {
             var rectTf = menuCommand.context as RectTransform;
+            Undo.RecordObject(rectTf, "Anchor to parent");
             rectTf.anchorToParent();
             NAssetUtils.setDirty(rectTf);
-            Undo.RecordObject(rectTf, "Anchor to parent");
+        }
+        [MenuItem("CONTEXT/RectTransform/Stretch to parent")]
+        public static void stretchToParent(MenuCommand menuCommand)
+        {
+            var rectTf = menuCommand.context as RectTransform;
+            Undo.RecordObject(rectTf, "Stretch to parent");
+            rectTf.stretchToParent();
+            NAssetUtils.setDirty(rectTf);
         }
     }
 

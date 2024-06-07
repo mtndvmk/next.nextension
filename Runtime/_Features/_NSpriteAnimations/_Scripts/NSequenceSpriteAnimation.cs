@@ -1,10 +1,18 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Nextension
 {
-    [RequireComponent(typeof(SpriteRenderer))]
     public class NSequenceSpriteAnimation : MonoBehaviour
     {
+        public enum TargetType
+        {
+            SpriteRenderer,
+            Image
+        }
+        [SerializeField] private TargetType _targetType;
+        [SerializeField] private SpriteRenderer _spriteRenderer;
+        [SerializeField] private Image _image;
         [SerializeField] private Sprite[] _spriteFrames;
         [SerializeField] private uint _fps;
         [SerializeField] private bool _isLoop;
@@ -16,15 +24,16 @@ namespace Nextension
         private int _requestFrameIndex = -1;
         private float _startPlayTime;
 
-        private SpriteRenderer _spriteRenderer;
-
+        
         public float Duration => _fps == 0 ? 0 : (float)_spriteFrames.Length / _fps;
         public int CurrentFrameIndex => _currentFrameIndex;
         public int FrameCount => _spriteFrames.Length;
 
-        private void Awake()
+        private void Reset()
         {
             _spriteRenderer = GetComponent<SpriteRenderer>();
+            _image = GetComponent<Image>();
+            _targetType = _image.isNull() ? TargetType.SpriteRenderer : TargetType.Image;
         }
         private void OnEnable()
         {
@@ -43,7 +52,7 @@ namespace Nextension
             {
                 if (_autoClearSpriteOnEndOfFrames)
                 {
-                    _spriteRenderer.sprite = null;
+                    setSprite(null);
                 }
                 if (_autoDisableOnEndOfFrames)
                 {
@@ -77,7 +86,26 @@ namespace Nextension
             if (_requestFrameIndex != _currentFrameIndex)
             {
                 _currentFrameIndex = _requestFrameIndex;
-                _spriteRenderer.sprite = _spriteFrames[_currentFrameIndex];
+                setSprite(_spriteFrames[_currentFrameIndex]);
+            }
+        }
+
+        private void setSprite(Sprite sprite)
+        {
+            switch (_targetType)
+            {
+                case TargetType.SpriteRenderer:
+                    {
+                        _spriteRenderer.sprite = sprite;
+                        break;
+                    }
+                case TargetType.Image:
+                    {
+                        _image.sprite = sprite;
+                        break;
+                    }
+                default:
+                    throw new System.NotImplementedException();
             }
         }
 

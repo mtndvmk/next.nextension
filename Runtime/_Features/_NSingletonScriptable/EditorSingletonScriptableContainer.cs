@@ -25,6 +25,10 @@ namespace Nextension.NEditor
             EditorSingletonScriptableLoader.scanAndReload(true);
         }
         private long _lastReloadTime;
+        internal void clear()
+        {
+            _editorSingletonScriptables.Clear();
+        }
         internal void reload(bool isDeleteIfEmpty = true)
         {
             var current = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

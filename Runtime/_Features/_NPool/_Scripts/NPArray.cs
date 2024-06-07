@@ -6,6 +6,7 @@ namespace Nextension
 {
     public class NPArray<T> : NCollectionPool<NPArray<T>, NArray<T>, T>
     {
+        public static int PoolCount => _pool == null ? 0 : _pool.PoolCount;
         public static NPArray<T> get()
         {
             var collectionPool = (_pool ??= new()).get();

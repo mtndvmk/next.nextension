@@ -1114,10 +1114,13 @@ namespace Nextension
         }
         public static void anchorToParent(this RectTransform self)
         {
-            Span<Vector3> fourCornersArray = stackalloc Vector3[4];
+            if (self.parent.isNull())
+            {
+                return;
+            }
+
             var rect = self.rect;
             var parentRect = self.parent.asRectTransform().rect;
-
 
             float anchorXMin;
             float anchorYMin;
@@ -1132,8 +1135,8 @@ namespace Nextension
             }
             else
             {
-                anchorXMin = (rect.x - parentRect.x) / parentRect.width;
-                anchorXMax = (rect.xMax - parentRect.x) / parentRect.width;
+                anchorXMin = (rect.xMin - parentRect.x + self.localPosition.x) / parentRect.width;
+                anchorXMax = (rect.xMax - parentRect.x + self.localPosition.x) / parentRect.width;
             }
 
             if (parentRect.height == 0)
@@ -1144,8 +1147,8 @@ namespace Nextension
             }
             else
             {
-                anchorYMin = (rect.y - parentRect.y) / parentRect.height;
-                anchorYMax = (rect.yMax - parentRect.y) / parentRect.height;
+                anchorYMin = (rect.yMin - parentRect.y + self.localPosition.y) / parentRect.height;
+                anchorYMax = (rect.yMax - parentRect.y + self.localPosition.y) / parentRect.height;
             }
 
             self.anchorMin = new Vector2(anchorXMin, anchorYMin);

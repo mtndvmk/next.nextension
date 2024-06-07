@@ -15,7 +15,7 @@ namespace Nextension.NEditor
         {
             _editorContainer = NAssetUtils.getMainObjectOnResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
         }
-        private static EditorSingletonScriptableContainer getEditorContainer()
+        internal static EditorSingletonScriptableContainer getEditorContainer()
         {
             if (!_isLoaded)
             {
@@ -44,6 +44,7 @@ namespace Nextension.NEditor
             foreach (var g in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(g);
+                if (!path.Contains("Assets/")) continue;
                 var item = NAssetUtils.loadAssetAt<ScriptableObject>(path);
                 if (ScriptableLoader.isSingletonable(item))
                 {

@@ -27,7 +27,7 @@ namespace Nextension
 
         public bool IsCompleted { get; private set; }
 
-        internal virtual void invokeComplete()
+        internal void invokeComplete()
         {
             if (!IsCompleted)
             {
@@ -39,7 +39,7 @@ namespace Nextension
                 }
             }
         }
-        internal virtual void invokeException(Exception ex)
+        internal void invokeException(Exception ex)
         {
             if (!IsCompleted)
             {
@@ -58,12 +58,6 @@ namespace Nextension
         protected virtual void onInnerCompleted()
         {
 
-        }
-        protected virtual void reset()
-        {
-            continuation = null;
-            exception = null;
-            IsCompleted = false;
         }
     }
 }

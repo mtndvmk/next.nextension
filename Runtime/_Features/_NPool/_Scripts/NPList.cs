@@ -5,6 +5,7 @@ namespace Nextension
 {
     public sealed class NPList<T> : NCollectionPool<NPList<T>, List<T>, T>
     {
+        public static int PoolCount => _pool == null ? 0 : _pool.PoolCount;
         public static NPList<T> get()
         {
             var collectionPool = (_pool ??= new()).get();

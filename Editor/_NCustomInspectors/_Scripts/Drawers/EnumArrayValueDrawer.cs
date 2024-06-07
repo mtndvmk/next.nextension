@@ -68,10 +68,16 @@ namespace Nextension.NEditor
                         if (hasChanged)
                         {
                             property.serializedObject.ApplyModifiedProperties();
-                            EditorUtility.SetDirty(property.serializedObject.targetObject);
-                            AssetDatabase.SaveAssets();
-                            AssetDatabase.Refresh();
-                            arrValue = NEditorHelper.getValue(property) as IEnumArrayValue;
+                            NAssetUtils.saveAsset(property.serializedObject.targetObject);
+                            if (NEditorHelper.getValue(property) is IEnumArrayValue arrValue2)
+                            {
+                                arrValue = arrValue2;
+                            }
+                            else
+                            {
+                                Debug.LogWarning("Error when get array value");
+                                return;
+                            }
                         }
 
                         contentPosition.y += EditorGUIUtility.singleLineHeight;

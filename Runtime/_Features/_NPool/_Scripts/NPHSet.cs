@@ -4,6 +4,7 @@ namespace Nextension
 {
     public sealed class NPHSet<T> : NCollectionPool<NPHSet<T>, HashSet<T>, T>
     {
+        public static int PoolCount => _pool == null ? 0 : _pool.PoolCount;
         public static NPHSet<T> get()
         {
             var collectionPool = (_pool ??= new()).get();

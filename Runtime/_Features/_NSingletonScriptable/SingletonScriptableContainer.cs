@@ -59,6 +59,14 @@ namespace Nextension
         {
             NEditor.EditorSingletonScriptableLoader.scanAndReload();
         }
+        [ContextMenu("Reset and reload")]
+        private void resetAndReload()
+        {
+            _preloadScriptables.Clear();
+            _nonPreloadScriptables.Clear();
+            NEditor.EditorSingletonScriptableLoader.getEditorContainer().clear();
+            scanAndReload();
+        }
         internal void updateScriptable(ScriptableObject scriptable)
         {
             bool hasChanged = false;

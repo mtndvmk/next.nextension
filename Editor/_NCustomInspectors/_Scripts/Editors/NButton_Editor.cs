@@ -4,7 +4,7 @@ namespace Nextension.UI.NEditor
 {
 
     [CustomEditor(typeof(NButton)), CanEditMultipleObjects]
-    public class NButtonEditor : Editor
+    public class NButton_Editor : Editor
     {
         private static bool _isShowEvent;
 

@@ -42,7 +42,16 @@ namespace Nextension
                     default:
                     case CompleteState.None:
                         {
-                            handle = NWaitableHandle.Factory.create(this, waitable.LoopType, predicateFunc);
+#if UNITY_EDITOR
+                            if (waitable is ICancelable cancelable)
+                            {
+                                throw new Exception("waitable is ICancelable, please use IWaitableFromCancelable");
+                            }
+                            else
+#endif
+                            {
+                                handle = NWaitableHandle.Factory.create(this, waitable.LoopType, predicateFunc);
+                            }
                             setup(handle, waitable.IsIgnoreFirstFrameCheck);
                             return;
                         }
@@ -118,32 +127,34 @@ namespace Nextension
             NAwaiterLoop.addAwaitable(handle, isIgnoreFisrtFrameCheck);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual void cancel()
+        public void cancel()
         {
             handle?.cancel();
         }
-    }
-    public sealed class NWaitableAwaiter : AbsNWaitableAwaiter, IPoolable
-    {
-#if UNITY_EDITOR
-        [EditorQuittingMethod]
-        private static void clearPool()
-        {
-            _pool?.clear();
-        }
-#endif
-        private static NPool<NWaitableAwaiter> _pool = new NPool<NWaitableAwaiter>();
 
+        protected override void onInnerCompleted()
+        {
+            handle = null;
+        }
+    }
+    public sealed class NWaitableAwaiter : AbsNWaitableAwaiter
+    {
         public static NWaitableAwaiter create(IWaitable waitable)
         {
-            var awaiter = _pool.get();
+            var awaiter = new NWaitableAwaiter();
             awaiter.setup(waitable);
             return awaiter;
         }
         public static NWaitableAwaiter create(IWaitableFromCancelable waitable)
         {
-            var awaiter = _pool.get();
+            var awaiter = new NWaitableAwaiter();
             awaiter.setup(waitable);
+            return awaiter;
+        }
+        public static NWaitableAwaiter create(NWaitable waitable)
+        {
+            var awaiter = new NWaitableAwaiter();
+            awaiter.setupFrom(waitable);
             return awaiter;
         }
 #if UNITY_EDITOR
@@ -187,42 +198,6 @@ namespace Nextension
             return awaiter;
         }
 #endif
-        public static NWaitableAwaiter create(NWaitable waitable)
-        {
-            var awaiter = _pool.get();
-            awaiter.setupFrom(waitable);
-            return awaiter;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override void cancel()
-        {
-            base.cancel();
-            releaseToPool();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected override void onInnerCompleted()
-        {
-            releaseToPool();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void IPoolable.onDespawned()
-        {
-            reset();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void releaseToPool()
-        {
-#if UNITY_EDITOR
-            if (handle != null && handle.isEditorWaitable)
-            {
-                handle = null;
-                return;
-            }
-#endif
-            handle = null;
-            _pool.release(this);
-        }
     }
     public sealed class NWaitableAwaiter<T> : AbsNWaitableAwaiter
     {
