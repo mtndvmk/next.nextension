@@ -22,6 +22,10 @@ namespace Nextension.UI
             _nButton = GetComponentInParent<NButton>();
             OnEnable();
         }
+        private void OnValidate()
+        {
+            OnEnable();
+        }
         private void Awake()
         {
             if (_nButton.isNull())

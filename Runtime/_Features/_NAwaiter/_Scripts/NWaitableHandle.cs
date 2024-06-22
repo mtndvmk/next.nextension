@@ -155,7 +155,7 @@ namespace Nextension
             Status = RunState.Canceled;
             _cancelable?.cancel();
         }
-        void IPoolable.onDespawned()
+        void IPoolable.onDespawn()
         {
             resetState();
         }

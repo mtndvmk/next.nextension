@@ -7,10 +7,10 @@ namespace Nextension
     public interface IPoolable
     {
         public const uint DEFAULT_MAX_POOL_ITEM_COUNT = 100;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onCreated() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onSpawned() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDespawned() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDestroyed() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onCreate() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onSpawn() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDespawn() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDestroy() { }
     }
     public class NPool<T> where T : class, IPoolable
     {
@@ -37,24 +37,24 @@ namespace Nextension
             else
             {
                 item = NUtils.createInstance<T>();
-                item.onCreated();
+                item.onCreate();
                 _countAll++;
             }
-            item.onSpawned();
+            item.onSpawn();
             return item;
         }
         public bool release(T item)
         {
             if (_pool.Count >= maxPoolItemCount)
             {
-                item.onDestroyed();
+                item.onDestroy();
                 return true;
             }
             else
             {
                 if (_pool.Add(item))
                 {
-                    item.onDespawned();
+                    item.onDespawn();
                     return true;
                 }
                 return false;
@@ -81,7 +81,7 @@ namespace Nextension
                 _countAll -= _pool.Count;
                 foreach (var item in _pool)
                 {
-                    item.onDestroyed();
+                    item.onDestroy();
                 }
                 _pool.Clear();
             }

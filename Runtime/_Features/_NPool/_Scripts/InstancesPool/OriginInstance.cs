@@ -3,10 +3,12 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public class OriginInstance : MonoBehaviour
+    public class OriginInstance : MonoBehaviour, IPoolable
     {
         [field: SerializeField] public int Id { get; private set; }
         [field: SerializeField] public bool IsUniquePool { get; private set; }
+
+        public bool IsInPool { get; private set; } = true;
 
         internal void setPoolId(int id, bool isUniquePool)
         {
@@ -22,8 +24,17 @@ namespace Nextension
             IsUniquePool = isUniquePool;
         }
 
+        void IPoolable.onSpawn()
+        {
+            IsInPool = false;
+        }
+        void IPoolable.onDespawn()
+        {
+            IsInPool = true;
+        }
+
 #if UNITY_EDITOR
-        [NonSerialized] private bool isOrigin;
+        private bool isOrigin { get; set; }
 
         [ContextMenu("Ping origin")]
         private void pingOrigin()

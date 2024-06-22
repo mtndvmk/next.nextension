@@ -1099,7 +1099,7 @@ namespace Nextension
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
         }
-        public static void setSizFitToOther(this RectTransform rectTransform, RectTransform other)
+        public static void setSizeFitToOther(this RectTransform rectTransform, RectTransform other)
         {
             var size = other.rect.size;
             rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, size.x);

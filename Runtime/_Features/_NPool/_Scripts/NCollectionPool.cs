@@ -54,7 +54,7 @@ namespace Nextension
 
 #if !NNEXT_DISABLE_NPOOL_TRACKING
         private PoolTracker _poolTrackable;
-        void IPoolable.onDespawned()
+        void IPoolable.onDespawn()
         {
             _poolTrackable.stop();
         }

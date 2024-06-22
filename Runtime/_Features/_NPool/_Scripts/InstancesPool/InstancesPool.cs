@@ -8,7 +8,36 @@ namespace Nextension
 {
     public static class InstancesPool
     {
-        public static void release(GameObject gameObject, bool invokeIPoolableEvent = false)
+        public static bool checkInPool(GameObject gameObject)
+        {
+            var origin = gameObject.GetComponent<OriginInstance>();
+            if (origin == null)
+            {
+                Debug.LogWarning($"{gameObject.name} is not from pool");
+                return false;
+            }
+            else
+            {
+                if (origin.IsUniquePool)
+                {
+                    var pool = SharedInstancesPool.getPool(origin.Id);
+                    if (pool != null)
+                    {
+                        return pool.poolContains(gameObject);
+                    }
+                    else
+                    {
+                        Debug.LogError($"Can't find pool - {origin.Id}");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Only support unique pool");
+                }
+            }
+            return false;
+        }
+        public static void release(GameObject gameObject)
         {
             var origin = gameObject.GetComponent<OriginInstance>();
             if (origin == null)
@@ -22,7 +51,7 @@ namespace Nextension
                     var pool = SharedInstancesPool.getPool(origin.Id);
                     if (pool != null)
                     {
-                        pool.release(gameObject, gameObject, origin, invokeIPoolableEvent);
+                        pool.release(gameObject, gameObject, origin);
                     }
                     else
                     {
@@ -31,13 +60,13 @@ namespace Nextension
                 }
                 else
                 {
-                    Debug.LogError("Only support unique pool, destroy gameObject");
+                    Debug.LogError("Only support unique pool");
                 }
             }
         }
-        public static void release(Component component, bool invokeIPoolableEvent = false)
+        public static void release(Component component)
         {
-            release(component.gameObject, invokeIPoolableEvent);
+            release(component.gameObject);
         }
     }
 
@@ -55,14 +84,14 @@ namespace Nextension
 
         private OriginInstance _origin;
         [NonSerialized] private InstancesPool<GameObject> _sharedPool;
-        [NonSerialized] private HashSet<T> _instancePool;
+        [NonSerialized] private List<T> _instancePool;
 
         private void requireCall()
         {
             InternalCheck.checkEditorMode();
             if (_instancePool == null)
             {
-                _instancePool = new HashSet<T>(_startupInstanceCount);
+                _instancePool = new List<T>(_startupInstanceCount);
                 Id = InstancesPoolUtil.computePoolId(_prefab);
             }
         }
@@ -79,6 +108,12 @@ namespace Nextension
         private T getPrefab()
         {
             InternalCheck.checkEditorMode();
+#if UNITY_EDITOR
+            if (_prefab == null)
+            {
+                throw new NullReferenceException("Prefab is null");
+            }
+#endif
             if (_useOriginPrefab)
             {
                 return _prefab;
@@ -160,7 +195,7 @@ namespace Nextension
 
             updateStartupInstances();
         }
-        public T get(Transform parent = null, bool worldPositionStays = true, bool invokeIPoolableEvent = false)
+        public T get(Transform parent = null, bool worldPositionStays = true)
         {
             requireCall();
             if (_isUniquePool)
@@ -168,7 +203,7 @@ namespace Nextension
                 T ins;
                 if (_instancePool.Count > 0)
                 {
-                    ins = _instancePool.takeAndRemoveFirst();
+                    ins = _instancePool.takeAndRemoveLast();
                 }
                 else
                 {
@@ -177,77 +212,79 @@ namespace Nextension
 
                 var go = getGameObject(ins);
                 go.transform.setParent(parent, worldPositionStays);
-                if (invokeIPoolableEvent)
+                using var poolableArray = NPList<IPoolable>.get();
+                go.GetComponentsInChildren(true, poolableArray.Collection);
+                foreach (var poolable in poolableArray)
                 {
-                    foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
-                    {
-                        poolable.onSpawned();
-                    }
+                    poolable.onSpawn();
                 }
                 return ins;
             }
             return InstancesPoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
         }
-        public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true, bool invokeIPoolableEvent = false)
+        public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
         {
-            T item = get(parent, worldPositionStays, invokeIPoolableEvent);
+            T item = get(parent, worldPositionStays);
             releaseWaitable.startWaitable().addCompletedEvent(() =>
             {
-                release(item, invokeIPoolableEvent);
+                release(item);
             });
             return item;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true, bool invokeIPoolableEvent = false)
+        public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
         {
-            return getAndRelease(new NWaitSecond(delaySeconds), parent, worldPositionStays, invokeIPoolableEvent);
+            return getAndRelease(new NWaitSecond(delaySeconds), parent, worldPositionStays);
         }
-        public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true, bool invokeIPoolableEvent = false)
+        public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
         {
             for (int i = 0; i < count; ++i)
             {
-                yield return get(parent, worldPositionStays, invokeIPoolableEvent);
+                yield return get(parent, worldPositionStays);
             }
         }
-        internal void release(T instance, GameObject go, OriginInstance origin, bool invokeIPoolableEvent = false)
+        internal void release(T instance, GameObject go, OriginInstance origin)
         {
             if (_isUniquePool)
             {
+                if (origin.IsInPool)
+                {
+                    Debug.LogWarning($"Instance has been in pool", instance);
+                    return;
+                }
                 if (origin.Id != _origin.Id)
                 {
                     Debug.LogWarning($"OriginId [{origin.Id}], [{_origin.Id}] not match, try release by SharedInstancesPool", go);
                     SharedInstancesPool.getPool(origin.Id)?.release(go);
                     return;
                 }
-                if (invokeIPoolableEvent)
-                {
-                    foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
-                    {
-                        poolable.onDespawned();
-                    }
-                }
+
+                using var poolableArray = NPList<IPoolable>.get();
+                go.GetComponentsInChildren(true, poolableArray.Collection);
+
                 if (_instancePool.Count >= MaxPoolInstanceCount)
                 {
-                    NUtils.destroy(go);
-                    if (invokeIPoolableEvent)
+                    foreach (var poolable in poolableArray)
                     {
-                        foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
-                        {
-                            poolable.onDestroyed();
-                        }
+                        poolable.onDespawn();
+                        poolable.onDestroy();
                     }
+                    NUtils.destroy(go);
                     return;
                 }
 
                 go.transform.setParent(InstancesPoolContainer.Container);
-                _instancePool.Add(instance);
+                foreach (var poolable in poolableArray)
+                {
+                    poolable.onDespawn();
+                }
             }
             else
             {
-                SharedPool.release(getGameObject(instance), go, origin, invokeIPoolableEvent);
+                SharedPool.release(getGameObject(instance), go, origin);
             }
         }
-        public void release(T instance, bool invokeIPoolableEvent = false)
+        public void release(T instance)
         {
             InternalCheck.checkEditorMode();
             if (_isUniquePool)
@@ -258,13 +295,6 @@ namespace Nextension
                     return;
                 }
 
-                var isExist = _instancePool.Contains(instance);
-                if (isExist)
-                {
-                    Debug.LogWarning($"Instance has been in pool", instance);
-                    return;
-                }
-
                 var go = getGameObject(instance);
                 if (!go.TryGetComponent<OriginInstance>(out var origin))
                 {
@@ -272,46 +302,35 @@ namespace Nextension
                     return;
                 }
 
-                if (origin.Id != _origin.Id)
-                {
-                    Debug.LogWarning($"OriginId [{origin.Id}], [{_origin.Id}] not match, try release by SharedInstancesPool", instance);
-                    SharedInstancesPool.getPool(origin.Id)?.release(go);
-                    return;
-                }
-
-                if (invokeIPoolableEvent)
-                {
-                    foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
-                    {
-                        poolable.onDespawned();
-                    }
-                }
-
-                if (_instancePool.Count >= MaxPoolInstanceCount)
-                {
-                    NUtils.destroy(go);
-                    if (invokeIPoolableEvent)
-                    {
-                        foreach (var poolable in go.GetComponentsInChildren<IPoolable>(true))
-                        {
-                            poolable.onDestroyed();
-                        }
-                    }
-                    return;
-                }
-
-                go.transform.setParent(InstancesPoolContainer.Container);
-                _instancePool.Add(instance);
+                release(instance, go, origin);
             }
             else
             {
-                SharedPool.release(getGameObject(instance), invokeIPoolableEvent);
+                SharedPool.release(getGameObject(instance));
             }
         }
         public void clearPool(bool isClearSharedPool = true)
         {
             InternalCheck.checkEditorMode();
-            if (!_isUniquePool)
+            if (_isUniquePool)
+            {
+                if (_instancePool != null && _instancePool.Count > 0)
+                {
+                    foreach (var item in _instancePool)
+                    {
+                        var go = getGameObject(item);
+                        using var poolableArray = NPList<IPoolable>.get();
+                        go.GetComponentsInChildren(true, poolableArray.Collection);
+                        foreach (var poolable in poolableArray)
+                        {
+                            poolable.onDestroy();
+                        }
+                        NUtils.destroy(go);
+                    }
+                    _instancePool.Clear();
+                }
+            }
+            else
             {
                 if (isClearSharedPool)
                 {
@@ -322,21 +341,16 @@ namespace Nextension
                     }
                 }
             }
-            if (_instancePool != null && _instancePool.Count > 0)
-            {
-                foreach (var item in _instancePool)
-                {
-                    NUtils.destroyObject(item);
-                }
-                _instancePool.Clear();
-            }
+        }
+        public bool poolContains(T instance)
+        {
+            return _instancePool.Contains(instance);
         }
 
         public void OnBeforeSerialize()
         {
 
         }
-
         public void OnAfterDeserialize()
         {
 #if UNITY_EDITOR

@@ -92,7 +92,7 @@ namespace Nextension
             }
             var ins = Object.Instantiate(getPrefab(), InstancesPoolContainer.Container, true);
             ins.name = $"{_origin.name} [PoolClone_{++_clonedCount}]";
-            ins.onCreated();
+            ins.onCreate();
             return ins;
         }
         private void createStartupInstances()
@@ -129,7 +129,7 @@ namespace Nextension
 
             var go = getGameObject(ins);
             go.transform.setParent(parent, worldPositionStays);
-            ins.onSpawned();
+            ins.onSpawn();
             return ins;
         }
         public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
@@ -160,11 +160,11 @@ namespace Nextension
                 Debug.LogError($"OriginId [{origin.Id}], [{_origin.Id}] not match", go);
                 return;
             }
-            instance.onDespawned();
+            instance.onDespawn();
             if (_instancePool.Count >= MaxPoolInstanceCount)
             {
                 NUtils.destroy(go);
-                instance.onDestroyed();
+                instance.onDestroy();
                 return;
             }
 
@@ -200,11 +200,11 @@ namespace Nextension
                 return;
             }
 
-            instance.onDespawned();
+            instance.onDespawn();
 
             if (_instancePool.Count >= MaxPoolInstanceCount)
             {
-                instance.onDestroyed();
+                instance.onDestroy();
                 NUtils.destroy(go);
                 return;
             }
@@ -219,7 +219,7 @@ namespace Nextension
             {
                 foreach (var item in _instancePool)
                 {
-                    item.onDestroyed();
+                    item.onDestroy();
                     NUtils.destroyObject(item);
                 }
                 _instancePool.Clear();
