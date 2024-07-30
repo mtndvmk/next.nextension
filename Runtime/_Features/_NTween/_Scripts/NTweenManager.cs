@@ -7,16 +7,16 @@ namespace Nextension.Tween
 {
     internal static class NTweenManager
     {
-        private static List<NRunnableTweener> _queuedRunnableTweeners;
-        private static List<CombinedNTweener> _queuedCombinedTweeners;
+        private static NArray<NRunnableTweener> _queuedRunnableTweeners;
+        private static NArray<CombinedNTweener> _queuedCombinedTweeners;
 
         private static Dictionary<ushort, AbsTweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;
 
         static NTweenManager()
         {
-            _queuedRunnableTweeners = new List<NRunnableTweener>();
-            _queuedCombinedTweeners = new List<CombinedNTweener>();
+            _queuedRunnableTweeners = new();
+            _queuedCombinedTweeners = new();
             _runners = new Dictionary<ushort, AbsTweenRunner>();
             _cancelControlManager = new CancelControlManager();
 
@@ -53,7 +53,7 @@ namespace Nextension.Tween
                     if (tweener.startTime <= currentTime)
                     {
                         tweener.invokeOnStart();
-                        _queuedCombinedTweeners.removeAtSwapBack(i);
+                        _queuedCombinedTweeners.removeAtSwapBackWithoutChecks(i);
                     }
                 }
             }

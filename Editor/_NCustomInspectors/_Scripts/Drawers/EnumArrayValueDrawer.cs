@@ -52,32 +52,10 @@ namespace Nextension.NEditor
                         var enumNameStyle = new GUIStyle(GUI.skin.label);
                         enumNameStyle.fontStyle = FontStyle.Bold;
 
-                        bool hasChanged = arrValue.refreshEditorCache();
-
-                        while (values.arraySize > arrValue.EnumCount)
+                        if (arrValue.refreshEditorCache())
                         {
-                            values.DeleteArrayElementAtIndex(values.arraySize - 1);
-                            hasChanged = true;
-                        }
-                        while (values.arraySize < arrValue.EnumCount)
-                        {
-                            values.InsertArrayElementAtIndex(values.arraySize - 1);
-                            hasChanged = true;
-                        }
-
-                        if (hasChanged)
-                        {
-                            property.serializedObject.ApplyModifiedProperties();
-                            NAssetUtils.saveAsset(property.serializedObject.targetObject);
-                            if (NEditorHelper.getValue(property) is IEnumArrayValue arrValue2)
-                            {
-                                arrValue = arrValue2;
-                            }
-                            else
-                            {
-                                Debug.LogWarning("Error when get array value");
-                                return;
-                            }
+                            NAssetUtils.setDirty(property.serializedObject.targetObject);
+                            return;
                         }
 
                         contentPosition.y += EditorGUIUtility.singleLineHeight;

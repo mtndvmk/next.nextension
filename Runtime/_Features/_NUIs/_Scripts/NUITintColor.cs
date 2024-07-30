@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Nextension.NUI
+namespace Nextension.UI
 {
     public class NUITintColor : MonoBehaviour
     {

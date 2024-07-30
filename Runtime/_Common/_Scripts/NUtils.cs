@@ -1405,18 +1405,30 @@ namespace Nextension
             }
             return true;
         }
-        public static string bytesToHex(this byte[] inData, bool include0xPrefix = false)
+        public static unsafe string toHex(this byte[] inData, bool include0xPrefix = false)
         {
-            int inDataLength = inData.Length;
+            fixed (byte* ptr = inData)
+            {
+                return toHex(ptr, inData.Length, include0xPrefix);
+            }
+        }
+        public static unsafe string toHex(byte* inData, int inDataLength, bool include0xPrefix = false)
+        {
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
             StringBuilder sb = new(hexLength);
             if (include0xPrefix)
             {
-                sb.Append("0x");
+                sb.Append('0');
+                sb.Append('x');
             }
             for (int i = 0; i < inDataLength; i++)
             {
-                sb.Append(inData[i].ToString("x2"));
+                var b = inData[i] >> 4;
+                var b1 = (int)((uint)(9 - b) >> 31);
+                sb.Append((char)(0x30 + b + (b1 << 3) - b1));
+                b = inData[i] & 0xf;
+                b1 = (int)((uint)(9 - b) >> 31);
+                sb.Append((char)(0x30 + b + (b1 << 3) - b1));
             }
             return sb.ToString();
         }
@@ -1435,7 +1447,7 @@ namespace Nextension
                 throw new Exception("Invalid hex: " + hex);
             }
             ReadOnlySpan<char> hexSpan;
-            if (hex[startIndex + 1] == 'x' || hex[startIndex + 1] == 'X')
+            if (hex[startIndex] == '0' && (hex[startIndex + 1] == 'x' || hex[startIndex + 1] == 'X'))
             {
                 hexSpan = hex.AsSpan(startIndex + 2);
             }
@@ -1462,7 +1474,7 @@ namespace Nextension
             byte[] bytes = new byte[hexSpan.Length / 2];
             for (int i = 0; i < bytes.Length; ++i)
             {
-                var i2 = i * 2;
+                var i2 = i << 1;
                 var c0 = _hexTable[hexSpan[i2]];
                 var c1 = _hexTable[hexSpan[i2 + 1]];
                 bytes[i] = (byte)(c0 << 4 | c1);
@@ -1493,11 +1505,17 @@ namespace Nextension
             }
             return hexSpan0.Equals(hexSpan1, StringComparison.OrdinalIgnoreCase);
         }
-        public static string computeMD5(this string s)
+        public static unsafe string computeMD5(this string s)
         {
             using var provider = System.Security.Cryptography.MD5.Create();
-            var hash = provider.ComputeHash(NConverter.getBytes(s));
-            return bytesToHex(hash);
+            var dst = stackalloc byte[16];
+            provider.TryComputeHash(s.AsSpan().asByteSpan(), new Span<byte>(dst, 16), out _);
+            return toHex(dst, 16);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool isNullOrEmpty(this string s)
+        {
+            return string.IsNullOrEmpty(s);
         }
         #endregion
 

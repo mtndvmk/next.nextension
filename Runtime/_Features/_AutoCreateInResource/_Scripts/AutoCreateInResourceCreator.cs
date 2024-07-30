@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Nextension
 {
-    internal class AutoCreateOnResourceCreator : IErrorCheckable, IAssetImportedCallback
+    internal class AutoCreateInResourceCreator : IErrorCheckable, IAssetImportedCallback
     {
         static int Priority => 1;
         static async void onLoadOrRecompiled()
@@ -16,14 +16,14 @@ namespace Nextension
             var types = NUtils.getCustomTypes();
             foreach (var type in types)
             {
-                if (!AutoCreateOnResourceUtils.checkValid(type)) continue;
-                var attr = type.GetCustomAttribute<AutoCreateOnResourceAttribute>();
+                if (!AutoCreateInResourceUtils.checkValid(type)) continue;
+                var attr = type.GetCustomAttribute<AutoCreateInResourceAttribute>();
                 if (attr == null) continue;
                 var fileName = attr.getFileName(type);
-                if (NAssetUtils.hasObjectOnResources(fileName)) continue;
+                if (NAssetUtils.hasObjectInMainResources(fileName)) continue;
                 if (attr.useTypeName)
                 {
-                    var fullPath = NAssetUtils.createMainResourcesPath(fileName);
+                    var fullPath = NAssetUtils.generateMainResourcesPath(fileName);
                     var dir = Path.GetDirectoryName(fullPath);
                     var so = NAssetUtils.findAssetAt(dir, type, out var foundPath);
                     if (so != null)
@@ -49,7 +49,7 @@ namespace Nextension
                 }
                 try
                 {
-                    NAssetUtils.createOnResource(type, fileName);
+                    NAssetUtils.createInMainResources(type, fileName);
                 }
                 catch (Exception ex)
                 {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -73,7 +72,7 @@ namespace Nextension
         }
         public bool contains(TEnum enumType)
         {
-            return _enumValueList.bFindIndex(enumType) >= 0;
+            return _enumValueList.bContains(enumType);
         }
         public bool remove(TEnum enumType)
         {
@@ -84,20 +83,12 @@ namespace Nextension
             get => get(enumType);
             set => set(enumType, value);
         }
-        public (TEnum enumType, TValue value) this[int index]
-        {
-            get => (_enumValueList[index].enumType, _enumValueList[index].value);
-        }
-        public IEnumerable<(TEnum enumType, TValue value)> enumerateTupleValues()
+        public IEnumerable<KeyValuePair<TEnum, TValue>> enumerateTupleValues()
         {
             foreach (var e in _enumValueList)
             {
-                yield return (e.enumType, e.value);
+                yield return new(e.enumType, e.value);
             }
-        }
-        public EnumArrayValue<TEnum, TValue> toEnumArrayValue()
-        {
-            return EnumArrayValue<TEnum, TValue>.createFrom(this);
         }
         public IEnumerable<TValue> enumerateValues()
         {
@@ -105,10 +96,6 @@ namespace Nextension
             {
                 yield return _enumValueList[i].value;
             }
-        }
-        public TValue[] toArray()
-        {
-            return enumerateValues().ToArray();
         }
     }
 }

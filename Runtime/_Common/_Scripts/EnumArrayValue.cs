@@ -81,13 +81,6 @@ namespace Nextension
         {
 
         }
-        public EnumArrayValue(params (TEnum, TValue)[] enumValues)
-        {
-            for (int i = 0; i < enumValues.Length; ++i)
-            {
-                this[enumValues[i].Item1] = enumValues[i].Item2;
-            }
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue getValue(TEnum enumType)

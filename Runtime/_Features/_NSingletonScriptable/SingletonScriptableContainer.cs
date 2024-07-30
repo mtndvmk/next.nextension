@@ -6,7 +6,7 @@ namespace Nextension
 {
     public class SingletonScriptableContainer : ScriptableObject
     {
-        internal const string FileNameOnResource = "AutoCreated/[AutoCreated][SingletonScriptableContainer]";
+        internal const string FileNameInResource = "AutoCreated/[AutoCreated][SingletonScriptableContainer]";
 
         [SerializeField] private List<ScriptableObject> _preloadScriptables;
         [SerializeField] private List<NonPreloadScriptable> _nonPreloadScriptables;
@@ -43,7 +43,7 @@ namespace Nextension
 
             if (_nonPreloadScriptablePaths.TryGetValue(typeOfT, out var path))
             {
-                return NAssetUtils.getMainObjectOnResources<T>(path);
+                return NAssetUtils.getMainObjectInMainResources<T>(path);
             }
             return null;
         }
@@ -127,7 +127,7 @@ namespace Nextension
             else
             {
                 var existItem = _nonPreloadScriptables.Find(item => item.getScriptableType() == scriptable.GetType());
-                NAssetUtils.getPathInResource(scriptable, out var path);
+                NAssetUtils.getPathInMainResources(scriptable, out var path);
                 path = path.removeExtension();
                 if (existItem == null)
                 {

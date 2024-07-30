@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -14,45 +13,6 @@ namespace Nextension
         {
             byte[] array = new byte[NUtils.sizeOf<T>()];
             writeBytesWithoutChecks(array, t1);
-            return array;
-        }
-        public static unsafe byte[] getBytes<T>(T t1, T t2) where T : unmanaged
-        {
-            var sizeOfT = NUtils.sizeOf<T>();
-            byte[] array = new byte[2 * sizeOfT];
-            fixed (byte* ptr = array)
-            {
-                T* ptrOfT = (T*)ptr;
-                *ptrOfT++ = t1;
-                *ptrOfT = t2;
-            }
-            return array;
-        }
-        public static unsafe byte[] getBytes<T>(T t1, T t2, T t3) where T : unmanaged
-        {
-            var sizeOfT = NUtils.sizeOf<T>();
-            byte[] array = new byte[3 * sizeOfT];
-            fixed (byte* ptr = array)
-            {
-                T* ptrOfT = (T*)ptr;
-                *ptrOfT++ = t1;
-                *ptrOfT++ = t2;
-                *ptrOfT = t3;
-            }
-            return array;
-        }
-        public static unsafe byte[] getBytes<T>(T t1, T t2, T t3, T t4) where T : unmanaged
-        {
-            var sizeOfT = NUtils.sizeOf<T>();
-            byte[] array = new byte[4 * sizeOfT];
-            fixed (byte* ptr = array)
-            {
-                T* ptrOfT = (T*)ptr;
-                *ptrOfT++ = t1;
-                *ptrOfT++ = t2;
-                *ptrOfT++ = t3;
-                *ptrOfT = t4;
-            }
             return array;
         }
 
@@ -344,6 +304,21 @@ namespace Nextension
                 Debug.LogWarning(e);
                 result = null;
                 return false;
+            }
+        }
+
+        public static unsafe Span<byte> asByteSpan<TIn>(this ReadOnlySpan<TIn> from) where TIn : unmanaged
+        {
+            fixed (TIn* ptr = from)
+            {
+                return new Span<byte>(ptr, from.Length * NUtils.sizeOf<TIn>());
+            }
+        }
+        public static unsafe Span<TOut> fromByteSpan<TOut>(this ReadOnlySpan<byte> from) where TOut : unmanaged
+        {
+            fixed (byte* ptr = from)
+            {
+                return new Span<TOut>(ptr, from.Length / NUtils.sizeOf<TOut>());
             }
         }
     }

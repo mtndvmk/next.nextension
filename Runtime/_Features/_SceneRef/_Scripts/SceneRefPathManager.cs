@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Nextension
 {
-    [AutoCreateOnResource]
+    [AutoCreateInResource]
     public sealed class SceneRefPathManager : SingletonScriptableGettable<SceneRefPathManager>, IErrorCheckable
     {
         [Serializable]

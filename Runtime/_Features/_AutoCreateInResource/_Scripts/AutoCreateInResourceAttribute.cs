@@ -4,25 +4,25 @@ using UnityEngine;
 namespace Nextension
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
-    public class AutoCreateOnResourceAttribute : Attribute
+    public class AutoCreateInResourceAttribute : Attribute
     {
 #if UNITY_EDITOR
         internal readonly string fileName;
         internal bool useTypeName => string.IsNullOrEmpty(fileName);
-        public AutoCreateOnResourceAttribute() { fileName = null; }
-        public AutoCreateOnResourceAttribute(string fileName) { this.fileName = fileName; }
+        public AutoCreateInResourceAttribute() { fileName = null; }
+        public AutoCreateInResourceAttribute(string fileName) { this.fileName = fileName; }
         public string getFileName(Type type)
         {
             if (string.IsNullOrEmpty(fileName))
             {
-                return "AutoCreated/[AutoCreated] " + type.Name;
+                return $"AutoCreated/[AutoCreated] {type.Name}";
             }
-            return "AutoCreated/[AutoCreated] " + fileName;
+            return $"AutoCreated/{fileName}";
         }
 #endif
     }
 
-    public class AutoCreateOnResourceUtils
+    internal class AutoCreateInResourceUtils
     {
         public static bool checkValid(Type type)
         {

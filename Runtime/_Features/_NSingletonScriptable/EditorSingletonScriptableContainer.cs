@@ -7,7 +7,7 @@ namespace Nextension.NEditor
 {
     internal class EditorSingletonScriptableContainer : ScriptableObject
     {
-        internal const string FileNameOnResource = "AutoCreated/Editor/[AutoCreated][EditorSingletonScriptableContainer]";
+        internal const string FileNameInResource = "AutoCreated/Editor/[AutoCreated][EditorSingletonScriptableContainer]";
         [SerializeField] private List<ScriptableObject> _editorSingletonScriptables;
 
         private void OnEnable()

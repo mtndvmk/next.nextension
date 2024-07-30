@@ -13,7 +13,7 @@ namespace Nextension.NEditor
         private static EditorSingletonScriptableContainer _editorContainer;
         private static void loadEditorContainer()
         {
-            _editorContainer = NAssetUtils.getMainObjectOnResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
+            _editorContainer = NAssetUtils.getMainObjectInMainResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameInResource);
         }
         internal static EditorSingletonScriptableContainer getEditorContainer()
         {
@@ -32,7 +32,7 @@ namespace Nextension.NEditor
             }
             if (!_editorContainer)
             {
-                _editorContainer = NAssetUtils.createOnResource<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameOnResource);
+                _editorContainer = NAssetUtils.createInMainResources<EditorSingletonScriptableContainer>(EditorSingletonScriptableContainer.FileNameInResource);
             }
             return _editorContainer;
         }
@@ -156,7 +156,7 @@ namespace Nextension.NEditor
                     var container = getOrCreateEditorContainer();
                     if (!container)
                     {
-                        Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameOnResource} on Resource directory");
+                        Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameInResource} on Resource directory");
                         return;
                     }
                     await new NWaitFrame_Editor(1);
@@ -178,7 +178,7 @@ namespace Nextension.NEditor
                     var container = getOrCreateEditorContainer();
                     if (!container)
                     {
-                        Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameOnResource} on Resource directory");
+                        Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameInResource} on Resource directory");
                         return;
                     }
                     await new NWaitFrame_Editor(1);
@@ -192,7 +192,7 @@ namespace Nextension.NEditor
                 {
                     return;
                 }
-                var editorName = EditorSingletonScriptableContainer.FileNameOnResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
+                var editorName = EditorSingletonScriptableContainer.FileNameInResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
                 if (path.EndsWith(editorName))
                 {
                     scanAndReload();
@@ -208,7 +208,7 @@ namespace Nextension.NEditor
                     return;
                 }
 
-                var runtimeName = SingletonScriptableContainer.FileNameOnResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
+                var runtimeName = SingletonScriptableContainer.FileNameInResource + NAssetUtils.SCRIPTABLE_OBJECT_EXTENSION;
                 if (path.EndsWith(runtimeName) && !NAssetUtils.hasAssetAt(path))
                 {
                     WarningTracker.trackError($"Did you delete `{runtimeName}`?, please don't do that!");

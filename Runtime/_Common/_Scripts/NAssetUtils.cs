@@ -67,7 +67,7 @@ namespace Nextension
         }
         public static bool IsCompiling => AssetDatabase.IsAssetImportWorkerProcess() || EditorApplication.isUpdating || EditorApplication.isCompiling;
 
-        public static string createMainResourcesPath(string fileName)
+        public static string generateMainResourcesPath(string fileName)
         {
             var index = fileName.IndexOf(MAIN_RESOURCE_PATH);
             if (index < 0)
@@ -98,7 +98,7 @@ namespace Nextension
         {
             return !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(@object));
         }
-        public static bool getPathInResource(Object @object, out string path)
+        public static bool getPathInMainResources(Object @object, out string path)
         {
             var assetPath = AssetDatabase.GetAssetPath(@object);
             var index = assetPath.IndexOf(MAIN_RESOURCE_PATH);
@@ -108,6 +108,18 @@ namespace Nextension
                 return false;
             }
             path = assetPath.Remove(0, index + MAIN_RESOURCE_PATH.Length);
+            return true;
+        }
+        public static bool getPathInResources(Object @object, out string path)
+        {
+            var assetPath = AssetDatabase.GetAssetPath(@object);
+            var index = assetPath.LastIndexOf("/Resources/");
+            if (index < 0)
+            {
+                path = null;
+                return false;
+            }
+            path = assetPath.Remove(0, index + 11);
             return true;
         }
         public static bool hasAssetAt(string path)
@@ -165,11 +177,11 @@ namespace Nextension
         {
             return AssetDatabase.LoadAssetAtPath<T>(path);
         }
-        public static T createOnResource<T>(string fileName = null) where T : ScriptableObject
+        public static T createInMainResources<T>(string fileName = null) where T : ScriptableObject
         {
-            return (T)createOnResource(typeof(T), fileName);
+            return (T)createInMainResources(typeof(T), fileName);
         }
-        public static ScriptableObject createOnResource(System.Type type, string fileName)
+        public static ScriptableObject createInMainResources(System.Type type, string fileName)
         {
             if (!type.IsSubclassOf(typeof(ScriptableObject)))
             {
@@ -195,7 +207,7 @@ namespace Nextension
             ScriptableObject scriptable;
             if (File.Exists(filePath))
             {
-                scriptable = getMainObjectOnResources<ScriptableObject>(fileName);
+                scriptable = getMainObjectInMainResources<ScriptableObject>(fileName);
                 if (scriptable == null)
                 {
                     throw new System.Exception($"`{fileName}` exists but can't be loaded");
@@ -241,11 +253,11 @@ namespace Nextension
             EditorUtility.SetDirty(@object);
 #endif
         }
-        public static bool hasObjectOnResources(string fileName)
+        public static bool hasObjectInMainResources(string fileName)
         {
-            return getMainObjectOnResources<Object>(fileName);
+            return getMainObjectInMainResources<Object>(fileName);
         }
-        public static T getMainObjectOnResources<T>(string fileName) where T : Object
+        public static T getMainObjectInMainResources<T>(string fileName) where T : Object
         {
 #if UNITY_EDITOR
             var dir = MAIN_RESOURCE_PATH;
