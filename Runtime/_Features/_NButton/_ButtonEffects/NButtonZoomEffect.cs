@@ -1,10 +1,10 @@
 using Nextension.Tween;
 using UnityEngine;
 
-namespace Nextension.UI
+namespace Nextension
 {
     [DisallowMultipleComponent]
-    public class NButtonZoomEffect : MonoBehaviour, INButtonListener
+    public class NButtonZoomEffect : AbsNButtonEffect
     {
         [SerializeField] private Transform _target;
         [SerializeField] private float _zoomRatio = 1.1f;
@@ -16,7 +16,7 @@ namespace Nextension.UI
         public float ZoomRatio { get => _zoomRatio; set => _zoomRatio = value; }
         public float ZoomTime { get => _zoomTime; set => _zoomTime = value; }
 
-        void INButtonListener.onButtonDown()
+        public override void onButtonDown()
         {
             if (!enabled) return;
             if (_effectTweener == null || _effectTweener.isFinalized)
@@ -30,7 +30,7 @@ namespace Nextension.UI
             _effectTweener = NTween.scaleTo(_target, _originScale * _zoomRatio, _zoomTime);
         }
 
-        void INButtonListener.onButtonUp()
+        public override void onButtonUp()
         {
             if (!enabled) return;
             if (_effectTweener != null && !_effectTweener.isFinalized)
@@ -52,15 +52,6 @@ namespace Nextension.UI
                 _effectTweener.cancel();
                 _effectTweener = null;
                 _target.localScale = _originScale;
-            }
-        }
-
-        private void OnDestroy()
-        {
-            var button = GetComponent<NButton>();
-            if (button)
-            {
-                button.removeNButtonListener(this);
             }
         }
     }

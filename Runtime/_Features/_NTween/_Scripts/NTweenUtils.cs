@@ -106,6 +106,10 @@ namespace Nextension.Tween
                 case TransformTweenType.Local_Scale:
                     transform.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(result);
                     break;
+                case TransformTweenType.Uniform_Local_Scale:
+                    var x = NConverter.bitConvertWithoutChecks<TValue, float>(result);
+                    transform.localScale = new(x, x, x);
+                    break;
                 case TransformTweenType.Local_Rotation:
                     transform.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(result);
                     break;

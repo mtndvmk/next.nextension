@@ -15,6 +15,7 @@
         Local_Rotation,
         World_Rotation,
         Local_Scale,
+        Uniform_Local_Scale,
     }
     //public enum TweenPriority : byte
     //{

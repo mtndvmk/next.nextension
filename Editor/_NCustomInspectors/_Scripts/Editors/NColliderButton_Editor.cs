@@ -16,7 +16,6 @@ namespace Nextension.NEditor
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_betweenClickIntervalTime"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_delayInvokeTime"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_interactable"));
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("_includeListenersInChildren"));
             EditorGUILayout.PropertyField(serializedObject.FindProperty("_interactableWhenPointerOverUI"));
 
             _isShowEvent = EditorGUILayout.Foldout(_isShowEvent, " Events", true);

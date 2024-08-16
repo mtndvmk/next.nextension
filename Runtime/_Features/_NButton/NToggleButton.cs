@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace Nextension.UI
+namespace Nextension
 {
-    [DisallowMultipleComponent, RequireComponent(typeof(NButton))]
-    public class NToggleButton : MonoBehaviour, INButtonListener
+    [DisallowMultipleComponent]
+    public class NToggleButton : AbsNButtonEffect
     {
         [SerializeField] private bool _value;
 
@@ -21,18 +21,6 @@ namespace Nextension.UI
             inner_onValueChanged();
         }
 
-        private NButton _button;
-        public NButton Button
-        {
-            get
-            {
-                if (_button.isNull())
-                {
-                    _button = GetComponent<NButton>();
-                }
-                return _button;
-            }
-        }
         public bool Value
         {
             get => _value;
@@ -64,7 +52,7 @@ namespace Nextension.UI
             }
         }
 
-        void INButtonListener.onButtonClick()
+        public override void onButtonClick()
         {
             Value = !_value;
         }

@@ -1,4 +1,4 @@
-namespace Nextension.UI
+namespace Nextension
 {
     public interface INButtonListener
     {

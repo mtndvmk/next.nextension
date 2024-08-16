@@ -6,26 +6,21 @@ namespace Nextension
 {
     internal static class InstancesPoolUtil
     {
-        private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new($"InstancesPool of {type} is not supported");
-        public static GameObject getGameObject<T>(T prefab) where T : Object
+        public static GameObject getGameObject<T>(T instance) where T : Object
         {
-            if (prefab == null) throw new ArgumentNullException(nameof(prefab));
-            if (prefab is GameObject go)
+            if (instance == null) throw new ArgumentNullException(nameof(instance));
+            if (InstancesPool<T>.IS_GENERIC_OF_GAMEOBJECT)
             {
-                return go;
-            }
-            else if (prefab is Component com)
-            {
-                return com.gameObject;
+                return instance as GameObject;
             }
             else
             {
-                throw NOT_SUPPORT_EXCEPTION(typeof(T));
+                return (instance as Component).gameObject;
             }
         }
-        public static int computePoolId<T>(T target) where T : Object
+        public static int computePoolId<T>(T prefab) where T : Object
         {
-            return getGameObject(target).GetInstanceID();
+            return getGameObject(prefab).GetInstanceID();
         }
         public static T getInstanceFromGO<T>(GameObject go) where T : Object
         {
@@ -35,7 +30,7 @@ namespace Nextension
             }
             else
             {
-                return go.TryGetComponent(out T com) ? com : throw NOT_SUPPORT_EXCEPTION(typeof(T));
+                return go.GetComponent<T>();
             }
         }
     }

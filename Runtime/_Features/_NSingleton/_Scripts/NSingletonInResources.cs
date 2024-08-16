@@ -77,6 +77,7 @@ namespace Nextension
         {
             if (prefab == null) throw new Exception($"Can't find prefab of [{typeof(T)}], resources path: {getPath()}");
             s_instance = Instantiate(prefab);
+            s_instance.name = $"[SingletonInResources] {prefab.name}";
             var singleton = s_instance as NSingletonInResources<T>;
             if (singleton._isDontDestroyOnLoad)
             {

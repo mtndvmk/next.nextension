@@ -5,8 +5,8 @@ namespace Nextension.Tween
 {
     internal class CancelControlManager
     {
-        private readonly Dictionary<long, HashSet<NTweener>> _controlledTweeners = new();
-        private readonly Dictionary<long, Object> _objectKeys = new();
+        private readonly SimpleDictionary<long, HashSet<NTweener>> _controlledTweeners = new();
+        private readonly SimpleDictionary<long, Object> _objectKeys = new();
         public CancelControlKey createKey(uint key)
         {
             if (key == 0) throw new System.Exception("key cannot equals 0");
@@ -17,10 +17,7 @@ namespace Nextension.Tween
             if (key == null) throw new System.Exception("key cannot be null");
             var longKey = CancelControlKey.getLongKey(key);
             var objectKey = new CancelControlKey(longKey);
-            if (!_objectKeys.ContainsKey(longKey))
-            {
-                _objectKeys.Add(longKey, key);
-            }
+            _objectKeys.tryAdd(longKey, key);
             return objectKey;
         }
         public bool isInvalid(CancelControlKey key)
@@ -39,10 +36,7 @@ namespace Nextension.Tween
             }
             else
             {
-                if (!hashset.Contains(tweener))
-                {
-                    hashset.Add(tweener);
-                }
+                hashset.Add(tweener);
             }
         }
         public void removeTweener(NTweener tweener)
@@ -58,14 +52,17 @@ namespace Nextension.Tween
         }
         public void cancel(long longKey)
         {
-            if (_controlledTweeners.TryGetValue(longKey, out var hashset))
+            if (_controlledTweeners.tryTakeAndRemove(longKey, out var hashset))
             {
                 using var array = hashset.toNPArray();
                 foreach (var item in array.asSpan())
                 {
                     item.cancel();
                 }
-                _controlledTweeners.Remove(longKey);
+            }
+            if (CancelControlKey.isObjectKey(longKey))
+            {
+                _objectKeys.Remove(longKey);
             }
         }
         public void cancelInvalid()
@@ -80,7 +77,6 @@ namespace Nextension.Tween
                 foreach (var k in keys)
                 {
                     cancel(k);
-                    _objectKeys.Remove(k);
                 }
             }
         }

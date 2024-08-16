@@ -1,10 +1,10 @@
 using Nextension.Tween;
 using UnityEngine;
 
-namespace Nextension.UI
+namespace Nextension
 {
     [DisallowMultipleComponent]
-    public class NButtonUIColorTint : MonoBehaviour, INButtonListener
+    public class NButtonUIColorTint : AbsNButtonEffect
     {
         [SerializeField] private CanvasRenderer _target;
         [SerializeField] private Color _normalColor = Color.white;
@@ -14,31 +14,22 @@ namespace Nextension.UI
         [SerializeField] private float _duration = 0.1f;
 
         private NTweener _colorTweener;
-        private NButton _nButton;
 
         private void Reset()
         {
             _target = GetComponent<CanvasRenderer>();
-            _nButton = GetComponentInParent<NButton>();
             OnEnable();
         }
         private void OnValidate()
         {
             OnEnable();
         }
-        private void Awake()
-        {
-            if (_nButton.isNull())
-            {
-                _nButton = GetComponentInParent<NButton>();
-            }
-        }
 
         private void OnEnable()
         {
-            if (_nButton && _target)
+            if (Button != null && _target)
             {
-                if (_nButton.isInteractable())
+                if (_button.isInteractable())
                 {
                     _target.SetColor(_normalColor);
                 }
@@ -55,39 +46,32 @@ namespace Nextension.UI
                 _target.SetColor(_normalColor);
             }
         }
-        private void OnDestroy()
-        {
-            if (_nButton)
-            {
-                _nButton.removeNButtonListener(this);
-            }
-        }
 
-        void INButtonListener.onButtonUp()
+        public override void onButtonUp()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeColor(_enterColor);
         }
-        void INButtonListener.onButtonEnter()
+        public override void onButtonEnter()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeColor(_enterColor);
         }
-        void INButtonListener.onButtonExit()
+        public override void onButtonExit()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeColor(_normalColor);
         }
-        void INButtonListener.onButtonDown()
+        public override void onButtonDown()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeColor(_downColor);
         }
-        void INButtonListener.onInteractableChanged(bool isInteractable)
+        public override void onInteractableChanged(bool isInteractable)
         {
             if (!enabled) return;
             if (_target == null) return;
@@ -121,10 +105,7 @@ namespace Nextension.UI
             }
             else
             {
-                _colorTweener = NTween.fromTo(_target.GetColor(), color, (resultColor) =>
-                {
-                    _target.SetColor(resultColor);
-                }, _duration);
+                _colorTweener = NTween.fromTo(_target.GetColor(), color, _duration, resultColor => _target.SetColor(resultColor));
                 _colorTweener.setCancelControlKey(_target);
             }
         }

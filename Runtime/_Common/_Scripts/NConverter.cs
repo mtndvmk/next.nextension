@@ -15,7 +15,6 @@ namespace Nextension
             writeBytesWithoutChecks(array, t1);
             return array;
         }
-
         public static unsafe void writeBytes<T>(byte[] inData, T t1, int startIndex) where T : unmanaged
         {
             InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());

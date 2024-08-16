@@ -28,14 +28,14 @@ namespace Nextension
             {
                 this.groupId = groupId;
                 this.name = func.ToString();
-                if (!_runningCoroutines.TryGetValue(groupId, out var hashset))
+                if (!_runningCoroutines.TryGetValue(groupId, out var hashSet))
                 {
-                    hashset = new(1) { this };
-                    _runningCoroutines.Add(groupId, hashset);
+                    hashSet = new(1) { this };
+                    _runningCoroutines.Add(groupId, hashSet);
                 }
                 else
                 {
-                    hashset.Add(this);
+                    hashSet.Add(this);
                 }
 
                 IEnumerator innerRoutine()
@@ -43,7 +43,7 @@ namespace Nextension
                     Status = RunState.Running;
                     yield return func;
                     Status = RunState.Completed;
-                    hashset.Remove(this);
+                    hashSet.Remove(this);
                 }
                 this.coroutine = _runner.StartCoroutine(innerRoutine());
             }
@@ -127,9 +127,9 @@ namespace Nextension
             switch (stopType)
             {
                 case StopType.SameGroup:
-                    if (_runningCoroutines.ContainsKey(groupId))
+                    if (_runningCoroutines.TryGetValue(groupId, out var hashSet))
                     {
-                        var arr = _runningCoroutines[groupId].ToArray();
+                        var arr = hashSet.ToArray();
                         foreach (var d in arr)
                         {
                             if (d.name == funcName)

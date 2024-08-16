@@ -33,7 +33,10 @@ namespace Nextension.Tween
                     case TransformTweenType.Local_Scale:
                         _target.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
                         break;
-
+                    case TransformTweenType.Uniform_Local_Scale:
+                        var x = NConverter.bitConvertWithoutChecks<TValue, float>(destination);
+                        _target.localScale = new(x, x, x);
+                        break;
                     case TransformTweenType.Local_Rotation:
                         _target.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(destination);
                         break;
@@ -60,6 +63,7 @@ namespace Nextension.Tween
                     TransformTweenType.Local_Position => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
                     TransformTweenType.World_Position => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
                     TransformTweenType.Local_Scale => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
+                    TransformTweenType.Uniform_Local_Scale => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<float, TValue>(_target.localScale.x),
                     TransformTweenType.Local_Rotation => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
                     TransformTweenType.World_Rotation => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
                     _ => throw new NotImplementedException(_transformTweenType.ToString()),

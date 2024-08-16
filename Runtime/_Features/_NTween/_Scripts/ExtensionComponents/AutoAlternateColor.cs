@@ -111,11 +111,11 @@ namespace Nextension.Tween
         }
         protected override NRunnableTweener onFromTo()
         {
-            return NTween.fromTo(getCurrentValue().toFloat4(), _toValue.toFloat4(), setValue, _timePerHalfCycle);
+            return NTween.fromTo(getCurrentValue().toFloat4(), _toValue.toFloat4(), _timePerHalfCycle, setValue);
         }
         protected override NRunnableTweener onToFrom()
         {
-            return NTween.fromTo(getCurrentValue().toFloat4(), _fromValue.toFloat4(), setValue, _timePerHalfCycle);
+            return NTween.fromTo(getCurrentValue().toFloat4(), _fromValue.toFloat4(), _timePerHalfCycle, setValue);
         }
     }
 }

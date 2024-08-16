@@ -128,20 +128,14 @@ namespace Nextension.UI
 
                     if (_effectOption == EffectOption.MoveDown)
                     {
-                        NTween.fromTo<float2>(_scaler.anchoredPosition, _anchoredPosition, (v) =>
-                        {
-                            _scaler.anchoredPosition = v;
-                        }, _effectDuration);
+                        NTween.fromTo<float2>(_scaler.anchoredPosition, _anchoredPosition, _effectDuration, v => _scaler.anchoredPosition = v);
                     }
                     else
                     {
                         _scaler.anchoredPosition = _anchoredPosition;
                     }
 
-                    NTween.fromTo(_canvasGroup.alpha, 1, (v) =>
-                    {
-                        _canvasGroup.alpha = v;
-                    }, _effectDuration).setCancelControlKey(gameObject);
+                    NTween.fromTo(_canvasGroup.alpha, 1, _effectDuration, v => _canvasGroup.alpha = v).setCancelControlKey(gameObject);
                 }
                 _canvasGroup.blocksRaycasts = true;
             }
@@ -180,16 +174,10 @@ namespace Nextension.UI
                 if (_effectOption == EffectOption.MoveDown)
                 {
                     var targetAnchorPos = _anchoredPosition.plusY(_scaler.rect.size.x / -10);
-                    NTween.fromTo<float2>(_scaler.anchoredPosition, targetAnchorPos, (v) =>
-                    {
-                        _scaler.anchoredPosition = v;
-                    }, _effectDuration);
+                    NTween.fromTo<float2>(_scaler.anchoredPosition, targetAnchorPos, _effectDuration, v => _scaler.anchoredPosition = v);
                 }
 
-                NTween.fromTo(_canvasGroup.alpha, 0, (v) =>
-                {
-                    _canvasGroup.alpha = v;
-                }, _effectDuration).onCompleted(() =>
+                NTween.fromTo(_canvasGroup.alpha, 0, _effectDuration, v => _canvasGroup.alpha = v).onCompleted(() =>
                 {
                     gameObject.setActive(false);
                 }).setCancelControlKey(gameObject);

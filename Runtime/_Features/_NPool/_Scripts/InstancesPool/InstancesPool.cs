@@ -18,7 +18,7 @@ namespace Nextension
             }
             else
             {
-                if (origin.IsUniquePool)
+                if (origin.IsSharedPool)
                 {
                     var pool = SharedInstancesPool.getPool(origin.Id);
                     if (pool != null)
@@ -46,7 +46,7 @@ namespace Nextension
             }
             else
             {
-                if (origin.IsUniquePool)
+                if (origin.IsSharedPool)
                 {
                     var pool = SharedInstancesPool.getPool(origin.Id);
                     if (pool != null)
@@ -68,16 +68,70 @@ namespace Nextension
         {
             release(component.gameObject);
         }
+        public static SharedPoolWrapper<T> getSharedPool<T>(this T prefab) where T : Object
+        {
+            var go = InstancesPoolUtil.getGameObject(prefab);
+            if (go.TryGetComponent<OriginInstance>(out var originInstance))
+            {
+                return new SharedPoolWrapper<T>(originInstance.Id);
+            }
+            else
+            {
+                var poolId = InstancesPoolUtil.computePoolId(prefab);
+                SharedInstancesPool.getOrCreatePool(poolId, go, 0);
+                return new SharedPoolWrapper<T>(poolId);
+            }
+        }
+        public static SharedPoolWrapper<T> getSharedPoolWithoutChecks<T>(this T prefab) where T : Object
+        {
+            var go = InstancesPoolUtil.getGameObject(prefab);
+            var poolId = InstancesPoolUtil.computePoolId(prefab);
+            SharedInstancesPool.getOrCreatePool(poolId, go, 0);
+            return new SharedPoolWrapper<T>(poolId);
+        }
+    }
+
+    public interface IInstancePool<T> where T : Object
+    {
+        T get(Transform parent = null, bool worldPositionStays = true);
+        T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
+        {
+            T item = get(parent, worldPositionStays);
+            releaseWaitable.startWaitable().addCompletedEvent(() =>
+            {
+                release(item);
+            });
+            return item;
+        }
+        T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
+        {
+            T item = get(parent, worldPositionStays);
+            new NWaitSecond(delaySeconds).startWaitable().addCompletedEvent(() =>
+            {
+                release(item);
+            });
+            return item;
+        }
+        IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                yield return get(parent, worldPositionStays);
+            }
+        }
+        void release(T instance);
+        void clearPool();
+        bool poolContains(T instance);
     }
 
     [Serializable]
-    public class InstancesPool<T> : ISerializationCallbackReceiver
+    public class InstancesPool<T> : ISerializationCallbackReceiver, IInstancePool<T>
         where T : Object
     {
         [SerializeField] private T _prefab;
-        [SerializeField] private bool _isUniquePool;
+        [SerializeField] private bool _isSharedPool;
         [SerializeField] private int _startupInstanceCount = 0;
-        [SerializeField] private bool _useOriginPrefab; 
+        [SerializeField] private bool _useOriginPrefab;
 
         private int _currentStartupInstanceCount;
         private uint _clonedCount;
@@ -128,7 +182,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void updateStartupInstances()
         {
-            if (_isUniquePool)
+            if (_isSharedPool)
             {
                 updateStartupInstances(null);
             }
@@ -151,7 +205,9 @@ namespace Nextension
                 createStartupInstances();
             }
         }
-        private InstancesPool<GameObject> SharedPool => _isUniquePool ? throw new Exception("SharedPool is not valid for UniquePool") : _sharedPool ??= SharedInstancesPool.getOrCreatePool(getGameObject(_prefab), _startupInstanceCount);
+        private InstancesPool<GameObject> SharedPool => _isSharedPool ? 
+            throw new Exception($"Not support when {nameof(_isSharedPool)} is true") : 
+            _sharedPool ??= SharedInstancesPool.getOrCreatePool(getGameObject(_prefab), _startupInstanceCount);
         private T createNewInstance()
         {
             if (_origin == null)
@@ -164,7 +220,7 @@ namespace Nextension
                 else
                 {
                     _origin = go.AddComponent<OriginInstance>();
-                    _origin.setPoolId(Id, _isUniquePool);
+                    _origin.setPoolId(Id);
                 }
                 if (MaxPoolInstanceCount == 0)
                 {
@@ -182,23 +238,23 @@ namespace Nextension
                 _instancePool.Add(createNewInstance());
             }
         }
-        private static GameObject getGameObject(T prefab)
+        private static GameObject getGameObject(T instance)
         {
-            return InstancesPoolUtil.getGameObject(prefab);
+            return InstancesPoolUtil.getGameObject(instance);
         }
-        public InstancesPool(T prefab, int startupInstanceCount = 0, bool isUniquePool = false)
+        public InstancesPool(T prefab, int startupInstanceCount = 0, bool isSharedPool = false)
         {
             InternalCheck.checkEditorMode();
             _prefab = prefab;
             _startupInstanceCount = startupInstanceCount;
-            _isUniquePool = isUniquePool;
+            _isSharedPool = isSharedPool;
 
             updateStartupInstances();
         }
         public T get(Transform parent = null, bool worldPositionStays = true)
         {
             requireCall();
-            if (_isUniquePool)
+            if (_isSharedPool)
             {
                 T ins;
                 if (_instancePool.Count > 0)
@@ -222,30 +278,9 @@ namespace Nextension
             }
             return InstancesPoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
         }
-        public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
-        {
-            T item = get(parent, worldPositionStays);
-            releaseWaitable.startWaitable().addCompletedEvent(() =>
-            {
-                release(item);
-            });
-            return item;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
-        {
-            return getAndRelease(new NWaitSecond(delaySeconds), parent, worldPositionStays);
-        }
-        public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
-        {
-            for (int i = 0; i < count; ++i)
-            {
-                yield return get(parent, worldPositionStays);
-            }
-        }
         internal void release(T instance, GameObject go, OriginInstance origin)
         {
-            if (_isUniquePool)
+            if (_isSharedPool)
             {
                 if (origin.IsInPool)
                 {
@@ -287,7 +322,7 @@ namespace Nextension
         public void release(T instance)
         {
             InternalCheck.checkEditorMode();
-            if (_isUniquePool)
+            if (_isSharedPool)
             {
                 if (_origin == null)
                 {
@@ -309,10 +344,14 @@ namespace Nextension
                 SharedPool.release(getGameObject(instance));
             }
         }
-        public void clearPool(bool isClearSharedPool = true)
+        public void clearPool()
+        {
+            clearPool(true);
+        }
+        public void clearPool(bool isClearSharedPool)
         {
             InternalCheck.checkEditorMode();
-            if (_isUniquePool)
+            if (_isSharedPool)
             {
                 if (_instancePool != null && _instancePool.Count > 0)
                 {
@@ -344,7 +383,14 @@ namespace Nextension
         }
         public bool poolContains(T instance)
         {
-            return _instancePool.Contains(instance);
+            if (_isSharedPool)
+            {
+                return _instancePool.Contains(instance);
+            }
+            else
+            {
+                return SharedPool.poolContains(getGameObject(instance));
+            }
         }
 
         public void OnBeforeSerialize()
@@ -370,6 +416,31 @@ namespace Nextension
                 }
             });
 #endif
+        }
+    }
+
+    public struct SharedPoolWrapper<T> : IInstancePool<T> where T : Object
+    {
+        public readonly int poolId;
+        public SharedPoolWrapper(int poolId)
+        {
+            this.poolId = poolId;
+        }
+        public T get(Transform parent = null, bool worldPositionStays = true)
+        {
+            return InstancesPoolUtil.getInstanceFromGO<T>(SharedInstancesPool.getPool(poolId).get(parent, worldPositionStays));
+        }
+        public void release(T instance)
+        {
+            SharedInstancesPool.getPool(poolId).release(InstancesPoolUtil.getGameObject(instance));
+        }
+        public void clearPool()
+        {
+            SharedInstancesPool.clearSharedPool(poolId);
+        }
+        public bool poolContains(T instance)
+        {
+            return SharedInstancesPool.getPool(poolId).poolContains(InstancesPoolUtil.getGameObject(instance));
         }
     }
 }

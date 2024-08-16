@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Unity.Jobs;
 
 namespace Nextension.Tween
@@ -25,17 +23,8 @@ namespace Nextension.Tween
 
     internal sealed class TweenRunner<TChunk> : AbsTweenRunner where TChunk : TweenChunk
     {
-        private readonly Dictionary<ushort, TweenChunk> _chunks = new(1);
+        private readonly SimpleDictionary<ushort, TweenChunk> _chunks = new(1);
         private readonly NArray<TweenChunk> _notFullChunks = new();
-        private readonly Action<TweenChunk> onChunkBecomeNotFullFunc;
-
-        public TweenRunner()
-        {
-            onChunkBecomeNotFullFunc = (chunk) =>
-            {
-                _notFullChunks.Add(chunk);
-            };
-        }
 
         public int ChunkCount => _chunks.Count;
 
@@ -46,7 +35,7 @@ namespace Nextension.Tween
             if (lastIndex < 0)
             {
                 nextChunk = NUtils.createInstance<TChunk>();
-                nextChunk.onChunkBecomeNotFull = onChunkBecomeNotFullFunc;
+                nextChunk.onChunkBecomeNotFull = _notFullChunks.Add;
                 _chunks.Add(nextChunk.chunkId, nextChunk);
                 _notFullChunks.Add(nextChunk);
                 lastIndex = 0;
@@ -85,8 +74,7 @@ namespace Nextension.Tween
                 foreach (var chunkId in unusedchunkIds)
                 {
                     if (chunksCount <= MIN_COUNT_OF_CHUNK) break;
-                    _chunks[chunkId].dispose();
-                    _chunks.Remove(chunkId);
+                    _chunks.takeAndRemove(chunkId).dispose();
                     chunksCount--;
                 }
 
@@ -106,9 +94,9 @@ namespace Nextension.Tween
         }
         public sealed override void dispose()
         {
-            foreach (var chunk in _chunks.Values)
+            foreach (var chunk in _chunks)
             {
-                chunk.dispose();
+                chunk.Value.dispose();
             }
             _chunks.Clear();
             _notFullChunks.Clear();

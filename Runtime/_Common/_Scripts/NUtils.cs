@@ -1512,10 +1512,21 @@ namespace Nextension
             provider.TryComputeHash(s.AsSpan().asByteSpan(), new Span<byte>(dst, 16), out _);
             return toHex(dst, 16);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool isNullOrEmpty(this string s)
+        public static unsafe decimal computeMD5AsDecimal(this string s)
         {
-            return string.IsNullOrEmpty(s);
+            using var provider = System.Security.Cryptography.MD5.Create();
+            Span<byte> dst = stackalloc byte[16];
+            provider.TryComputeHash(s.AsSpan().asByteSpan(), dst, out _);
+            return NConverter.fromBytesWithoutChecks<decimal>(dst);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool isNullOrEmpty(this string value)
+        {
+            if (value != null)
+            {
+                return value.Length == 0;
+            }
+            return true;
         }
         #endregion
 

@@ -20,5 +20,10 @@ namespace Nextension.Tween
         internal static long getLongKey(uint uintKey) => (long)uintKey << 32;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static long getLongKey(Object objKey) => objKey.GetHashCode();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool isObjectKey(long longKey)
+        {
+            return (longKey & 0xffffffff) != 0;
+        }
     }
 }

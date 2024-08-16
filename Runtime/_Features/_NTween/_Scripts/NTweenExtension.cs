@@ -84,7 +84,7 @@ namespace Nextension.Tween
         {
             var moveTweener = NTween.moveTo(target, destination, duration, isLocalSpace);
             var currentHeight = 0f;
-            var heightTweener = NTween.punchValue(0, jumpHeight, (f) => currentHeight = f, duration).setEase(EaseType.QuadOut);
+            var heightTweener = NTween.punchValue(0, jumpHeight, duration, f => currentHeight = f).setEase(EaseType.QuadOut);
 
             var combinedTweener = new CombinedNTweener(moveTweener, heightTweener);
             combinedTweener.onUpdated(() =>
@@ -97,58 +97,58 @@ namespace Nextension.Tween
 
         public static NRunnableTweener fadeTo(this CanvasGroup target, float endAlpha, float duration)
         {
-            var tweener = NTween.fromTo(target.alpha, endAlpha, a => target.alpha = a, duration);
+            var tweener = NTween.fromTo(target.alpha, endAlpha, duration, a => target.alpha = a);
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener fadeTo(this Graphic target, float endAlpha, float duration)
         {
-            var tweener = NTween.fromTo(target.color.a, endAlpha, a => target.color = target.color.setA(a), duration);
+            var tweener = NTween.fromTo(target.color.a, endAlpha, duration, a => target.color = target.color.setA(a));
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener fadeTo(this Material target, float endAlpha, float duration)
         {
-            var tweener = NTween.fromTo(target.color.a, endAlpha, a => target.color = target.color.setA(a), duration);
+            var tweener = NTween.fromTo(target.color.a, endAlpha, duration, a => target.color = target.color.setA(a));
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener fadeTo(this SpriteRenderer target, float endAlpha, float duration)
         {
-            var tweener = NTween.fromTo(target.color.a, endAlpha, a => target.color = target.color.setA(a), duration);
+            var tweener = NTween.fromTo(target.color.a, endAlpha, duration, a => target.color = target.color.setA(a));
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener fadeTo(this CanvasRenderer target, float endAlpha, float duration)
         {
             var fromColor = target.GetColor();
-            var tweener = NTween.fromTo(fromColor.a, endAlpha, a => target.SetColor(fromColor.setA(a)), duration);
+            var tweener = NTween.fromTo(fromColor.a, endAlpha, duration, a => target.SetColor(fromColor.setA(a)));
             tweener.setCancelControlKey(target);
             return tweener;
         }
         
         public static NRunnableTweener colorTo(this Graphic target, Color destination, float duration)
         {
-            var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), c => target.color = c.toColor(), duration);
+            var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), duration, c => target.color = c.toColor());
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener colorTo(this Material target, Color destination, float duration)
         {
-            var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), c => target.color = c.toColor(), duration);
+            var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), duration, c => target.color = c.toColor());
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener colorTo(this SpriteRenderer target, Color destination, float duration)
         {
-            var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), c => target.color = c.toColor(), duration);
+            var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), duration, c => target.color = c.toColor());
             tweener.setCancelControlKey(target);
             return tweener;
         }
         public static NRunnableTweener colorTo(this CanvasRenderer target, Color destination, float duration)
         {
             var fromColor = target.GetColor();
-            var tweener = NTween.fromTo(fromColor.toFloat4(), destination.toFloat4(), c => target.SetColor(c.toColor()), duration);
+            var tweener = NTween.fromTo(fromColor.toFloat4(), destination.toFloat4(), duration, c => target.SetColor(c.toColor()));
             tweener.setCancelControlKey(target);
             return tweener;
         }

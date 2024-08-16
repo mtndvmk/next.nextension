@@ -23,16 +23,14 @@ namespace Nextension
         }
         public static InstancesPool<GameObject> getOrCreatePool(GameObject prefab, int startupInstanceCount)
         {
-            var insId = prefab.GetInstanceID();
-            InstancesPool<GameObject> pool;
-            if (!_sharedPools.ContainsKey(insId))
+            return getOrCreatePool(prefab.GetInstanceID(), prefab, startupInstanceCount);
+        }
+        internal static InstancesPool<GameObject> getOrCreatePool(int poolId, GameObject prefab, int startupInstanceCount)
+        {
+            if (!_sharedPools.TryGetValue(poolId, out var pool))
             {
                 pool = new InstancesPool<GameObject>(prefab, startupInstanceCount, true);
-                _sharedPools.Add(insId, pool);
-            }
-            else
-            {
-                pool = _sharedPools[insId];
+                _sharedPools.Add(poolId, pool);
             }
             pool.updateStartupInstances(startupInstanceCount);
             return pool;
@@ -41,6 +39,10 @@ namespace Nextension
         {
             if (_sharedPools.TryGetValue(id, out var pool)) return pool;
             return null;
+        }
+        public static bool exists(int id)
+        {
+            return _sharedPools.ContainsKey(id);
         }
         public static void clearSharedPool(int id)
         {

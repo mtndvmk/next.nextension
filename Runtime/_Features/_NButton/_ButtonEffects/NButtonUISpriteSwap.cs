@@ -1,12 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Nextension.UI
+namespace Nextension
 {
     [DisallowMultipleComponent]
-    public class NButtonUISpriteSwap : MonoBehaviour, INButtonListener
+    public class NButtonUISpriteSwap : AbsNButtonEffect
     {
-        [SerializeField] NButton _nButton;
         [SerializeField] private Image _target;
         [SerializeField] private Sprite _normalSprite;
         [SerializeField] private Sprite _enterSprite;
@@ -16,15 +15,13 @@ namespace Nextension.UI
         private void Reset()
         {
             _target = GetComponent<Image>();
-            _nButton = GetComponent<NButton>();
             OnEnable();
         }
-
         private void OnEnable()
         {
-            if (_nButton && _target)
+            if (Button != null && _target)
             {
-                if (_nButton.isInteractable())
+                if (_button.isInteractable())
                 {
                     _target.overrideSprite = _normalSprite;
                 }
@@ -34,32 +31,31 @@ namespace Nextension.UI
                 }
             }
         }
-
-        void INButtonListener.onButtonUp()
+        public override void onButtonUp()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeSprite(_enterSprite);
         }
-        void INButtonListener.onButtonEnter()
+        public override void onButtonEnter()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeSprite(_enterSprite);
         }
-        void INButtonListener.onButtonExit()
+        public override void onButtonExit()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeSprite(_normalSprite);
         }
-        void INButtonListener.onButtonDown()
+        public override void onButtonDown()
         {
             if (!enabled) return;
             if (_target == null) return;
             changeSprite(_downSprite);
         }
-        void INButtonListener.onInteractableChanged(bool isInteractable)
+        public override void onInteractableChanged(bool isInteractable)
         {
             if (!enabled) return;
             if (_target == null) return;
@@ -76,13 +72,6 @@ namespace Nextension.UI
         private void changeSprite(Sprite sprite)
         {
             _target.overrideSprite = sprite;
-        }
-        private void OnDestroy()
-        {
-            if (_nButton)
-            {
-                _nButton.removeNButtonListener(this);
-            }
         }
     }
 }

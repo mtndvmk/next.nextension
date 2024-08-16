@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Unity.Jobs;
 using UnityEngine;
 
@@ -10,15 +9,15 @@ namespace Nextension.Tween
         private static NArray<NRunnableTweener> _queuedRunnableTweeners;
         private static NArray<CombinedNTweener> _queuedCombinedTweeners;
 
-        private static Dictionary<ushort, AbsTweenRunner> _runners;
+        private static SimpleDictionary<ushort, AbsTweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;
 
         static NTweenManager()
         {
             _queuedRunnableTweeners = new();
             _queuedCombinedTweeners = new();
-            _runners = new Dictionary<ushort, AbsTweenRunner>();
-            _cancelControlManager = new CancelControlManager();
+            _runners = new();
+            _cancelControlManager = new();
 
             NUpdater.onUpdateEvent.add(update);
         }
@@ -26,9 +25,9 @@ namespace Nextension.Tween
         [EditorQuittingMethod]
         private static void onApplicationQuit()
         {
-            foreach (var runner in _runners.Values)
+            foreach (var runner in _runners)
             {
-                runner.dispose();
+                runner.Value.dispose();
             }
             _runners.Clear();
             _cancelControlManager.clear();
@@ -46,10 +45,9 @@ namespace Nextension.Tween
             int combinedCount = _queuedCombinedTweeners.Count;
             if (combinedCount > 0)
             {
-                var inCombinedSpan = _queuedCombinedTweeners.asSpan();
                 for (int i = combinedCount - 1; i >= 0; i--)
                 {
-                    var tweener = inCombinedSpan[i];
+                    var tweener = _queuedCombinedTweeners.getAtWithoutChecks(i);
                     if (tweener.startTime <= currentTime)
                     {
                         tweener.invokeOnStart();
@@ -61,10 +59,9 @@ namespace Nextension.Tween
             int runnableCount = _queuedRunnableTweeners.Count;
             if (runnableCount > 0)
             {
-                var runnableSpan = _queuedRunnableTweeners.asSpan();
                 for (int i = 0; i < runnableCount; ++i)
                 {
-                    startRunnableTweener(runnableSpan[i]);
+                    startRunnableTweener(_queuedRunnableTweeners.getAtWithoutChecks(i));
                 }
                 _queuedRunnableTweeners.Clear();
             }
@@ -74,9 +71,9 @@ namespace Nextension.Tween
                 NNativeListFixedSize<JobHandle> jobHandles = new(TweenChunk.ChunkCount);
                 NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks = new(TweenChunk.ChunkCount);
 
-                foreach (var runner in _runners.Values)
+                foreach (var runner in _runners)
                 {
-                    runner.runTweenJob(ref jobHandles, ref runningChunks);
+                    runner.Value.runTweenJob(ref jobHandles, ref runningChunks);
                 }
 
                 int runningChunkCount = runningChunks.Count;
@@ -98,7 +95,7 @@ namespace Nextension.Tween
             {
                 runner = tweener.createRunner();
                 runner.runnerId = runnerId;
-                _runners[runnerId] = runner;
+                _runners.Add(runnerId, runner);
             }
             return runner;
         }

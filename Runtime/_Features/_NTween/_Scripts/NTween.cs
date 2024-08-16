@@ -61,6 +61,12 @@ namespace Nextension.Tween
             tweener.schedule();
             return tweener;
         }
+        public static NRunnableTweener scaleTo(Transform target, float destination, float duration)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createTransformFromToTweener(target, destination, duration, TransformTweenType.Uniform_Local_Scale);
+            tweener.schedule();
+            return tweener;
+        }
 
         public static NRunnableTweener punchPosition(Transform target, float3 punchDestination, float duration, bool isLocalSpace = true)
         {
@@ -103,6 +109,12 @@ namespace Nextension.Tween
             tweener.schedule();
             return tweener;
         }
+        public static NRunnableTweener punchScale(Transform target, float punchDestination, float duration)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createTransformPunchTweener(target, punchDestination, duration, TransformTweenType.Uniform_Local_Scale);
+            tweener.schedule();
+            return tweener;
+        }
 
         public static NRunnableTweener shakePosition(Transform target, float distance, float duration, bool isLocalSpace = true)
         {
@@ -140,16 +152,24 @@ namespace Nextension.Tween
             tweener.schedule();
             return tweener;
         }
-        public static NRunnableTweener shakeScale(Transform target, float distance, float duration)
+        public static NRunnableTweener shakeScale(Transform target, float distance, float duration, bool uniformScale = true)
         {
-            NRunnableTweener tweener = NTweenerCreator.createTransformShakeTweener<float3>(target, distance, duration, TransformTweenType.Local_Scale);
+            NRunnableTweener tweener;
+            if (uniformScale)
+            {
+                tweener = NTweenerCreator.createTransformShakeTweener<float>(target, distance, duration, TransformTweenType.Uniform_Local_Scale);
+            }
+            else
+            {
+                tweener = NTweenerCreator.createTransformShakeTweener<float3>(target, distance, duration, TransformTweenType.Local_Scale);
+            }
             tweener.schedule();
             return tweener;
         }
         #endregion
 
         #region ValueTween
-        public static NRunnableTweener fromTo<T>(T from, T destination, Action<T> onChanged, float duration) where T : unmanaged
+        public static NRunnableTweener fromTo<T>(T from, T destination, float duration, Action<T> onChanged) where T : unmanaged
         {
 #if UNITY_EDITOR
             if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
@@ -162,7 +182,7 @@ namespace Nextension.Tween
             return tweener;
         }
 
-        public static NRunnableTweener punchValue<T>(T from, T destination, Action<T> onChanged, float duration) where T : unmanaged
+        public static NRunnableTweener punchValue<T>(T from, T destination, float duration, Action<T> onChanged) where T : unmanaged
         {
 #if UNITY_EDITOR
             if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
@@ -175,7 +195,7 @@ namespace Nextension.Tween
             return tweener;
         }
 
-        public static NRunnableTweener shakeValue<T>(T from, float range, Action<T> onChanged, float duration) where T : unmanaged
+        public static NRunnableTweener shakeValue<T>(T from, float range, float duration, Action<T> onChanged) where T : unmanaged
         {
 #if UNITY_EDITOR
             if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
