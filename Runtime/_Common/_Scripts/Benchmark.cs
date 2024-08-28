@@ -5,7 +5,7 @@ using UnityEngine.Profiling;
 
 namespace Nextension
 {
-    public class Benchmark
+    public static class Benchmark
     {
         private static uint _count;
         public struct Result

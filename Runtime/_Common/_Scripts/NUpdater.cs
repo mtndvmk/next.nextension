@@ -125,7 +125,7 @@ namespace Nextension
         [StartupMethod]
         private static void initialize()
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             _stopwatch = Stopwatch.StartNew();
             findStaticEvents();
         }

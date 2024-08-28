@@ -5,6 +5,6 @@ namespace Nextension
     [SingletonScriptable]
     public class SingletonScriptableGettable<T> : ScriptableObject where T : ScriptableObject
     {
-        public static T Getter => ScriptableLoader.get<T>();
+        public static T Instance => ScriptableLoader.get<T>();
     }
 }

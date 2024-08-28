@@ -4,19 +4,6 @@ namespace Nextension
 {
     internal static class InternalCheck
     {
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        internal static void checkEditorMode(string note = null)
-        {
-            if (!NStartRunner.IsPlaying)
-            {
-                var err = "Not support editor mode";
-                if (!string.IsNullOrEmpty(note))
-                {
-                    err += ": " + note;
-                }
-                throw new Exception(err);
-            }
-        }
         internal static void checkValidArray(Array inData, int startIndex, int lengthRequired)
         {
             if (inData == null)
@@ -50,6 +37,29 @@ namespace Nextension
             {
                 NThrowHelper.throwArrayLengthToSmallException("inData", startIndex, inData.Length, lengthRequired);
             }
+        }
+        
+    }
+
+    public static class EditorCheck
+    {
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        internal static void checkEditorMode(string note = null)
+        {
+            if (!NStartRunner.IsPlaying)
+            {
+                var err = "Not support editor mode";
+                if (!string.IsNullOrEmpty(note))
+                {
+                    err += ": " + note;
+                }
+                throw new Exception(err);
+            }
+        }
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        internal static void requireNotNull<T>(T target)
+        {
+            if (target == null) throw new ArgumentNullException("target");
         }
     }
 

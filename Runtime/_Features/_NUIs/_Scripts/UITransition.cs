@@ -7,7 +7,7 @@ namespace Nextension.UI
 {
     public class UITransition : MonoBehaviour
     {
-        public enum EffectOption
+        public enum EffectOption : byte
         {
             None,
             Scale,
@@ -21,6 +21,7 @@ namespace Nextension.UI
         [SerializeField] private float _punchScaleValue = 0.04f;
         [SerializeField] private bool _addBlockingUIForScaler = true;
         [SerializeField] private bool _hideOnSetup = true;
+        [SerializeField] private bool _hideWhenClickOnOutSide = true;
         [SerializeField] private EffectOption _effectOption = EffectOption.MoveDown;
 
         private NButton _closeBgButton;
@@ -34,20 +35,17 @@ namespace Nextension.UI
         public event Action onShowEvent;
         public event Action onHideEvent;
 
-        private void OnValidate()
+        protected virtual void Reset()
         {
-            if (_target.isNull())
-            {
-                _target = GetComponentInChildren<RectTransform>(true);
-            }
+            _target = GetComponentInChildren<RectTransform>(true);
         }
 
-        private void Awake()
+        protected virtual void Awake()
         {
-            setup();
+            innerSetup();
         }
 
-        public void setup()
+        private void innerSetup()
         {
             if (_isSetup) return;
 
@@ -56,7 +54,7 @@ namespace Nextension.UI
 
             if (_addBlockingUIForScaler)
             {
-                _scaler.getOrAddComponent<NBlockingUI>();
+                _scaler.getOrAddComponent<NInteractiveBlockingUI>();
             }
 
             _anchoredPosition = _scaler.anchoredPosition;
@@ -64,6 +62,8 @@ namespace Nextension.UI
             {
                 hide();
             });
+
+            _closeBgButton.Interactable = _hideWhenClickOnOutSide;
 
             onBeforeSetup();
             _isSetup = true;
@@ -73,6 +73,7 @@ namespace Nextension.UI
                 innerHide(true, true);
             }
         }
+
         public void hide()
         {
             innerHide(false);
@@ -88,11 +89,12 @@ namespace Nextension.UI
 
         protected void setClosableFromBgButton(bool isClosable)
         {
+            _hideWhenClickOnOutSide = isClosable;
             _closeBgButton.Interactable = isClosable;
         }
-
         protected void innerShow(bool isImmediate = false)
         {
+            innerSetup();
             if (!_isOpen)
             {
                 onBeforeShow();
@@ -142,6 +144,7 @@ namespace Nextension.UI
         }
         protected void innerHide(bool isImmediate = false, bool isforce = false)
         {
+            innerSetup();
             if (!_isOpen && !isforce)
             {
                 return;

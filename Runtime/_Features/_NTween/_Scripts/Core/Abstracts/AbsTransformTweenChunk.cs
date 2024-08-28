@@ -32,7 +32,7 @@ namespace Nextension.Tween
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected sealed override JobHandle onScheduleJob()
         {
-            return _job.Schedule(_transformAccessArray);
+            return _job.ScheduleByRef(_transformAccessArray);
         }
         public override void dispose()
         {

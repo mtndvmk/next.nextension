@@ -14,7 +14,13 @@ namespace Nextension
 
         public byte[] toBytes()
         {
-            return new NInteger(data.Length).getBytes().mergeWith(data);
+            var nLength = new NInteger(data.Length);
+            var numBytesLength = nLength.estNumBytesLength();
+            byte[] result = new byte[numBytesLength + 1 + data.Length];
+            int startIndex = 0;
+            nLength.writeTo(result, numBytesLength, ref startIndex);
+            Buffer.BlockCopy(data, 0, result, startIndex, data.Length);
+            return result;
         }
     }
 
@@ -60,7 +66,7 @@ namespace Nextension
             for (int i = 0; i < nDataCount; ++i)
             {
                 dataLengthNInteger.Value = nData[i].Length;
-                totalLength += dataLengthNInteger.Value + (nDataLengthSpan[i] = dataLengthNInteger.estNumberBytesLength());
+                totalLength += dataLengthNInteger.Value + (nDataLengthSpan[i] = dataLengthNInteger.estNumBytesLength());
             }
             var data = new byte[totalLength];
             int pointer = 0;

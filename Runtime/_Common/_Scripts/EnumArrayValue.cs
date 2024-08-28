@@ -82,6 +82,12 @@ namespace Nextension
 
         }
 
+        public void set(TEnum enumType, TValue val)
+        {
+            var index = EnumIndex<TEnum>.getIndex(enumType);
+            if (index < 0) return;
+            enumValues[index] = val;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue getValue(TEnum enumType)
         {
@@ -90,29 +96,18 @@ namespace Nextension
 #endif
             return enumValues[EnumIndex<TEnum>.getIndex(enumType)];
         }
-        public TValue getValueByIndex(int index)
-        {
-            return enumValues[index];
-        }
-        public void set(TEnum enumType, TValue val)
-        {
-            var index = EnumIndex<TEnum>.getIndex(enumType);
-            if (index < 0) return;
-            enumValues[index] = val;
-        }
         public void setByIndex(int index, TValue val)
         {
             enumValues[index] = val;
+        }
+        public TValue getValueByIndex(int index)
+        {
+            return enumValues[index];
         }
         public TValue this[TEnum enumType]
         {
             get => getValue(enumType);
             set => set(enumType, value);
-        }
-        public TValue this[int index]
-        {
-            get => enumValues[index];
-            set => enumValues[index] = value;
         }
         public Enumerator GetEnumerator()
         {
@@ -128,9 +123,9 @@ namespace Nextension
             return GetEnumerator();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public IEnumerable<TValue> enumerateValues()
+        public ArrayEnumerator<TValue> enumerateValues()
         {
-            return enumValues;
+            return new ArrayEnumerator<TValue>(enumValues);
         }
         public EnumListValue<TEnum, TValue> toEnumListValue(bool isIgnoreDefaultValue = false)
         {
@@ -261,6 +256,11 @@ namespace Nextension
             {
                 _index = 0;
                 _current = default;
+            }
+
+            public Enumerator GetEnumerator()
+            {
+                return this;
             }
         }
     }

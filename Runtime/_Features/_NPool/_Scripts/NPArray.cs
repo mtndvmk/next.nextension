@@ -44,6 +44,8 @@ namespace Nextension
         }
         private NPArray() : base() { }
         
+        public int Capacity => _collection.Capacity;
+
         public T this[int index]
         {
             get { onAccessed(); return _collection[index]; }
@@ -78,6 +80,12 @@ namespace Nextension
         {
             onAccessed();
             _collection.copyFrom(collection);
+        }
+        public void copyTo(NPArray<T> dst)
+        {
+            onAccessed();
+            dst.onAccessed();
+            dst._collection.copyFrom(this);
         }
         public ArrayEnumerator<T> GetEnumerator()
         {

@@ -11,15 +11,24 @@ namespace Nextension
         {
             var newArrayInt32 = new NPUArray<T>
             {
-                _array = NPArray<byte>.get()
+                i_array = NPArray<byte>.get()
             };
+            return newArrayInt32;
+        }
+        public static NPUArray<T> get(int capacity)
+        {
+            var newArrayInt32 = new NPUArray<T>
+            {
+                i_array = NPArray<byte>.get()
+            };
+            newArrayInt32.ensureCapacity(capacity);
             return newArrayInt32;
         }
         public static NPUArray<T> get(IEnumerable<T> collection)
         {
             var newArrayInt32 = new NPUArray<T>
             {
-                _array = NPArray<byte>.get()
+                i_array = NPArray<byte>.get()
             };
             newArrayInt32.AddRange(collection);
             return newArrayInt32;
@@ -28,25 +37,40 @@ namespace Nextension
         {
             var newArrayInt32 = new NPUArray<T>
             {
-                _array = NPArray<byte>.getWithoutTracking()
+                i_array = NPArray<byte>.getWithoutTracking()
             };
+            return newArrayInt32;
+        }
+        public static NPUArray<T> getWithoutTracking(int capacity)
+        {
+            var newArrayInt32 = new NPUArray<T>
+            {
+                i_array = NPArray<byte>.getWithoutTracking()
+            };
+            newArrayInt32.ensureCapacity(capacity);
             return newArrayInt32;
         }
         public static NPUArray<T> getWithoutTracking(IEnumerable<T> collection)
         {
             var newArrayInt32 = new NPUArray<T>
             {
-                _array = NPArray<byte>.getWithoutTracking()
+                i_array = NPArray<byte>.getWithoutTracking()
             };
             newArrayInt32.AddRange(collection);
             return newArrayInt32;
         }
 
-        private NPArray<byte> _array;
+        public void stopTracking()
+        {
+            i_array.stopTracking();
+        }
 
-        public int Count => _array.Count / NUtils.sizeOf<T>();
-        public bool IsCreated => _array != null;
-        public bool IsReadOnly => _array.IsReadOnly;
+        internal NPArray<byte> i_array;
+
+        public int Count => i_array.Count / NUtils.sizeOf<T>();
+        public bool IsCreated => i_array != null;
+        public bool IsReadOnly => i_array.IsReadOnly;
+        public int Capacity => i_array.Capacity / NUtils.sizeOf<T>();
 
         public T this[int index]
         {
@@ -70,11 +94,11 @@ namespace Nextension
 
         public T GetWithoutChecks(int index)
         {
-            return NConverter.fromBytesWithoutChecks<T>(_array.Collection.i_Items, index * NUtils.sizeOf<T>());
+            return NConverter.fromBytesWithoutChecks<T>(i_array.Collection.i_Items, index * NUtils.sizeOf<T>());
         }
         public unsafe void SetWithoutChecks(int index, T value)
         {
-            var collection = _array.Collection;
+            var collection = i_array.Collection;
             fixed (byte* bPtr = collection.i_Items)
             {
                 T* ptr = (T*)bPtr;
@@ -82,16 +106,21 @@ namespace Nextension
             }
         }
 
+        public void ensureCapacity(int capacity)
+        {
+            var capacityInBytes = capacity * NUtils.sizeOf<T>();
+            ensureCapacityInBytes(capacityInBytes);
+        }
         public void ensureCapacityInBytes(int capacityInBytes)
         {
-            var byteArray = _array.Collection;
+            var byteArray = i_array.Collection;
             if (byteArray.Capacity >= capacityInBytes) return;
             byteArray.ensureCapacity(capacityInBytes > 16 ? capacityInBytes : 16);
         }
         public unsafe void Add(T item)
         {
             var sizeOfT = NUtils.sizeOf<T>();
-            var byteArray = _array.Collection;
+            var byteArray = i_array.Collection;
             if (byteArray.Capacity == 0)
             {
                 byteArray.ensureCapacity(16);
@@ -124,7 +153,7 @@ namespace Nextension
         {
             int addSizeInBytes = collection.Count * NUtils.sizeOf<T>();
             int startIndex = Count;
-            var byteArray = _array.Collection;
+            var byteArray = i_array.Collection;
             ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
             fixed (byte* bPtr = byteArray.i_Items)
             {
@@ -138,7 +167,7 @@ namespace Nextension
         public unsafe void AddRange(T[] items)
         {
             var addSizeInBytes = NUtils.sizeOf<T>() * items.Length;
-            var byteArray = _array.Collection;
+            var byteArray = i_array.Collection;
             ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
             fixed (T* tPtr = items)
             {
@@ -153,7 +182,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Clear()
         {
-            _array.Clear();
+            i_array.Clear();
         }
         public bool Contains(T item)
         {
@@ -175,7 +204,7 @@ namespace Nextension
             }
             fixed (T* tPtr = &array[arrayIndex])
             {
-                var byteArray = _array.Collection;
+                var byteArray = i_array.Collection;
                 int sizeInBytes = byteArray.Count;
                 byte* dstPtr = (byte*)tPtr;
                 fixed (byte* srcPtr = byteArray.i_Items)
@@ -184,9 +213,14 @@ namespace Nextension
                 }
             }
         }
+        public void CopyTo(NPUArray<T> dst)
+        {
+            dst.ensureCapacity(Count);
+            dst.i_array.copyFrom(i_array);
+        }
         public unsafe bool Remove(T item)
         {
-            var byteArray = _array.Collection;
+            var byteArray = i_array.Collection;
             var sizeOfT = NUtils.sizeOf<T>();
             int tCount = byteArray.i_Count / sizeOfT;
             fixed (byte* bPtr = byteArray.i_Items)
@@ -211,11 +245,11 @@ namespace Nextension
         }
         public unsafe void RemoveAt(int index)
         {
-            if ((uint)index >= _array.Count)
+            if ((uint)index >= i_array.Count)
             {
                 throw new ArgumentOutOfRangeException("index");
             }
-            var byteArray = _array.Collection;
+            var byteArray = i_array.Collection;
             var sizeOfT = NUtils.sizeOf<T>();
             int tCount = byteArray.i_Count / sizeOfT;
             fixed (byte* bPtr = byteArray.i_Items)
@@ -232,7 +266,7 @@ namespace Nextension
         }
         public unsafe int IndexOf(T item)
         {
-            var collection = _array.Collection;
+            var collection = i_array.Collection;
             var sizeOfT = NUtils.sizeOf<T>();
             int tCount = collection.i_Count / sizeOfT;
             fixed (byte* bPtr = collection.i_Items)
@@ -250,22 +284,59 @@ namespace Nextension
         }
         public unsafe void Insert(int index, T item)
         {
-            Span<byte> span = stackalloc byte[NUtils.sizeOf<T>()];
+            var sizeOfT = NUtils.sizeOf<T>();
+            Span<byte> span = stackalloc byte[sizeOfT];
             fixed (byte* ptr = span)
             {
                 *(T*)ptr = item;
             }
-            _array.Collection.InsertRangeWithoutChecks(index * NUtils.sizeOf<T>(), span);
+            i_array.Collection.InsertRangeWithoutChecks(index * sizeOfT, span);
         }
+
+        public unsafe void InsertRangeWithoutChecks(int index, ReadOnlySpan<T> span)
+        {
+            fixed(void* ptr = span)
+            {
+                var sizeOfT = NUtils.sizeOf<T>();
+                ReadOnlySpan<byte> bSpan = new ReadOnlySpan<byte>(ptr, span.Length * sizeOfT);
+                i_array.Collection.InsertRangeWithoutChecks(index * sizeOfT, bSpan);
+            }
+        }
+
+        public unsafe void InsertRangeWithoutChecks(int index, T* ptr, int length)
+        {
+            var sizeOfT = NUtils.sizeOf<T>();
+
+            var byteIndex = index * sizeOfT;
+            var byteLength = length * sizeOfT;
+            var byteCount = i_array.Count;
+            ensureCapacityInBytes(byteCount + byteLength);
+
+            var byteArray = i_array.Collection.i_Items;
+
+            fixed (byte* byteArrPtr = byteArray)
+            {
+                var wPtr = byteArrPtr + byteIndex;
+                if (byteIndex < byteCount)
+                {
+                    var tmpCount = byteCount - byteIndex;
+                    Buffer.MemoryCopy(wPtr, wPtr + byteLength, tmpCount, tmpCount);
+                }
+
+                Buffer.MemoryCopy((byte*)ptr, wPtr, byteLength, byteLength);
+                i_array.Collection.i_Count += byteLength;
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-            _array.Dispose();
+            i_array.Dispose();
         }
 
         private unsafe UnsafeArrayEnumerator<T> GetUnsafeArrayEnumerator()
         {
-            fixed (byte* intPtr = _array.Collection.i_Items)
+            fixed (byte* intPtr = i_array.Collection.i_Items)
             {
                 return new UnsafeArrayEnumerator<T>(intPtr, (uint)Count);
             }
@@ -288,7 +359,7 @@ namespace Nextension
         }
         public unsafe Span<T> AsSpan()
         {
-            return _array.Collection.asSpan().asSpan<byte, T>();
+            return i_array.Collection.asSpan().asSpan<byte, T>();
         }
         public T[] ToArray()
         {

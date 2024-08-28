@@ -33,7 +33,7 @@ namespace Nextension
         private bool? _editorInteractable;
         protected override void OnValidate()
         {
-            if (_editorInteractable != _interactable)
+            if (!NStartRunner.IsPlaying && _editorInteractable != _interactable && gameObject.activeInHierarchy)
             {
                 _editorInteractable = _interactable;
                 invokeInteractableChangedEvent();

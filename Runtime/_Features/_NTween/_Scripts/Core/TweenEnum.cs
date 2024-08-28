@@ -3,6 +3,7 @@
     internal enum SupportedDataType : byte
     {
         NotSupported = 0,
+        Int32,
         Float,
         Float2,
         Float3,

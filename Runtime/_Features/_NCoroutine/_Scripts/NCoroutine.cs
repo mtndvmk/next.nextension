@@ -102,12 +102,12 @@ namespace Nextension
 
         public static Data startCoroutine(IEnumerator func, StopType? stopType = null)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             return startCoroutine(func, DEFAULT_GROUP_ID, stopType);
         }
         public static Data startCoroutine(IEnumerator func, int groupId, StopType? stopType = null)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             if (stopType.HasValue)
             {
                 stopCoroutine(func, groupId, stopType.Value);
@@ -122,7 +122,7 @@ namespace Nextension
         }
         public static void stopCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.SameGroup)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             var funcName = func.ToString();
             switch (stopType)
             {
@@ -187,7 +187,7 @@ namespace Nextension
 
         public static Data runDelay(float time, Action delayCallback, int groupId = 0)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             IEnumerator delayRoutine_Time()
             {
                 yield return new WaitForSeconds(time);
@@ -197,7 +197,7 @@ namespace Nextension
         }
         public static Data runDelay(YieldInstruction yieldInstruction, Action delayCallback)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             IEnumerator delayRoutine_YI()
             {
                 yield return yieldInstruction;
@@ -207,7 +207,7 @@ namespace Nextension
         }
         public static Data runDelay(CustomYieldInstruction yieldInstruction, Action delayCallback)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             IEnumerator delayRoutine_CYI()
             {
                 yield return yieldInstruction;

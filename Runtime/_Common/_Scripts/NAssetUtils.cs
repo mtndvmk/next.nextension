@@ -98,6 +98,11 @@ namespace Nextension
         {
             return !string.IsNullOrEmpty(AssetDatabase.GetAssetPath(@object));
         }
+        public static bool isInAssets(Object @object)
+        {
+            var assetPath = AssetDatabase.GetAssetPath(@object);
+            return assetPath.StartsWith("Assets/");
+        }
         public static bool getPathInMainResources(Object @object, out string path)
         {
             var assetPath = AssetDatabase.GetAssetPath(@object);

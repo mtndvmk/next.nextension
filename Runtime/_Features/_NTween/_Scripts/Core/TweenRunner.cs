@@ -94,9 +94,9 @@ namespace Nextension.Tween
         }
         public sealed override void dispose()
         {
-            foreach (var chunk in _chunks)
+            foreach ((_, var chunk) in _chunks)
             {
-                chunk.Value.dispose();
+                chunk.dispose();
             }
             _chunks.Clear();
             _notFullChunks.Clear();

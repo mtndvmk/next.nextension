@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Nextension
 {
-    public static class UnmanagedCheck
+    public static class UnmanagedUtil
     {
         private static readonly Dictionary<Type, bool> _cachedTypes = new();
 

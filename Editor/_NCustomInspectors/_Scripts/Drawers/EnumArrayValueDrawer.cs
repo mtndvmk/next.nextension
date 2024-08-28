@@ -14,16 +14,11 @@ namespace Nextension.NEditor
                 return;
             }
 
-#if UNITY_2022_3_OR_NEWER
-            EditorGUI.indentLevel--;
-#endif
             Rect contentPosition = position;
             var headerSize = position;
             headerSize.height = EditorGUIUtility.singleLineHeight;
             property.isExpanded = EditorGUI.Foldout(headerSize, property.isExpanded, label, true);
-#if UNITY_2022_3_OR_NEWER
-            EditorGUI.indentLevel++;
-#endif
+
             var arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
             if (arrValue != null)
             {

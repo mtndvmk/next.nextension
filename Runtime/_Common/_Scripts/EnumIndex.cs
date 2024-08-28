@@ -72,6 +72,11 @@ namespace Nextension
             return indexToEnumTable.randItem(seed);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T getRandomEnum(Unity.Mathematics.Random rand)
+        {
+            return indexToEnumTable.randItem(rand);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReadOnlySpan<T> asReadOnlySpan()
         {
             return indexToEnumTable;

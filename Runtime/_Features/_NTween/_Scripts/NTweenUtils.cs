@@ -13,6 +13,7 @@ namespace Nextension.Tween
         {
             _supportedDataTypeTable = new()
             {
+                {typeof(int), SupportedDataType.Int32 },
                 { typeof(float), SupportedDataType.Float },
                 { typeof(float2), SupportedDataType.Float2 },
                 { typeof(float3), SupportedDataType.Float3 },
@@ -39,6 +40,14 @@ namespace Nextension.Tween
         {
             switch (ISupportedDataType<T>.type)
             {
+                case SupportedDataType.Int32:
+                    {
+                        float fa = NConverter.bitConvertWithoutChecks<T, int>(a);
+                        float fb = NConverter.bitConvertWithoutChecks<T, int>(b);
+                        BurstEaseFloat.ease(fa, fb, t, easeType, out var fResult);
+                        result = NConverter.bitConvertWithoutChecks<int, T>((int)fResult);
+                        break;
+                    }
                 case SupportedDataType.Float:
                     {
                         BurstEaseFloat.ease(NConverter.bitConvertWithoutChecks<T, float>(a), NConverter.bitConvertWithoutChecks<T, float>(b), t, easeType, out var fResult);
@@ -73,6 +82,7 @@ namespace Nextension.Tween
             Unity.Mathematics.Random rand = new(seed);
             return ISupportedDataType<T>.type switch
             {
+                SupportedDataType.Int32 => NConverter.bitConvertWithoutChecks<int, T>((int)((rand.NextFloat() - 0.5f) * range)),
                 SupportedDataType.Float => NConverter.bitConvertWithoutChecks<float, T>((rand.NextFloat() - 0.5f) * range),
                 SupportedDataType.Float2 => NConverter.bitConvertWithoutChecks<float2, T>((rand.NextFloat2() - 0.5f) * range),
                 SupportedDataType.Float3 => NConverter.bitConvertWithoutChecks<float3, T>((rand.NextFloat3() - 0.5f) * range),
@@ -85,6 +95,7 @@ namespace Nextension.Tween
         {
             return ISupportedDataType<T>.type switch
             {
+                SupportedDataType.Int32 => NConverter.bitConvertWithoutChecks<int, T>(NConverter.bitConvertWithoutChecks<T, int>(a) + NConverter.bitConvertWithoutChecks<T, int>(b)),
                 SupportedDataType.Float => NConverter.bitConvertWithoutChecks<float, T>(NConverter.bitConvertWithoutChecks<T, float>(a) + NConverter.bitConvertWithoutChecks<T, float>(b)),
                 SupportedDataType.Float2 => NConverter.bitConvertWithoutChecks<float2, T>(NConverter.bitConvertWithoutChecks<T, float2>(a) + NConverter.bitConvertWithoutChecks<T, float2>(b)),
                 SupportedDataType.Float3 => NConverter.bitConvertWithoutChecks<float3, T>(NConverter.bitConvertWithoutChecks<T, float3>(a) + NConverter.bitConvertWithoutChecks<T, float3>(b)),

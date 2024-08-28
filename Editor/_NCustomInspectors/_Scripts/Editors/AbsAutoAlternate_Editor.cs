@@ -8,7 +8,6 @@ namespace Nextension.NEditor
     [CustomEditor(typeof(AbsAutoAlternate<>), true), CanEditMultipleObjects]
     public class AbsAutoAlternate_Editor : Editor
     {
-        private static bool _isUniformScale;
         public override void OnInspectorGUI()
         {
             EditorGUI.BeginDisabledGroup(true);
@@ -24,10 +23,14 @@ namespace Nextension.NEditor
             bool isAutoAlternateColor = target.GetType() == typeof(AutoAlternateColor);
             bool isAutoAlterScale = !isAutoAlternateColor && target.GetType() == typeof(AutoAlternateScale);
 
+            bool isUniformScale = false;
             if (isAutoAlterScale)
             {
-                _isUniformScale = EditorGUILayout.Toggle("Uniform Scale", _isUniformScale);
+                var uniformScaleProperty = serializedObject.FindProperty("_isUniformScale");
+                EditorGUILayout.PropertyField(uniformScaleProperty);
+                isUniformScale = (bool)NEditorHelper.getValue(uniformScaleProperty);
             }
+
 
             while (iterator.NextVisible(false))
             {
@@ -88,9 +91,13 @@ namespace Nextension.NEditor
                     }
                     else if (isAutoAlterScale)
                     {
+                        if (iteratorName == "_isUniformScale")
+                        {
+                            continue;
+                        }
                         if (iteratorName == "_fromValue")
                         {
-                            if (_isUniformScale)
+                            if (isUniformScale)
                             {
                                 var v = EditorGUILayout.FloatField("From value", ((float3)iterator.boxedValue).x);
                                 iterator.boxedValue = new float3(v);
@@ -102,7 +109,7 @@ namespace Nextension.NEditor
                         }
                         else if (iteratorName == "_toValue")
                         {
-                            if (_isUniformScale)
+                            if (isUniformScale)
                             {
                                 var v = EditorGUILayout.FloatField("To value", ((float3)iterator.boxedValue).x);
                                 iterator.boxedValue = new float3(v);

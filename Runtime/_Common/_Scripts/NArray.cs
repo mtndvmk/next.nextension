@@ -297,7 +297,7 @@ namespace Nextension
                 }
             }
         }
-        public void InsertRangeWithoutChecks(int index, Span<T> span)
+        public void InsertRangeWithoutChecks(int index, ReadOnlySpan<T> span)
         {
             int count = span.Length;
             ensureCapacity(this.i_Count + count);
@@ -306,6 +306,7 @@ namespace Nextension
                 Array.Copy(i_Items, index, i_Items, index + count, this.i_Count - index);
             }
             span.CopyTo(i_Items.AsSpan(index));
+            i_Count += count;
         }
 
         public ArrayEnumerator<T> GetEnumerator()

@@ -25,9 +25,9 @@ namespace Nextension.Tween
         [EditorQuittingMethod]
         private static void onApplicationQuit()
         {
-            foreach (var runner in _runners)
+            foreach ((_, var runner) in _runners)
             {
-                runner.Value.dispose();
+                runner.dispose();
             }
             _runners.Clear();
             _cancelControlManager.clear();
@@ -71,9 +71,9 @@ namespace Nextension.Tween
                 NNativeListFixedSize<JobHandle> jobHandles = new(TweenChunk.ChunkCount);
                 NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks = new(TweenChunk.ChunkCount);
 
-                foreach (var runner in _runners)
+                foreach ((_, var runner) in _runners)
                 {
-                    runner.Value.runTweenJob(ref jobHandles, ref runningChunks);
+                    runner.runTweenJob(ref jobHandles, ref runningChunks);
                 }
 
                 int runningChunkCount = runningChunks.Count;
@@ -82,7 +82,7 @@ namespace Nextension.Tween
                     JobHandle.CombineDependencies(jobHandles.Slice()).Complete();
                     for (int i = 0; i < runningChunkCount; ++i)
                     {
-                        var (runnerId, chunkId) = runningChunks[i];
+                        var (runnerId, chunkId) = runningChunks.getWithoutCheck(i);
                         _runners[runnerId].getChunk(chunkId).invokeJobComplete();
                     }
                 }

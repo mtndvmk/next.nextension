@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 namespace Nextension
 {
     [DisallowMultipleComponent]
-    public class NBlockingUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
+    public class NInteractiveBlockingUI : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         public void OnPointerClick(PointerEventData eventData)
         {

@@ -9,7 +9,7 @@ namespace Nextension
         {
             get
             {
-                InternalCheck.checkEditorMode();
+                EditorCheck.checkEditorMode();
                 if (!_copiedPrefabContainer)
                 {
                     _copiedPrefabContainer = new GameObject("[InstancesPool.CopiedPrefabContainer]").transform;
@@ -23,7 +23,7 @@ namespace Nextension
         {
             get
             {
-                InternalCheck.checkEditorMode();
+                EditorCheck.checkEditorMode();
                 if (!_container)
                 {
                     _container = new GameObject("[InstancesPool.Container]").transform;

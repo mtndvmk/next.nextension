@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
-namespace Nextension
+namespace Nextension.NEditor
 {
     public enum WarningType
     {

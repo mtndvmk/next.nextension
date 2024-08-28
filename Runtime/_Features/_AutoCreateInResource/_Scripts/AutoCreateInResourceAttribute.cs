@@ -3,10 +3,10 @@ using UnityEngine;
 
 namespace Nextension
 {
+#if UNITY_EDITOR
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class AutoCreateInResourceAttribute : Attribute
     {
-#if UNITY_EDITOR
         internal readonly string fileName;
         internal bool useTypeName => string.IsNullOrEmpty(fileName);
         public AutoCreateInResourceAttribute() { fileName = null; }
@@ -19,8 +19,15 @@ namespace Nextension
             }
             return $"AutoCreated/{fileName}";
         }
-#endif
     }
+#else
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public class AutoCreateInResourceAttribute : Attribute
+    {
+        public AutoCreateInResourceAttribute() { }
+        public AutoCreateInResourceAttribute(string fileName) {  }
+    }
+#endif
 
     internal class AutoCreateInResourceUtils
     {

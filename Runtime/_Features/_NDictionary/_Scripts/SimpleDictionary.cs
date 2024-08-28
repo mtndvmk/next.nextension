@@ -650,6 +650,12 @@ namespace Nextension
             }
         }
 
+        public int EnsureCapacity(uint capacity)
+        {
+            if (capacity <= entries.Length) return entries.Length;
+            Resize(HashHelpers.ExpandPrime(capacity), forceNewHashCodes: false);
+            return entries.Length;
+        }
 
         private void Resize()
         {
@@ -660,10 +666,6 @@ namespace Nextension
         {
             int[] array = new int[newSize];
             SetValueUtil.setAllValue(array, -1);
-            //for (int i = 0; i < array.Length; i++)
-            //{
-            //    array[i] = -1;
-            //}
 
             Entry[] array2 = new Entry[newSize];
             Array.Copy(entries, 0, array2, 0, count);
