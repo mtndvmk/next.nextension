@@ -13,17 +13,13 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void add(Action callback)
         {
-            if (callback != null)
-            {
-                _actions.Add(callback);
-            }
+            EditorCheck.requireNotNull(callback);
+            _actions.Add(callback);
         }
         public void addIfNotPresent(Action callback)
         {
-            if (callback != null)
-            {
-                _actions.addIfNotPresent(callback);
-            }
+            EditorCheck.requireNotNull(callback);
+            _actions.addIfNotPresent(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void remove(Action callback)
@@ -107,17 +103,13 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void add(Action<T> callback)
         {
-            if (callback != null)
-            {
-                _actions.Add(callback);
-            }
+            EditorCheck.requireNotNull(callback);
+            _actions.Add(callback);
         }
         public void addIfNotPresent(Action<T> callback)
         {
-            if (callback != null)
-            {
-                _actions.addIfNotPresent(callback);
-            }
+            EditorCheck.requireNotNull(callback);
+            _actions.addIfNotPresent(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void remove(Action<T> callback)

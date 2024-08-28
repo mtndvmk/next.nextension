@@ -1,9 +1,7 @@
-using System;
 using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    [Serializable]
     public sealed class NDirty : AbsNNotify
     {
         public NDirty(NotificationType type = NotificationType.IMMEDIATE)

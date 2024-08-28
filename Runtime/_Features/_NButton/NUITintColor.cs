@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace Nextension
 {
+    [ExecuteAlways]
     public class NUITintColor : MonoBehaviour
     {
         [SerializeField] private Color _color;
@@ -18,7 +19,6 @@ namespace Nextension
                 updateColor(Color.white);
             }
         }
-
         private void OnEnable()
         {
             updateColor(_color);

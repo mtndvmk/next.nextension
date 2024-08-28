@@ -37,7 +37,7 @@ namespace Nextension.NEditor
             return _editorContainer;
         }
 
-        internal static void scanAndReload(bool forceReload = false)
+        internal static void scanAndReload(bool isHardReload = false)
         {
             List<ScriptableObject> validScriptables = new List<ScriptableObject>();
             var guids = AssetDatabase.FindAssets("t:ScriptableObject");
@@ -54,12 +54,19 @@ namespace Nextension.NEditor
             if (validScriptables.Count > 0)
             {
                 var container = getOrCreateEditorContainer();
+
+                if (isHardReload)
+                {
+                    container.clearEditorScriptableObjectList();
+                    ScriptableLoader.getContainer()?.clearScriptableObjectList();
+                }
+
                 bool isAdded = false;
                 foreach (var scriptableObject in validScriptables.asSpan())
                 {
                     isAdded |= container.add(scriptableObject);
                 }
-                if (isAdded || forceReload) container.reload();
+                if (isAdded || isHardReload) container.reload();
             }
             else
             {

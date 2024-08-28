@@ -52,7 +52,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void requireCall()
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             if (_instanceList == null)
             {
                 createInstanceList();
@@ -81,7 +81,10 @@ namespace Nextension
                     ins = Object.Instantiate(_prefab, _container);
                 }
 #if UNITY_EDITOR
-                ins.name = _prefab.name + $" [Clone_{_instanceList.Count}]";
+                if (!_useSharedInstancesPool)
+                {
+                    ins.name = _prefab.name + $" [Clone_{_instanceList.Count}]";
+                }
 #endif
                 ins.setActive(isActive);
                 _instanceList.Add(ins);

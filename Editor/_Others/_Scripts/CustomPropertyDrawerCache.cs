@@ -58,6 +58,7 @@ namespace Nextension.NEditor
 
         public static bool draw(Rect position, SerializedProperty property, GUIContent label)
         {
+            if (property == null || property.boxedValue == null) return false;
             var boxedType = property.boxedValue.GetType();
             var cache = getCache(boxedType);
             if (cache != null)
@@ -69,6 +70,7 @@ namespace Nextension.NEditor
         }
         public static float? getPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            if (property == null || property.boxedValue == null) return default; 
             var boxedType = property.boxedValue.GetType();
             var cache = getCache(boxedType);
             if (cache != null)

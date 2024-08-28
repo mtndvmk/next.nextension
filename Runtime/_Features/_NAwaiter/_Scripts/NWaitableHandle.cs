@@ -72,14 +72,14 @@ namespace Nextension
 
         private void setup(AbsNWaitableAwaiter awaiter, NLoopType loopType, Func<NWaitableResult> predicateFunc)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             this._predicateFunc = predicateFunc;
             this._awaiter = awaiter;
             this.loopType = loopType;
         }
         private void setup(AbsNWaitableAwaiter awaiter, NLoopType loopType, Func<NWaitableResult> predicateFunc, ICancelable cancelable)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             this._predicateFunc = predicateFunc;
             this._awaiter = awaiter;
             this.loopType = loopType;

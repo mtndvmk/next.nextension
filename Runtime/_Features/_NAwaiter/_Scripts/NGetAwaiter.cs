@@ -16,39 +16,39 @@ namespace Nextension
         }
         public static NWaitableAwaiter GetAwaiter(this IWaitable waitable)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this IWaitableFromCancelable waitable)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this AsyncOperation operation)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             var waitable = new NWaitUntil(() => operation.isDone);
             return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this CustomYieldInstruction operation)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             var waitable = new NWaitUntil(() => !operation.keepWaiting);
             return NWaitableAwaiter.create(waitable);
         }
         public static NWaitableAwaiter GetAwaiter(this JobHandle jobHandle)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             return NWaitableAwaiter.create(new NWaitJobHandle(jobHandle));
         }
         public static NWaitableAwaiter GetAwaiter(this IEnumerator routine)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             return NWaitableAwaiter.create(new NWaitRoutine(routine));
         }
         public static NWaitableAwaiter GetAwaiter(this NWaitRoutine routine)
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             return NWaitableAwaiter.create(routine);
         }
 #if UNITY_EDITOR

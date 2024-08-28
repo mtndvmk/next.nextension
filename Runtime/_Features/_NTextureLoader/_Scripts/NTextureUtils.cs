@@ -84,7 +84,7 @@ namespace Nextension.TextureLoader
                 outHeight = outHeight,
                 ratio = ratio,
             };
-            var jobHandle = job.Schedule(targetSize, 64);
+            var jobHandle = job.ScheduleByRef(targetSize, 64);
             await jobHandle;
             return (dst, outWidth, outHeight);
         }
@@ -125,7 +125,7 @@ namespace Nextension.TextureLoader
                 ratio = ratio,
                 sizePerPixel = sizePerPixel,
             };
-            var jobHandle = job.Schedule(targetSize, 64);
+            var jobHandle = job.ScheduleByRef(targetSize, 64);
             await jobHandle;
 
             return (nativeDst, outWidth, outHeight);
@@ -193,7 +193,7 @@ namespace Nextension.TextureLoader
                 src = src,
                 dst = nativeDst,
             };
-            var jobHandle = job.Schedule(nativeDst.Length, 64);
+            var jobHandle = job.ScheduleByRef(nativeDst.Length, 64);
             await jobHandle;
             return nativeDst;
         }
@@ -208,7 +208,7 @@ namespace Nextension.TextureLoader
                 src = src,
                 dst = nativeDst,
             };
-            var jobHandle = job.Schedule(nativeDst.Length, 64);
+            var jobHandle = job.ScheduleByRef(nativeDst.Length, 64);
             await jobHandle;
             return nativeDst;
         }
@@ -224,7 +224,7 @@ namespace Nextension.TextureLoader
                 src = src,
                 dst = nativeDst,
             };
-            var jobHandle = job.Schedule(colorCount, 64);
+            var jobHandle = job.ScheduleByRef(colorCount, 64);
             await jobHandle;
             return nativeDst;
         }

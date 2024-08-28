@@ -69,7 +69,7 @@ namespace Nextension
 #endif
         private static void ensureSetup()
         {
-            InternalCheck.checkEditorMode();
+            EditorCheck.checkEditorMode();
             if (!_transformAccessArray.isCreated)
             {
                 _transformAccessArray = new TransformAccessArray(4);

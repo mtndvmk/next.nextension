@@ -55,7 +55,7 @@ namespace Nextension.NEditor
             {
                 sceneRef.setGUID(guid);
                 NAssetUtils.setDirty(property.serializedObject.targetObject);
-                SceneRefPathManager.Getter.addOrUpdate(guid);
+                SceneRefPathManager.Instance.addOrUpdate(guid);
             }
         }
     }

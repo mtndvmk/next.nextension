@@ -82,7 +82,7 @@ namespace Nextension
             return left.CompareTo(right) >= 0;
         }
 
-        public byte estNumberBytesLength()
+        public byte estNumBytesLength()
         {
             if (_value == 0 || _value == long.MinValue) return 0;
             var num = Math.Abs(_value);
@@ -103,70 +103,77 @@ namespace Nextension
         }
         public unsafe byte[] getBytes()
         {
-            var num = _value;
-            if (num == 0)
+            if (_value == 0)
             {
                 return new byte[1] { 0 };
             }
-            if (num == long.MinValue)
+            if (_value == long.MinValue)
             {
                 return new byte[1] { byte.MaxValue };
             }
 
-            int isNegative = (num < 0) ? 128 : 0;
-            num = Math.Abs(num);
+            var absValue = Math.Abs(_value);
 
             var srcBytes = stackalloc byte[8];
-            *(long*)srcBytes = num;
+            *(long*)srcBytes = absValue;
 
-            int numLength = estNumberBytesLength();
+            byte numBytesLength = estNumBytesLength();
+            byte firstNum = _value < 0 ? (byte)(numBytesLength | 128) : numBytesLength;
 
-            byte[] result = new byte[numLength + 1];
-            result[0] = (byte)(numLength + isNegative);
+            byte[] result = new byte[numBytesLength + 1];
+            result[0] = firstNum;
             fixed (byte* dst = &result[1])
             {
-                Buffer.MemoryCopy(srcBytes, dst, numLength, numLength);
+                Buffer.MemoryCopy(srcBytes, dst, numBytesLength, numBytesLength);
             }
             return result;
         }
-        public unsafe void writeTo(byte[] buffer, byte estNumBytesLength, ref int startIndex)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="numBytesLength">numBytesLength = estNumBytesLength()</param>
+        /// <param name="startIndex"></param>
+        public unsafe void writeTo(byte[] dst, byte numBytesLength, ref int startIndex)
         {
             if (_value == 0)
             {
-                buffer[startIndex++] = 0;
+                dst[startIndex++] = 0;
             }
             else if (_value == long.MinValue)
             {
-                buffer[startIndex++] = byte.MaxValue;
+                dst[startIndex++] = byte.MaxValue;
             }
             else
             {
                 var srcBytes = stackalloc byte[8];
                 *(long*)srcBytes = Math.Abs(_value);
+
+                byte firstNum;
                 if (_value < 0)
                 {
-                    buffer[startIndex++] = (byte)(estNumBytesLength + 128);
+                    firstNum = (byte)(numBytesLength | 128);
                 }
                 else
                 {
-                    buffer[startIndex++] = estNumBytesLength;
+                   firstNum = numBytesLength;
                 }
-                fixed (byte* dst = &buffer[startIndex])
+                dst[startIndex++] = firstNum;
+                fixed (byte* dstPtr = &dst[startIndex])
                 {
-                    Buffer.MemoryCopy(srcBytes, dst, estNumBytesLength, estNumBytesLength);
+                    Buffer.MemoryCopy(srcBytes, dstPtr, numBytesLength, numBytesLength);
                 }
-                startIndex += estNumBytesLength;
+                startIndex += numBytesLength;
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static NInteger fromBytes(byte[] bytes, int startIndex = 0)
+        public static NInteger fromBytes(byte[] src, int startIndex = 0)
         {
-            return fromBytes(bytes, ref startIndex);
+            return fromBytes(src, ref startIndex);
         }
-        public unsafe static NInteger fromBytes(byte[] bytes, ref int startIndex)
+        public unsafe static NInteger fromBytes(byte[] src, ref int startIndex)
         {
-            var firstNum = bytes[startIndex++];
+            var firstNum = src[startIndex++];
             if (firstNum == 0)
             {
                 return new NInteger(0);
@@ -178,20 +185,20 @@ namespace Nextension
 
             if (firstNum > 128)
             {
-                int numLength = firstNum - 128;
+                int numBytesLength = firstNum & 127;
                 var dstBytes = stackalloc byte[8];
-                fixed (byte* srcBytes = &bytes[startIndex])
+                fixed (byte* srcBytes = &src[startIndex])
                 {
-                    Buffer.MemoryCopy(srcBytes, dstBytes, numLength, numLength);
+                    Buffer.MemoryCopy(srcBytes, dstBytes, numBytesLength, numBytesLength);
                 }
-                startIndex += numLength;
+                startIndex += numBytesLength;
                 return -*(long*)dstBytes;
             }
             else
             {
                 int numLength = firstNum;
                 var dstBytes = stackalloc byte[8];
-                fixed (byte* srcBytes = &bytes[startIndex])
+                fixed (byte* srcBytes = &src[startIndex])
                 {
                     Buffer.MemoryCopy(srcBytes, dstBytes, numLength, numLength);
                 }

@@ -4,7 +4,7 @@
     {
         public static string getPath(this SceneRef sceneRef)
         {
-            return SceneRefPathManager.Getter.getScenePath(sceneRef);
+            return SceneRefPathManager.Instance.getScenePath(sceneRef);
         }
     }
 }

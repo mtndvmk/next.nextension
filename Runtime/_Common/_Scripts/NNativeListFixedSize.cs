@@ -20,8 +20,26 @@ namespace Nextension
             _count = array.Length;
         }
 
-        public T this[int index] { get => _array[index]; set => _array[index] = value; }
-        public int Count => _count;
+        public T this[int index]
+        {
+            get 
+            {
+                if (index >= _count) { throw new IndexOutOfRangeException(); }
+                return _array[index];
+            }
+            set
+            {
+                if (index >= _count) { throw new IndexOutOfRangeException(); }
+                _array[index] = value;
+            }
+        }
+        public T getWithoutCheck(int index)
+        {
+            return _array[index];
+        }
+
+        public readonly int Count => _count;
+        public int Capacity => _array.Length;
         public bool IsCreated => _array.IsCreated;
 
         public unsafe void AddRangeNoReSize(T[] array)
@@ -53,7 +71,7 @@ namespace Nextension
         }
         public void CopyTo(T[] array)
         {
-            _array.CopyTo(array);
+            Slice().CopyTo(array);
         }
         public void Dispose()
         {

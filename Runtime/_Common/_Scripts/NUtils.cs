@@ -9,6 +9,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.LowLevel;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -592,6 +593,19 @@ namespace Nextension
             vector2.y += y;
             return vector2;
         }
+        public static Vector2 plusXY(this Vector2 vector2, float x, float y)
+        {
+            vector2.x += x;
+            vector2.y += y;
+            return vector2;
+        }
+        public static Vector2 plusXY(this Vector2 vector2, float xy)
+        {
+            vector2.x += xy;
+            vector2.y += xy;
+            return vector2;
+        }
+
         public static Vector2 mul(this Vector2 vector2, Vector2 factor)
         {
             return new Vector2(vector2.x * factor.x, vector2.y * factor.y);
@@ -684,20 +698,18 @@ namespace Nextension
             vector3.z += z;
             return vector3;
         }
-        public static Vector3 plusXYZ(this Vector3 vector3, float x = float.NaN, float y = float.NaN, float z = float.NaN)
+        public static Vector3 plusXYZ(this Vector3 vector3, float xyz)
         {
-            if (!x.Equals(float.NaN))
-            {
-                vector3.x += x;
-            }
-            if (!y.Equals(float.NaN))
-            {
-                vector3.y += y;
-            }
-            if (!z.Equals(float.NaN))
-            {
-                vector3.z += z;
-            }
+            vector3.x += xyz;
+            vector3.y += xyz;
+            vector3.z += xyz;
+            return vector3;
+        }
+        public static Vector3 plusXYZ(this Vector3 vector3, float x, float y, float z)
+        {
+            vector3.x += x;
+            vector3.y += y;
+            vector3.z += z;
             return vector3;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -832,6 +844,14 @@ namespace Nextension
             {
                 self.position = self.position.setZ(z);
             }
+        }
+        public static void setAnchorPositionX(this RectTransform self, float x)
+        {
+            self.anchoredPosition = self.anchoredPosition.setX(x);
+        }
+        public static void setAnchorPositionY(this RectTransform self, float y)
+        {
+            self.anchoredPosition = self.anchoredPosition.setY(y);
         }
         public static void plusPositionX(this Transform self, float x, bool isLocal = true)
         {
@@ -1020,6 +1040,31 @@ namespace Nextension
             self.localPosition = Vector3.zero;
             self.localEulerAngles = Vector3.zero;
             self.localScale = Vector3.one;
+        }
+
+        public static Vector2 getBotomLeft(this Rect rect)
+        {
+            float x = rect.x;
+            float y = rect.y;
+            return new Vector2(x, y);
+        }
+        public static Vector2 getTopLeft(this Rect rect)
+        {
+            float x = rect.x;
+            float yMax = rect.yMax;
+            return new Vector2(x, yMax);
+        }
+        public static Vector2 getTopRight(this Rect rect)
+        {
+            float xMax = rect.xMax;
+            float yMax = rect.yMax;
+            return new Vector2(xMax, yMax);
+        }
+        public static Vector2 getBotomRight(this Rect rect)
+        {
+            float y = rect.y;
+            float xMax = rect.xMax;
+            return new Vector2(xMax, y);
         }
 
         public static Vector3 getBotomLeft(this RectTransform self, bool isWorldSpace = true)
@@ -1471,7 +1516,7 @@ namespace Nextension
                 _hexTable['F'] = _hexTable['f'] = 15;
             }
 
-            byte[] bytes = new byte[hexSpan.Length / 2];
+            byte[] bytes = new byte[hexSpan.Length >> 1];
             for (int i = 0; i < bytes.Length; ++i)
             {
                 var i2 = i << 1;
@@ -1761,7 +1806,7 @@ namespace Nextension
                 self.RemoveAt(indices[i]);
             }
         }
-        
+
         public static void removeLast<T>(this List<T> self)
         {
             self.RemoveAt(self.Count - 1);
@@ -1774,7 +1819,7 @@ namespace Nextension
         {
             self.RemoveAt(self.Length - 1);
         }
-        
+
         public static T takeAndRemoveAt<T>(this List<T> self, int index)
         {
             var item = self[index];
@@ -1787,7 +1832,7 @@ namespace Nextension
             self.removeAt(index);
             return item;
         }
-        
+
         public static V takeAndRemove<K, V>(this IDictionary<K, V> self, K key)
         {
             if (!self.TryGetValue(key, out var v)) return default;
@@ -1800,7 +1845,7 @@ namespace Nextension
             self.Remove(key);
             return true;
         }
-        
+
         public static T takeAndRemoveLast<T>(this List<T> self)
         {
             var item = self[^1];
@@ -1951,13 +1996,13 @@ namespace Nextension
             }
             return result;
         }
-        public static T[] mergeWith<T>(this T[] a, T[] b)
+        public static T[] mergeWith<T>(this T[] left, T[] right)
         {
-            var aLength = a.Length;
-            var bLength = b.Length;
+            var aLength = left.Length;
+            var bLength = right.Length;
             var result = new T[aLength + bLength];
-            Array.Copy(a, 0, result, 0, aLength);
-            Array.Copy(b, 0, result, aLength, bLength);
+            Array.Copy(left, 0, result, 0, aLength);
+            Array.Copy(right, 0, result, aLength, bLength);
             return result;
         }
         public static T[] getBlock<T>(T[] src, int startIndex, int count)
@@ -1970,12 +2015,12 @@ namespace Nextension
         {
             return getBlock(src, startIndex, src.Length - startIndex);
         }
-        
+
         public static void clear(this Array self)
         {
             Array.Clear(self, 0, self.Length);
         }
-        
+
         public static T[] clone<T>(this T[] self)
         {
             return clone(self, 0, self.Length);
@@ -2804,6 +2849,22 @@ namespace Nextension
             }
             defaultPlayerLoop.subSystemList = subSystemList;
             return defaultPlayerLoop;
+        }
+        public static void set(this UnityEvent self, UnityAction call)
+        {
+            self.RemoveAllListeners();
+            if (call != null)
+            {
+                self.AddListener(call);
+            }
+        }
+        public static void setAction(this UnityEvent self, Action call)
+        {
+            self.RemoveAllListeners();
+            if (call != null)
+            {
+                self.AddListener(new UnityAction(call));
+            }
         }
         #endregion
     }

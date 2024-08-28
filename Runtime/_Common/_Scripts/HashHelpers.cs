@@ -37,7 +37,6 @@ namespace Nextension
 
         public static int GetPrime(uint min)
         {
-            //for (int i = 0; i < HashHelpers.primes.Length; i++)
             for (int i = 0; i < 72; i++)
             {
                 var num = HashHelpers.primes[i];
@@ -55,7 +54,10 @@ namespace Nextension
             }
             return (int)min;
         }
-
+        public static int GetPrime(int min)
+        {
+            return HashHelpers.GetPrime((uint)min);
+        }
         public static int ExpandPrime(uint oldSize)
         {
             var num = oldSize << 1;
@@ -64,6 +66,11 @@ namespace Nextension
                 return 2146435069;
             }
             return HashHelpers.GetPrime(num);
+        }
+        public static int ExpandPrime(int oldSize)
+        {
+            if (oldSize < 0) throw new InvalidOperationException($"{nameof(oldSize)} must be equal or greater than zero");
+            return ExpandPrime((uint)oldSize);
         }
     }
 }

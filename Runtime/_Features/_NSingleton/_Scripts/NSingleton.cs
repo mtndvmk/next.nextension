@@ -234,7 +234,12 @@ namespace Nextension
         }
     }
 
-    public static class S_<T> where T : class
+    public interface ISingletonable
+    {
+        bool isSingleton() => true;
+    }
+
+    public static class S_<T> where T : class, ISingletonable
     {
         private static T s_Instance;
         public static T Instance => get();
@@ -245,7 +250,17 @@ namespace Nextension
                 var tType = typeof(T);
                 if (NUtils.isInherited(tType, typeof(MonoBehaviour)))
                 {
-                    s_Instance = UnityEngine.Object.FindFirstObjectByType(tType, FindObjectsInactive.Include) as T;
+                    var allObjects = UnityEngine.Object.FindObjectsByType(tType, FindObjectsInactive.Include, FindObjectsSortMode.None);
+                    foreach (var obj in allObjects)
+                    {
+                        var ins = obj as T;
+                        if (ins.isSingleton())
+                        {
+                            s_Instance = ins;
+                            return s_Instance;
+                        }
+                    }
+                    throw new Exception($"Can't found instance of [{tType}]");
                 }
                 else
                 {
@@ -253,6 +268,17 @@ namespace Nextension
                 }
             }
             return s_Instance;
+        }
+        public static void dispose()
+        {
+            if (s_Instance != null)
+            {
+                if (NUtils.isInherited(typeof(T), typeof(MonoBehaviour)))
+                {
+                    NUtils.destroyObject(s_Instance as MonoBehaviour);
+                }
+                s_Instance = null;
+            }
         }
     }
 }

@@ -31,7 +31,7 @@ namespace Nextension.Tween
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected sealed override JobHandle onScheduleJob()
         {
-            return _job.ScheduleParallel(ChunkSize, 64, default);
+            return _job.ScheduleParallelByRef(ChunkSize, 64, default);
         }
     }
 }

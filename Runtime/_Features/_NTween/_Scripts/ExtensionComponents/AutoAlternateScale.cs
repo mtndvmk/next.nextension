@@ -6,6 +6,7 @@ namespace Nextension.Tween
     [DisallowMultipleComponent]
     public class AutoAlternateScale : AbsAutoAlternate<float3>
     {
+        [SerializeField] private bool _isUniformScale;
         private void Reset()
         {
             _fromValue = _toValue = transform.localScale;

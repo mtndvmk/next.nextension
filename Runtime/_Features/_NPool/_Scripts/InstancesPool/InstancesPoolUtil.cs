@@ -8,7 +8,6 @@ namespace Nextension
     {
         public static GameObject getGameObject<T>(T instance) where T : Object
         {
-            if (instance == null) throw new ArgumentNullException(nameof(instance));
             if (InstancesPool<T>.IS_GENERIC_OF_GAMEOBJECT)
             {
                 return instance as GameObject;

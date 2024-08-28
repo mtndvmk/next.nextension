@@ -32,7 +32,7 @@ namespace Nextension
             {
                 var gcHandle = GCHandle.Alloc(target, GCHandleType.Pinned);
                 var job = new SetValueJob<T>(gcHandle.AddrOfPinnedObject(), value);
-                job.Run(target.Length);
+                job.RunByRef(target.Length);
                 gcHandle.Free();
             }
             else

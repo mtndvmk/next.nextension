@@ -1,8 +1,8 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-#if UNITY_EDITOR
 namespace Nextension.NEditor
 {
     internal class EditorSingletonScriptableContainer : ScriptableObject
@@ -19,13 +19,14 @@ namespace Nextension.NEditor
         {
             reload(false);
         }
-        [ContextMenu("Scan and reload")]
-        private void scanAndReload()
+        [ContextMenu("Clear and reload")]
+        private async void hardReload()
         {
+            await new NWaitSecond_Editor(1);
             EditorSingletonScriptableLoader.scanAndReload(true);
         }
         private long _lastReloadTime;
-        internal void clear()
+        internal void clearEditorScriptableObjectList()
         {
             _editorSingletonScriptables.Clear();
         }
@@ -45,13 +46,9 @@ namespace Nextension.NEditor
             for (int i = maxIndex; i >= 0; i--)
             {
                 var scriptable = span[i];
-                if (scriptable == null)
-                {
-                    _editorSingletonScriptables.RemoveAt(i);
-                    hasChanged = true;
-                    continue;
-                }
-                if (!ScriptableLoader.isSingletonable(scriptable))
+                if (scriptable == null ||
+                    !NAssetUtils.isInAssets(scriptable) ||
+                    !ScriptableLoader.isSingletonable(scriptable))
                 {
                     _editorSingletonScriptables.RemoveAt(i);
                     hasChanged = true;
@@ -87,6 +84,10 @@ namespace Nextension.NEditor
         }
         internal bool add(ScriptableObject scriptableObject)
         {
+            if (!NAssetUtils.isInAssets(scriptableObject))
+            {
+                return false;
+            }
             _editorSingletonScriptables ??= new List<ScriptableObject>();
             if (_editorSingletonScriptables.Contains(scriptableObject))
             {

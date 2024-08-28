@@ -54,18 +54,15 @@ namespace Nextension
         {
             hideFlags = HideFlags.NotEditable;
         }
-        [ContextMenu("Scan and reload")]
-        private void scanAndReload()
+        [ContextMenu("Clear and reload")]
+        private void hardReload()
         {
-            NEditor.EditorSingletonScriptableLoader.scanAndReload();
+            NEditor.EditorSingletonScriptableLoader.scanAndReload(true);
         }
-        [ContextMenu("Reset and reload")]
-        private void resetAndReload()
+        internal void clearScriptableObjectList()
         {
-            _preloadScriptables.Clear();
-            _nonPreloadScriptables.Clear();
-            NEditor.EditorSingletonScriptableLoader.getEditorContainer().clear();
-            scanAndReload();
+            _preloadScriptables?.Clear();
+            _nonPreloadScriptables?.Clear();
         }
         internal void updateScriptable(ScriptableObject scriptable)
         {
@@ -73,43 +70,61 @@ namespace Nextension
             bool isPreload = !NonPreloadScriptable.isNonPreload(scriptable);
 
             _preloadScriptables ??= new List<ScriptableObject>();
+            _nonPreloadScriptables ??= new List<NonPreloadScriptable>();
+
             var preloadSpan = _preloadScriptables.asSpan();
 
             int preloadMaxIndex = _preloadScriptables.Count - 1;
             for (int i = preloadMaxIndex; i >= 0; i--)
             {
                 var scriptableObject = preloadSpan[i];
+                if (NonPreloadScriptable.isNonPreload(scriptableObject))
+                {
+                    _preloadScriptables.RemoveAt(i);
+                    hasChanged = true;
+                    addNonPreloadScriptable(scriptable);
+                    continue;
+                }
                 if (scriptableObject == scriptable)
                 {
                     if (!isPreload)
                     {
                         _preloadScriptables.RemoveAt(i);
-                        hasChanged |= true;
+                        hasChanged = true;
                     }
                     break;
                 }
             }
 
-            _nonPreloadScriptables ??= new List<NonPreloadScriptable>();
             var nonPreloadSpan = _nonPreloadScriptables.AsSpan();
-
             int nonPreloadMaxIndex = _nonPreloadScriptables.Count - 1;
             for (int i = nonPreloadMaxIndex; i >= 0; i--)
             {
                 var nonScriptable = nonPreloadSpan[i];
-                var type = nonScriptable.getScriptableType();
-                if (type == null)
+
+                var tmpType = nonScriptable.getScriptableType();
+                var tmpScriptableObject = nonScriptable.getScriptableObject();
+
+                if (tmpType == null || tmpScriptableObject == null)
                 {
                     _nonPreloadScriptables.RemoveAt(i);
-                    hasChanged |= true;
+                    hasChanged = true;
                     continue;
                 }
-                if (type == scriptable.GetType())
+
+                if (!NonPreloadScriptable.isNonPreload(tmpScriptableObject))
+                {
+                    _nonPreloadScriptables.RemoveAt(i);
+                    _preloadScriptables.addIfNotPresent(tmpScriptableObject);
+                    hasChanged = true;
+                    continue;
+                }
+                if (tmpType == scriptable.GetType())
                 {
                     if (isPreload)
                     {
                         _nonPreloadScriptables.RemoveAt(i);
-                        hasChanged |= true;
+                        hasChanged = true;
                     }
                     break;
                 }
@@ -121,27 +136,12 @@ namespace Nextension
                 {
                     _preloadScriptables.Add(scriptable);
                     _preloadScriptables.Sort((a, b) => a.name.CompareTo(b.name));
-                    hasChanged |= true;
+                    hasChanged = true;
                 }
             }
             else
             {
-                var existItem = _nonPreloadScriptables.Find(item => item.getScriptableType() == scriptable.GetType());
-                NAssetUtils.getPathInMainResources(scriptable, out var path);
-                path = path.removeExtension();
-                if (existItem == null)
-                {
-                    NonPreloadScriptable nonPreloadScriptable = new NonPreloadScriptable();
-                    nonPreloadScriptable.setup(scriptable.GetType(), path);
-                    _nonPreloadScriptables.Add(nonPreloadScriptable);
-                    _nonPreloadScriptables.Sort();
-                    hasChanged |= true;
-                }
-                else if (existItem.PathInResource != path)
-                {
-                    existItem.setup(scriptable.GetType(), path);
-                    hasChanged |= true;
-                }
+                hasChanged |= addNonPreloadScriptable(scriptable);
             }
 
             if (hasChanged)
@@ -149,6 +149,28 @@ namespace Nextension
                 NAssetUtils.saveAsset(this);
             }
         }
+
+        private bool addNonPreloadScriptable(ScriptableObject scriptable)
+        {
+            var existItem = _nonPreloadScriptables.Find(item => item.getScriptableType() == scriptable.GetType());
+            NAssetUtils.getPathInMainResources(scriptable, out var path);
+            path = path.removeExtension();
+            if (existItem == null)
+            {
+                NonPreloadScriptable nonPreloadScriptable = new NonPreloadScriptable();
+                nonPreloadScriptable.setup(scriptable.GetType(), path);
+                _nonPreloadScriptables.Add(nonPreloadScriptable);
+                _nonPreloadScriptables.Sort();
+                return true;
+            }
+            else if (existItem.PathInResource != path)
+            {
+                existItem.setup(scriptable.GetType(), path);
+                return true;
+            }
+            return false;
+        }
+
         internal bool contains(ScriptableObject scriptableObject)
         {
             bool isPreload = _preloadScriptables.Contains(scriptableObject);

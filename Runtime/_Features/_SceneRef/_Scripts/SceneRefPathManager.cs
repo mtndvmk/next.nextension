@@ -99,7 +99,7 @@ namespace Nextension
         }
         static void onPreprocessBuild()
         {
-            Getter.refresh();
+            Instance.refresh();
         }
 #endif
         public string getScenePath(SceneRef sceneRef)
