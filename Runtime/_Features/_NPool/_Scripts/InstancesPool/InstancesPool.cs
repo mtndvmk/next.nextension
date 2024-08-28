@@ -94,31 +94,9 @@ namespace Nextension
     public interface IInstancePool<T> where T : Object
     {
         T get(Transform parent = null, bool worldPositionStays = true);
-        T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
-        {
-            T item = get(parent, worldPositionStays);
-            releaseWaitable.startWaitable().addCompletedEvent(() =>
-            {
-                release(item);
-            });
-            return item;
-        }
-        T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
-        {
-            T item = get(parent, worldPositionStays);
-            new NWaitSecond(delaySeconds).startWaitable().addCompletedEvent(() =>
-            {
-                release(item);
-            });
-            return item;
-        }
-        IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
-        {
-            for (int i = 0; i < count; ++i)
-            {
-                yield return get(parent, worldPositionStays);
-            }
-        }
+        T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true);
+        T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true);
+        IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true);
         void release(T instance);
         void clearPool();
         bool poolContains(T instance);
@@ -278,6 +256,31 @@ namespace Nextension
             }
             return InstancesPoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
         }
+        public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
+        {
+            T item = get(parent, worldPositionStays);
+            releaseWaitable.startWaitable().addCompletedEvent(() =>
+            {
+                release(item);
+            });
+            return item;
+        }
+        public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
+        {
+            T item = get(parent, worldPositionStays);
+            new NWaitSecond(delaySeconds).startWaitable().addCompletedEvent(() =>
+            {
+                release(item);
+            });
+            return item;
+        }
+        public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                yield return get(parent, worldPositionStays);
+            }
+        }
         internal void release(T instance, GameObject go, OriginInstance origin)
         {
             if (_isSharedPool)
@@ -429,6 +432,33 @@ namespace Nextension
         public T get(Transform parent = null, bool worldPositionStays = true)
         {
             return InstancesPoolUtil.getInstanceFromGO<T>(SharedInstancesPool.getPool(poolId).get(parent, worldPositionStays));
+        }
+        public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
+        {
+            var pool = SharedInstancesPool.getPool(poolId);
+            var go = pool.get(parent, worldPositionStays);
+            releaseWaitable.startWaitable().addCompletedEvent(() =>
+            {
+                pool.release(go);
+            });
+            return InstancesPoolUtil.getInstanceFromGO<T>(go);
+        }
+        public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
+        {
+            var pool = SharedInstancesPool.getPool(poolId);
+            var go = pool.get(parent, worldPositionStays);
+            new NWaitSecond(delaySeconds).startWaitable().addCompletedEvent(() =>
+            {
+                pool.release(go);
+            });
+            return InstancesPoolUtil.getInstanceFromGO<T>(go);
+        }
+        public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                yield return get(parent, worldPositionStays);
+            }
         }
         public void release(T instance)
         {

@@ -34,12 +34,9 @@ namespace Nextension.UI
         public event Action onShowEvent;
         public event Action onHideEvent;
 
-        private void OnValidate()
+        private void Reset()
         {
-            if (_target.isNull())
-            {
-                _target = GetComponentInChildren<RectTransform>(true);
-            }
+            _target = GetComponentInChildren<RectTransform>(true);
         }
 
         private void Awake()
