@@ -10,7 +10,7 @@ namespace Nextension
         public float spacing = 0f;
         public float extendVisibleRange;
 
-        protected NArray<FTAnchor> _cellFTAnchorList = new NArray<FTAnchor>();
+        protected NList<FTAnchor> _cellFTAnchorList = new NList<FTAnchor>();
         protected FTIndex _visibleIndices = new FTIndex(-1, -1);
 
         protected int getFromVisibleIndex_1To0(float topMostY, int fromIndex, int toIndex)

@@ -6,18 +6,18 @@ using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    public class NArray<T> : IList<T>
+    public class NList<T> : IList<T>
     {
         private readonly static T[] _emptyArray = new T[0];
-        public NArray()
+        public NList()
         {
             i_Items = _emptyArray;
         }
-        public NArray(int capacity)
+        public NList(int capacity)
         {
             i_Items = new T[capacity];
         }
-        public NArray(IEnumerable<T> collection)
+        public NList(IEnumerable<T> collection)
         {
             i_Items = collection.ToArray();
             i_Count = i_Items.Length;
@@ -237,7 +237,7 @@ namespace Nextension
                         }
                         else
                         {
-                            var array = new NArray<T>();
+                            var array = new NList<T>();
                             array.copyFrom(collection2);
                             array.asSpan().CopyTo(i_Items.AsSpan(index));
                         }
@@ -281,7 +281,7 @@ namespace Nextension
                         }
                         else
                         {
-                            var array = new NArray<T>();
+                            var array = new NList<T>();
                             array.copyFrom(collection2);
                             array.asSpan().CopyTo(i_Items.AsSpan(index));
                         }

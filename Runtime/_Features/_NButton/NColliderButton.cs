@@ -19,8 +19,8 @@ namespace Nextension
         public UnityEvent onEnableInteractableEvent = new();
         public UnityEvent onDisableInteractableEvent = new();
 
-        private readonly NArray<INButtonListener> _listeners = new();
-        private readonly NArray<INButtonListener> _disableInteratableFromListeners = new();
+        private readonly NList<INButtonListener> _listeners = new();
+        private readonly NList<INButtonListener> _disableInteratableFromListeners = new();
 
         protected float _nextClickableTime;
         protected bool _isSetup;

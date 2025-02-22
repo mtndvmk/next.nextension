@@ -6,8 +6,8 @@ namespace Nextension.Tween
 {
     internal static class NTweenManager
     {
-        private static NArray<NRunnableTweener> _queuedRunnableTweeners;
-        private static NArray<CombinedNTweener> _queuedCombinedTweeners;
+        private static NList<NRunnableTweener> _queuedRunnableTweeners;
+        private static NList<CombinedNTweener> _queuedCombinedTweeners;
 
         private static SimpleDictionary<ushort, AbsTweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;

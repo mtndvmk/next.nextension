@@ -21,6 +21,7 @@ namespace Nextension
         private Func<InfiniteCell> _instantiateCellFunc;
         private Action<InfiniteCell> _destroyCellItemFunc;
 
+#if UNITY_EDITOR
         protected override void Reset()
         {
             base.Reset();
@@ -31,6 +32,7 @@ namespace Nextension
             base.Awake();
             scrollRect.onValueChanged.AddListener((_) => onLayoutUpdated());
         }
+#endif
         protected virtual void LateUpdate()
         {
             if (_isDirtyLayout)

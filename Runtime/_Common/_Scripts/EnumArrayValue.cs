@@ -11,7 +11,6 @@ namespace Nextension
     public interface IEnumArrayValue
     {
         int Length { get; }
-        int EnumCount { get; }
         Type getTypeOfEnum();
         Type getTypeOfValue();
         object getEnumAtIndexAsObject(int index);
@@ -76,7 +75,6 @@ namespace Nextension
         #endregion
 
         public int Length => enumValues.Length;
-        public int EnumCount => EnumIndex<TEnum>.getCount();
         public EnumArrayValue()
         {
 
@@ -89,7 +87,7 @@ namespace Nextension
             enumValues[index] = val;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue getValue(TEnum enumType)
+        public TValue get(TEnum enumType)
         {
 #if UNITY_EDITOR
             refreshEditorCache();
@@ -100,13 +98,13 @@ namespace Nextension
         {
             enumValues[index] = val;
         }
-        public TValue getValueByIndex(int index)
+        public TValue getByIndex(int index)
         {
             return enumValues[index];
         }
         public TValue this[TEnum enumType]
         {
-            get => getValue(enumType);
+            get => get(enumType);
             set => set(enumType, value);
         }
         public Enumerator GetEnumerator()

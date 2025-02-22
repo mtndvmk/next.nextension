@@ -24,7 +24,7 @@ namespace Nextension.Tween
     internal sealed class TweenRunner<TChunk> : AbsTweenRunner where TChunk : TweenChunk
     {
         private readonly SimpleDictionary<ushort, TweenChunk> _chunks = new(1);
-        private readonly NArray<TweenChunk> _notFullChunks = new();
+        private readonly NList<TweenChunk> _notFullChunks = new();
 
         public int ChunkCount => _chunks.Count;
 

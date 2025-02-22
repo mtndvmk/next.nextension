@@ -16,11 +16,13 @@ namespace Nextension
             base.Awake();
             updateContentAnchorAndPivot();
         }
+#if UNITY_EDITOR
         protected override void OnValidate()
         {
             updateContentAnchorAndPivot();
             recalculateCellPositions();
         }
+#endif
         protected override void onAddedNewItem(InfiniteCellData data)
         {
             RectTransform scrollContent = scrollRect.content;

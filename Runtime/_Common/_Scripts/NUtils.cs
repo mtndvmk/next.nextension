@@ -1880,7 +1880,7 @@ namespace Nextension
             self[index] = self[lastIndex];
             self.RemoveAt(lastIndex);
         }
-        public static void removeAtSwapBack<T>(this NArray<T> self, int index)
+        public static void removeAtSwapBack<T>(this NList<T> self, int index)
         {
             var lastIndex = self.Count - 1;
             self[index] = self[lastIndex];
@@ -1901,7 +1901,7 @@ namespace Nextension
             self.removeAtSwapBack(index);
             return true;
         }
-        public static bool removeSwapBack<T>(this NArray<T> self, T item)
+        public static bool removeSwapBack<T>(this NList<T> self, T item)
         {
             var index = self.IndexOf(item);
             if (index < 0) return false;

@@ -6,7 +6,7 @@ namespace Nextension
 {
     public interface IPoolable
     {
-        public const uint DEFAULT_MAX_POOL_ITEM_COUNT = 100;
+        public const int DEFAULT_MAX_POOL_ITEM_COUNT = 100;
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void onCreate() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void onSpawn() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDespawn() { }
@@ -17,7 +17,7 @@ namespace Nextension
         [NonSerialized] private readonly HashSet<T> _pool;
         [NonSerialized] private int _countAll;
 
-        [NonSerialized] public uint maxPoolItemCount;
+        [NonSerialized] public int maxPoolItemCount;
 
         public int CountAll => _countAll;
         public int PoolCount => _pool.Count;
@@ -74,9 +74,9 @@ namespace Nextension
         {
             return getAndRelease(new NWaitSecond(time));
         }
-        public void clear()
+        public void clear(int keepCount = 0)
         {
-            if (_pool.Count > 0)
+            if (_pool.Count > keepCount)
             {
                 _countAll -= _pool.Count;
                 foreach (var item in _pool)
@@ -85,6 +85,10 @@ namespace Nextension
                 }
                 _pool.Clear();
             }
+        }
+        public void clearFitIn()
+        {
+            clear(maxPoolItemCount);
         }
     }
 

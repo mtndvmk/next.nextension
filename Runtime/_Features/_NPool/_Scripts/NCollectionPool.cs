@@ -52,6 +52,12 @@ namespace Nextension
             pool.Clear();
         }
 
+        public static void setMaxItemInPool(int count)
+        {
+            _pool.maxPoolItemCount = count;
+            _pool.clearFitIn();
+        }
+
 #if !NNEXT_DISABLE_NPOOL_TRACKING
         private PoolTracker _poolTrackable;
         void IPoolable.onDespawn()

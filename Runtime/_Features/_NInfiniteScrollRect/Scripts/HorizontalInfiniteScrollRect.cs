@@ -11,7 +11,7 @@ namespace Nextension
         }
         
         [field: SerializeField] public Direction direction { get; private set; }
-
+#if UNITY_EDITOR
         protected override void Awake()
         {
             base.Awake();
@@ -22,6 +22,7 @@ namespace Nextension
             updateContentAnchorAndPivot();
             recalculateCellPositions();
         }
+#endif
         protected override void onAddedNewItem(InfiniteCellData data)
         {
             RectTransform scrollContent = scrollRect.content;

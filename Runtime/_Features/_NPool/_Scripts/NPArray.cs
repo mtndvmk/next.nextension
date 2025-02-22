@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    public class NPArray<T> : NCollectionPool<NPArray<T>, NArray<T>, T>
+    public class NPArray<T> : NCollectionPool<NPArray<T>, NList<T>, T>
     {
         public static int PoolCount => _pool == null ? 0 : _pool.PoolCount;
         public static NPArray<T> get()
@@ -43,7 +43,7 @@ namespace Nextension
             return collectionPool;
         }
         private NPArray() : base() { }
-        
+
         public int Capacity => _collection.Capacity;
 
         public T this[int index]
