@@ -2,18 +2,40 @@ using Nextension.Tween;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Nextension
 {
-    public abstract class InfiniteScrollRect : UIBehaviour
+    public abstract class InfiniteScrollRect : MonoBehaviour
     {
+        protected readonly struct FTAnchor
+        {
+            public readonly float from;
+            public readonly float to;
+            public readonly float size => from - to;
+
+            public FTAnchor(float from, float size)
+            {
+                this.from = from;
+                to = from - size;
+            }
+        }
+        protected struct FTIndex
+        {
+            public int fromIndex;
+            public int toIndex;
+            public FTIndex(int fromIndex, int toIndex)
+            {
+                this.fromIndex = fromIndex;
+                this.toIndex = toIndex;
+            }
+        }
+
         public InfiniteCell cellPrefab;
         public ScrollRect scrollRect;
         public List<InfiniteCellData> DataList { get; internal set; } = new List<InfiniteCellData>();
         protected Dictionary<int, InfiniteCell> _cellTable = new Dictionary<int, InfiniteCell>();
-        protected Queue<InfiniteCell> cellPool = new Queue<InfiniteCell>();
+        protected Queue<InfiniteCell> _cellPool = new Queue<InfiniteCell>();
 
         private NTweener _snapAnimation;
         private bool _isDirtyLayout;
@@ -22,17 +44,24 @@ namespace Nextension
         private Action<InfiniteCell> _destroyCellItemFunc;
 
 #if UNITY_EDITOR
-        protected override void Reset()
+        protected virtual void Reset()
         {
-            base.Reset();
             scrollRect = GetComponent<ScrollRect>();
         }
-        protected override void Awake()
+        protected virtual async void OnValidate()
         {
-            base.Awake();
-            scrollRect.onValueChanged.AddListener((_) => onLayoutUpdated());
+            if (NStartRunner.IsPlaying)
+            {
+                await new NWaitFrame(1);
+                updateContentAnchorAndPivot();
+                recalculateCellPositions();
+            }
         }
 #endif
+        protected virtual void Awake()
+        {
+            scrollRect.onValueChanged.AddListener((_) => onLayoutUpdated());
+        }
         protected virtual void LateUpdate()
         {
             if (_isDirtyLayout)
@@ -40,9 +69,8 @@ namespace Nextension
                 forceUpdateLayout();
             }
         }
-        protected override void OnDisable()
+        protected virtual void OnDisable()
         {
-            base.OnDisable();
             stopSnapping();
         }
 
@@ -57,9 +85,9 @@ namespace Nextension
             }
             else
             {
-                if (cellPool.Count > 0)
+                if (_cellPool.Count > 0)
                 {
-                    cell = cellPool.Dequeue();
+                    cell = _cellPool.Dequeue();
                 }
                 else
                 {
@@ -80,7 +108,7 @@ namespace Nextension
             else
             {
                 cell.gameObject.SetActive(false);
-                cellPool.Enqueue(cell);
+                _cellPool.Enqueue(cell);
             }
         }
         protected void hideCell(int cellIndex)
@@ -115,15 +143,19 @@ namespace Nextension
         {
 
         }
-        public virtual void remove(int index)
+        public void remove(int index)
         {
             if (DataList.Count == 0 || index >= DataList.Count) return;
+            var removedData = DataList[index];
             DataList.RemoveAt(index);
             hideCell(index);
+            onRemovedItem(index, removedData);
             recalculateCellPositions(index);
-            setDirty();
         }
+        protected virtual void onRemovedItem(int index, InfiniteCellData data)
+        {
 
+        }
         public void insert(int index, InfiniteCellData data)
         {
             for (int i = index; i < DataList.Count; i++)
@@ -136,9 +168,7 @@ namespace Nextension
             DataList.Insert(index, data);
             onAddedNewItem(data);
             recalculateCellPositions(index);
-            setDirty();
         }
-
         public void addRange(IEnumerable<InfiniteCellData> dataEnumerable)
         {
             foreach (var d in dataEnumerable)
@@ -240,7 +270,7 @@ namespace Nextension
         }
         protected virtual void onCellSizeUpdated(int index, Vector2 oldSize, Vector2 newSize) { }
         protected abstract void recalculateCellPositions(int startIndex = 1);
-
+        protected abstract void updateContentAnchorAndPivot();
         public void overrideCellInstantiation(Func<InfiniteCell> instantiateCellFunc, Action<InfiniteCell> destroyCellItemFunc)
         {
             _instantiateCellFunc = instantiateCellFunc;

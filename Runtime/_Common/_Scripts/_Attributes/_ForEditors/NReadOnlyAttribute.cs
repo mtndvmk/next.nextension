@@ -4,5 +4,11 @@ using UnityEngine;
 namespace Nextension
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class NReadOnlyAttribute : PropertyAttribute { }
+    public class NReadOnlyAttribute : PropertyAttribute 
+    {
+        public NReadOnlyAttribute() 
+        {
+            order = 1;
+        }
+    }
 }

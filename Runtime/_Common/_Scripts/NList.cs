@@ -159,6 +159,13 @@ namespace Nextension
             }
             i_Items[i_Count] = default;
         }
+        public void removeLast()
+        {
+            if (i_Count > 0)
+            {
+                i_Items[--i_Count] = default;
+            }
+        }
         public void removeAtWithoutChecks(int index)
         {
             if (index < --i_Count)

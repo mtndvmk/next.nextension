@@ -9,20 +9,27 @@ namespace Nextension
             TOP_BOTTOM,
             BOTTOM_TOP,
         }
-        [field: SerializeField] public Direction direction { get; private set; }
+        [SerializeField] private Direction _direction;
+        public Direction direction
+        {
+            get => _direction;
+            set
+            {
+                if (value != _direction)
+                {
+                    _direction = value;
+                    updateContentAnchorAndPivot();
+                    recalculateCellPositions();
+                }
+            }
+        }
 
         protected override void Awake()
         {
             base.Awake();
             updateContentAnchorAndPivot();
         }
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            updateContentAnchorAndPivot();
-            recalculateCellPositions();
-        }
-#endif
+
         protected override void onAddedNewItem(InfiniteCellData data)
         {
             RectTransform scrollContent = scrollRect.content;
@@ -37,8 +44,8 @@ namespace Nextension
             else
             {
                 var prevFTAnchor = _cellFTAnchorList[data.Index - 1];
-                ftAnchor = new FTAnchor(prevFTAnchor.to - spacing, cellHeight);
-                contentHeight += cellHeight + spacing;
+                ftAnchor = new FTAnchor(prevFTAnchor.to - _spacing, cellHeight);
+                contentHeight += cellHeight + _spacing;
             }
             _cellFTAnchorList.Add(ftAnchor);
             scrollContent.sizeDelta = new Vector2(scrollContent.sizeDelta.x, contentHeight);
@@ -72,11 +79,11 @@ namespace Nextension
                 }
             }
 
-            float anchorY = direction == Direction.TOP_BOTTOM ? 1 : 0;
+            float anchorY = _direction == Direction.TOP_BOTTOM ? 1 : 0;
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
                 var cellFTAnchor = _cellFTAnchorList[i];
-                var posY = direction == Direction.TOP_BOTTOM ? cellFTAnchor.from : -cellFTAnchor.to;
+                var posY = _direction == Direction.TOP_BOTTOM ? cellFTAnchor.from : -cellFTAnchor.to;
                 var cell = showCell(i, new Vector2(0, posY));
                 var cellRectTransform = cell.rectTransform();
                 cellRectTransform.anchorMin = cellRectTransform.anchorMin.setY(anchorY);
@@ -90,15 +97,15 @@ namespace Nextension
         private FTAnchor getViewportFTAnchor()
         {
             float viewportHeight = scrollRect.viewport.rect.height;
-            if (direction == Direction.TOP_BOTTOM)
+            if (_direction == Direction.TOP_BOTTOM)
             {
                 float contentTop = scrollRect.content.anchoredPosition.y;
-                return new FTAnchor(extendVisibleRange - contentTop, viewportHeight + extendVisibleRange + extendVisibleRange);
+                return new FTAnchor(_extendVisibleRange - contentTop, viewportHeight + _extendVisibleRange + _extendVisibleRange);
             }
             else
             {
                 float contentBottom = scrollRect.content.anchoredPosition.y;
-                return new FTAnchor(extendVisibleRange - contentBottom + viewportHeight, viewportHeight + extendVisibleRange + extendVisibleRange);
+                return new FTAnchor(_extendVisibleRange - contentBottom + viewportHeight, viewportHeight + _extendVisibleRange + _extendVisibleRange);
             }
         }
         private FTIndex getVisibleIndices()
@@ -117,7 +124,7 @@ namespace Nextension
 
             FTAnchor viewportFTAnchor = getViewportFTAnchor();
 
-            if (direction == Direction.TOP_BOTTOM)
+            if (_direction == Direction.TOP_BOTTOM)
             {
                 var fromVisibleIndex = getFromVisibleIndex_1To0(viewportFTAnchor.from, 0, latestIndex);
                 var toVisibleIndex = getToVisibleIndex_1To0(viewportFTAnchor.to, fromVisibleIndex, latestIndex);
@@ -143,7 +150,7 @@ namespace Nextension
             }
             float cellPosY = -_cellFTAnchorList[index].from;
             cellPosY = Mathf.Min(scrollRect.content.rect.height - scrollRect.viewport.rect.height, cellPosY);
-            if (direction == Direction.BOTTOM_TOP)
+            if (_direction == Direction.BOTTOM_TOP)
             {
                 cellPosY = -cellPosY;
             }
@@ -152,18 +159,17 @@ namespace Nextension
                 innerSnap(new Vector2(0, cellPosY), duration);
             }
         }
-        public override void remove(int index)
+        protected override void onRemovedItem(int index, InfiniteCellData removedCell)
         {
-            var removeCell = DataList[index];
-            base.remove(index);
+            _cellFTAnchorList.removeLast();
 
             RectTransform scrollContent = scrollRect.content;
             var contentHeight = scrollContent.sizeDelta.y;
-            var deltaHeight = removeCell.CellSize.y + spacing;
+            var deltaHeight = removedCell.CellSize.y + _spacing;
 
             contentHeight -= deltaHeight;
             scrollContent.sizeDelta = new Vector2(scrollContent.sizeDelta.x, contentHeight);
-            
+
             scrollRect.content.anchoredPosition -= new Vector2(0, deltaHeight);
         }
 
@@ -176,10 +182,10 @@ namespace Nextension
             _cellFTAnchorList[index] = new FTAnchor(_cellFTAnchorList[index].from, newSize.y);
             recalculateCellPositions(index);
         }
-        protected void updateContentAnchorAndPivot()
+        protected override void updateContentAnchorAndPivot()
         {
             RectTransform scrollContent = scrollRect.content;
-            if (direction == Direction.TOP_BOTTOM)
+            if (_direction == Direction.TOP_BOTTOM)
             {
                 scrollContent.anchorMin = scrollContent.anchorMin.setY(1);
                 scrollContent.anchorMax = scrollContent.anchorMax.setY(1);

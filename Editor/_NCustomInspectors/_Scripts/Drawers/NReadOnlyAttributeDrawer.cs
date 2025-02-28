@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NReadOnlyAttribute))]
-    public class NReadOnlyDrawer : PropertyDrawer
+    public class NReadOnlyAttributeDrawer : PropertyDrawer
     {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

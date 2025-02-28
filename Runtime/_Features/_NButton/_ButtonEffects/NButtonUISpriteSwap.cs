@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Nextension
 {
-    [DisallowMultipleComponent]
+    [DisallowMultipleComponent, ExecuteAlways]
     public class NButtonUISpriteSwap : AbsNButtonEffect
     {
         [SerializeField] private Image _target;
@@ -12,65 +12,91 @@ namespace Nextension
         [SerializeField] private Sprite _downSprite;
         [SerializeField] private Sprite _disableSprite;
 
+        private enum SpriteState : byte
+        {
+            Normal,
+            Enter,
+            Down,
+            Disable
+        }
+
+        private SpriteState _currentState;
+
         private void Reset()
         {
             _target = GetComponent<Image>();
             OnEnable();
         }
+        private void OnValidate()
+        {
+            refreshSprite();
+        }
         private void OnEnable()
         {
-            if (Button != null && _target)
+            if (Button != null)
             {
-                if (_button.isInteractable())
-                {
-                    _target.overrideSprite = _normalSprite;
-                }
-                else
-                {
-                    _target.overrideSprite = _disableSprite;
-                }
+                onInteractableChanged(_button.isInteractable());
             }
+        }
+        private void OnDisable()
+        {
+            _target.overrideSprite = default;
         }
         public override void onButtonUp()
         {
-            if (!enabled) return;
-            if (_target == null) return;
+            _currentState = SpriteState.Enter;
             changeSprite(_enterSprite);
         }
         public override void onButtonEnter()
         {
-            if (!enabled) return;
-            if (_target == null) return;
+            _currentState = SpriteState.Enter;
             changeSprite(_enterSprite);
         }
         public override void onButtonExit()
         {
-            if (!enabled) return;
-            if (_target == null) return;
+            _currentState = SpriteState.Normal;
             changeSprite(_normalSprite);
         }
         public override void onButtonDown()
         {
-            if (!enabled) return;
-            if (_target == null) return;
+            _currentState = SpriteState.Down;
             changeSprite(_downSprite);
         }
         public override void onInteractableChanged(bool isInteractable)
         {
-            if (!enabled) return;
-            if (_target == null) return;
             if (isInteractable)
             {
+                _currentState = SpriteState.Normal;
                 changeSprite(_normalSprite);
             }
             else
             {
+                _currentState = SpriteState.Disable;
                 changeSprite(_disableSprite);
             }
         }
-
+        private void refreshSprite()
+        {
+            switch (_currentState)
+            {
+                case SpriteState.Normal:
+                    changeSprite(_normalSprite);
+                    break;
+                case SpriteState.Enter:
+                    changeSprite(_enterSprite);
+                    break;
+                case SpriteState.Down:
+                    changeSprite(_downSprite);
+                    break;
+                case SpriteState.Disable:
+                    changeSprite(_disableSprite);
+                    break;
+            }
+        }
         private void changeSprite(Sprite sprite)
         {
+            if (!enabled) return;
+            if (_target == null) return;
             _target.overrideSprite = sprite;
         }
     }

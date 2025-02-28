@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Nextension
 {
-    [DisallowMultipleComponent]
+    [DisallowMultipleComponent, ExecuteAlways]
     public class NButtonUIColorTint : AbsNButtonEffect
     {
         [SerializeField] private CanvasRenderer _target;

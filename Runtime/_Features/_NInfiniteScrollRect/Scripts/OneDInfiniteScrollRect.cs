@@ -2,13 +2,39 @@
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using UnityEngine;
 
 namespace Nextension
 {
     public abstract class OneDInfiniteScrollRect : InfiniteScrollRect
     {
-        public float spacing = 0f;
-        public float extendVisibleRange;
+        [SerializeField] protected float _spacing;
+        [SerializeField] protected float _extendVisibleRange;
+
+        public float Spacing
+        {
+            get => _spacing;
+            set
+            {
+                if (_spacing != value)
+                {
+                    _spacing = value;
+                    recalculateCellPositions();
+                }
+            }
+        }
+        public float extendVisibleRange
+        {
+            get => _extendVisibleRange;
+            set
+            {
+                if (value != _extendVisibleRange)
+                {
+                    _extendVisibleRange = value;
+                    setDirty();
+                }
+            }
+        }
 
         protected NList<FTAnchor> _cellFTAnchorList = new NList<FTAnchor>();
         protected FTIndex _visibleIndices = new FTIndex(-1, -1);
@@ -87,6 +113,7 @@ namespace Nextension
         }
         protected override unsafe void recalculateCellPositions(int startIndex = 1)
         {
+            setDirty();
             if (startIndex <= _visibleIndices.fromIndex)
             {
                 for (int i = _visibleIndices.fromIndex; i <= _visibleIndices.toIndex; i++)
@@ -116,7 +143,7 @@ namespace Nextension
 
             var gcHandle = GCHandle.Alloc(_cellFTAnchorList.i_Items, GCHandleType.Pinned);
             var cellFTAnchorListStartPtr = ((FTAnchor*)gcHandle.AddrOfPinnedObject()) + startIndex;
-            var job = new CalculateCellPositionJob(cellFTAnchorListStartPtr, cellCount - startIndex, spacing);
+            var job = new CalculateCellPositionJob(cellFTAnchorListStartPtr, cellCount - startIndex, _spacing);
             var jobHandle = job.ScheduleByRef();
 
             jobHandle.Complete();
@@ -129,28 +156,6 @@ namespace Nextension
             _cellFTAnchorList.Clear();
         }
 
-        protected readonly struct FTAnchor
-        {
-            public readonly float from;
-            public readonly float to;
-            public readonly float size => from - to;
-
-            public FTAnchor(float from, float size)
-            {
-                this.from = from;
-                to = from - size;
-            }
-        }
-        protected struct FTIndex
-        {
-            public int fromIndex;
-            public int toIndex;
-            public FTIndex(int fromIndex, int toIndex)
-            {
-                this.fromIndex = fromIndex;
-                this.toIndex = toIndex;
-            }
-        }
         [BurstCompile]
         protected unsafe struct CalculateCellPositionJob : IJob
         {

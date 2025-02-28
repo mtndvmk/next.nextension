@@ -2647,12 +2647,6 @@ namespace Nextension
             NUtils.destroyObject(cloneFrom, true);
             return boxCollider;
         }
-        public static KeepScale setParentAndKeepScale(this Transform transform, Transform parent)
-        {
-            var kScale = transform.gameObject.getOrAddComponent<KeepScale>().setup();
-            transform.SetParent(parent);
-            return kScale;
-        }
         #endregion
 
         #region Animator

@@ -11,18 +11,13 @@ namespace Nextension
         }
         
         [field: SerializeField] public Direction direction { get; private set; }
-#if UNITY_EDITOR
+
         protected override void Awake()
         {
             base.Awake();
             updateContentAnchorAndPivot();
         }
-        protected override void OnValidate()
-        {
-            updateContentAnchorAndPivot();
-            recalculateCellPositions();
-        }
-#endif
+
         protected override void onAddedNewItem(InfiniteCellData data)
         {
             RectTransform scrollContent = scrollRect.content;
@@ -38,14 +33,14 @@ namespace Nextension
                 }
                 else
                 {
-                    contentWidth += cellWidth + spacing;
+                    contentWidth += cellWidth + _spacing;
                 }
             }
             else
             {
                 var prevFTAnchor = _cellFTAnchorList[data.Index - 1];
-                ftAnchor = new FTAnchor(prevFTAnchor.to - spacing, cellWidth);
-                contentWidth += cellWidth + spacing;
+                ftAnchor = new FTAnchor(prevFTAnchor.to - _spacing, cellWidth);
+                contentWidth += cellWidth + _spacing;
             }
             _cellFTAnchorList.Add(ftAnchor);
             scrollContent.sizeDelta = new Vector2(contentWidth, scrollContent.sizeDelta.y);
@@ -100,12 +95,12 @@ namespace Nextension
             if (direction == Direction.RIGHT_LEFT)
             {
                 float contentRight = scrollRect.content.anchoredPosition.x;
-                return new FTAnchor(extendVisibleRange - contentRight, viewportWidth + extendVisibleRange + extendVisibleRange);
+                return new FTAnchor(_extendVisibleRange - contentRight, viewportWidth + _extendVisibleRange + _extendVisibleRange);
             }
             else
             {
                 float contentLeft = scrollRect.content.anchoredPosition.x;
-                return new FTAnchor(extendVisibleRange - contentLeft + viewportWidth, viewportWidth + extendVisibleRange + extendVisibleRange);
+                return new FTAnchor(_extendVisibleRange - contentLeft + viewportWidth, viewportWidth + _extendVisibleRange + _extendVisibleRange);
             }
         }
         private FTIndex getVisibleIndices()
@@ -159,14 +154,14 @@ namespace Nextension
                 innerSnap(new Vector2(cellPosX, 0), duration);
             }
         }
-        public override void remove(int index)
+        protected override void onRemovedItem(int index, InfiniteCellData removedCell)
         {
-            var removeCell = DataList[index];
-            base.remove(index);
+            _cellFTAnchorList.removeLast();
+
             RectTransform scrollContent = scrollRect.content;
             var contentWidth = scrollContent.sizeDelta.x;
 
-            var deltaWidth = removeCell.CellSize.x + spacing;
+            var deltaWidth = removedCell.CellSize.x + _spacing;
             contentWidth -= deltaWidth;
 
             scrollContent.sizeDelta = new Vector2(contentWidth, scrollContent.sizeDelta.y);
@@ -183,7 +178,7 @@ namespace Nextension
             _cellFTAnchorList[index] = new FTAnchor(_cellFTAnchorList[index].from, newSize.x);
             recalculateCellPositions(index);
         }
-        protected void updateContentAnchorAndPivot()
+        protected override void updateContentAnchorAndPivot()
         {
             RectTransform scrollContent = scrollRect.content;
             if (direction == Direction.RIGHT_LEFT)
