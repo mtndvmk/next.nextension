@@ -44,7 +44,7 @@ namespace Nextension
                 return;
             }
 
-            var index = _sceneRefPaths.bFindIndex(guid);
+            var index = _sceneRefPaths.FindIndex(guid);
             if (index >= 0)
             {
                 if (_sceneRefPaths[index].path != path)
@@ -56,7 +56,7 @@ namespace Nextension
             }
             else
             {
-                _sceneRefPaths.addAndSort(new SceneRefPath()
+                _sceneRefPaths.AddAndSort(new SceneRefPath()
                 {
                     guid = guid,
                     path = path
@@ -72,7 +72,7 @@ namespace Nextension
                 var guid = _sceneRefPaths[i].guid;
                 if (string.IsNullOrEmpty(guid))
                 {
-                    _sceneRefPaths.removeAt(i);
+                    _sceneRefPaths.RemoveAt(i);
                     isDirty = true;
                     continue;
                 }
@@ -80,7 +80,7 @@ namespace Nextension
                 var sceneAsset = NAssetUtils.loadMainAssetFromGUID(guid, out var path) as SceneAsset;
                 if (string.IsNullOrEmpty(path) || sceneAsset == null)
                 {
-                    _sceneRefPaths.removeAt(i);
+                    _sceneRefPaths.RemoveAt(i);
                     isDirty = true;
                     continue;
                 }
@@ -114,7 +114,7 @@ namespace Nextension
                 refresh();
             }
 #endif
-            var refPath = _sceneRefPaths.bFind(sceneRef.guid);
+            var refPath = _sceneRefPaths.Find(sceneRef.guid);
             return refPath.path;
         }
     }

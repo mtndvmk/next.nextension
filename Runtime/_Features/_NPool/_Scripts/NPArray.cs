@@ -45,16 +45,17 @@ namespace Nextension
         private NPArray() : base() { }
 
         public int Capacity => _collection.Capacity;
+        public T[] Items => ToArray();
 
         public T this[int index]
         {
             get { onAccessed(); return _collection[index]; }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T getAtWithoutChecks(int index)
+        public T GetAtWithoutChecks(int index)
         {
             onAccessed();
-            return _collection.getAtWithoutChecks(index);
+            return _collection.GetAtWithoutChecks(index);
         }
         public void AddRange(IEnumerable<T> collection)
         {
@@ -66,36 +67,36 @@ namespace Nextension
             onAccessed();
             _collection.RemoveAt(index);
         }
-        public Span<T> asSpan()
+        public Span<T> AsSpan()
         {
             onAccessed();
-            return _collection.asSpan();
+            return _collection.AsSpan();
         }
-        public void ensureCapacity(int capacity)
+        public void EnsureCapacity(int capacity)
         {
             onAccessed();
             _collection.ensureCapacity(capacity);
         }
-        public void copyFrom(IEnumerable<T> collection)
+        public void CopyFrom(IEnumerable<T> collection)
         {
             onAccessed();
             _collection.copyFrom(collection);
         }
-        public void copyTo(NPArray<T> dst)
+        public void CopyTo(NPArray<T> dst)
         {
             onAccessed();
             dst.onAccessed();
-            dst._collection.copyFrom(this);
+            dst._collection.CopyFrom(this);
         }
         public ArrayEnumerator<T> GetEnumerator()
         {
             onAccessed();
             return _collection.GetEnumerator();
         }
-        public T[] toArray()
+        public T[] ToArray()
         {
             onAccessed();
-            return asSpan().ToArray();
+            return AsSpan().ToArray();
         }
         public int IndexOf(T item)
         {

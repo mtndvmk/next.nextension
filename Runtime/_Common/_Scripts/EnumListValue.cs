@@ -36,7 +36,7 @@ namespace Nextension
         public int Count => _enumValueList.Count;
         public void set(TEnum enumType, TValue val)
         {
-            var index = _enumValueList.bFindIndex(enumType);
+            var index = _enumValueList.FindIndex(enumType);
             if (index >= 0)
             {
                 var enumValue = _enumValueList[index];
@@ -45,7 +45,7 @@ namespace Nextension
             }
             else
             {
-                _enumValueList.addAndSort(new EnumValue() { enumType = enumType, value = val });
+                _enumValueList.AddAndSort(new EnumValue() { enumType = enumType, value = val });
             }
         }
         public TValue get(TEnum enumType)
@@ -58,7 +58,7 @@ namespace Nextension
         }
         public bool tryGet(TEnum enumType, out TValue outValue)
         {
-            var index = _enumValueList.bTryGetValue(enumType, out var val);
+            var index = _enumValueList.TryGetValue(enumType, out var val);
             if (index >= 0)
             {
                 outValue = val.value;
@@ -72,11 +72,11 @@ namespace Nextension
         }
         public bool contains(TEnum enumType)
         {
-            return _enumValueList.bContains(enumType);
+            return _enumValueList.Contains(enumType);
         }
         public bool remove(TEnum enumType)
         {
-            return _enumValueList.removeKey(enumType);
+            return _enumValueList.RemoveKey(enumType);
         }
         public TValue this[TEnum enumType]
         {

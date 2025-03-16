@@ -20,16 +20,16 @@ namespace Nextension
 
         public void schedule(TSchedulable task)
         {
-            Pending.addAndSort(task);
+            Pending.AddAndSort(task);
             executeNext();
         }
         public void cancelPending()
         {
-            foreach (var schedule in _pending.asSpan())
+            foreach (var schedule in _pending.AsSpan())
             {
                 schedule.onCanceled();
             }
-            _pending.clear();
+            _pending.Clear();
         }
 
         private async void executeNext()

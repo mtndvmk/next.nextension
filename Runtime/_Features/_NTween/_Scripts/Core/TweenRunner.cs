@@ -42,7 +42,7 @@ namespace Nextension.Tween
             }
             else
             {
-                nextChunk = _notFullChunks.getAtWithoutChecks(lastIndex);
+                nextChunk = _notFullChunks.GetAtWithoutChecks(lastIndex);
             }
 
             nextChunk.addTweener(tweener);
@@ -80,7 +80,7 @@ namespace Nextension.Tween
 
                 for (int i = _notFullChunks.Count - 1; i >= 0; i--)
                 {
-                    if (_notFullChunks.getAtWithoutChecks(i).isDisposed())
+                    if (_notFullChunks.GetAtWithoutChecks(i).isDisposed())
                     {
                         _notFullChunks.removeAtSwapBackWithoutChecks(i);
                     }

@@ -185,6 +185,7 @@ namespace Nextension
         protected override void updateContentAnchorAndPivot()
         {
             RectTransform scrollContent = scrollRect.content;
+            if (scrollContent == null) return;
             if (_direction == Direction.TOP_BOTTOM)
             {
                 scrollContent.anchorMin = scrollContent.anchorMin.setY(1);

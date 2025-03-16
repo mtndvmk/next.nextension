@@ -50,7 +50,7 @@ namespace Nextension
 
         public static NData toNData(this string value)
         {
-            return new NData(NConverter.getBytes(value));
+            return new NData(NConverter.getUTF8Bytes(value));
         }
         public static NData toNData(this byte[] value)
         {

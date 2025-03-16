@@ -47,7 +47,7 @@ namespace Nextension.Tween
             {
                 for (int i = combinedCount - 1; i >= 0; i--)
                 {
-                    var tweener = _queuedCombinedTweeners.getAtWithoutChecks(i);
+                    var tweener = _queuedCombinedTweeners.GetAtWithoutChecks(i);
                     if (tweener.startTime <= currentTime)
                     {
                         tweener.invokeOnStart();
@@ -61,7 +61,7 @@ namespace Nextension.Tween
             {
                 for (int i = 0; i < runnableCount; ++i)
                 {
-                    startRunnableTweener(_queuedRunnableTweeners.getAtWithoutChecks(i));
+                    startRunnableTweener(_queuedRunnableTweeners.GetAtWithoutChecks(i));
                 }
                 _queuedRunnableTweeners.Clear();
             }

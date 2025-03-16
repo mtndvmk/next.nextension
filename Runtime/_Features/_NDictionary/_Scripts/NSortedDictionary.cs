@@ -34,7 +34,7 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void sort()
         {
-            items.sort();
+            items.Sort();
         }
 
         public override int Count => items.Count;
@@ -74,13 +74,13 @@ namespace Nextension
                 var k = items[i].key;
                 if (k == null || k.Equals(null))
                 {
-                    items.removeAt(i);
+                    items.RemoveAt(i);
                 }
                 else
                 {
                     if (existKeys.Contains(k))
                     {
-                        items.removeAt(i);
+                        items.RemoveAt(i);
                     }
                     else
                     {
@@ -96,11 +96,11 @@ namespace Nextension
             {
                 throw new ArgumentNullException("NDictionary.key");
             }
-            var index = items.bFindIndex(key);
+            var index = items.FindIndex(key);
             if (index < 0)
             {
                 var item = new DItem(key, value);
-                items.addAndSort(item);
+                items.AddAndSort(item);
             }
             else
             {
@@ -113,7 +113,7 @@ namespace Nextension
             {
                 throw new ArgumentNullException("NDictionary.key");
             }
-            var index = items.bFindIndex(key);
+            var index = items.FindIndex(key);
             if (index < 0)
             {
                 return default;
@@ -127,12 +127,12 @@ namespace Nextension
 
         public override bool containsKey(K key)
         {
-            var index = items.bFindIndex(key);
+            var index = items.FindIndex(key);
             return index >= 0;
         }
         public override bool containsValue(V value)
         {
-            var index = items.findIndex(item => item.value.equals(value));
+            var index = items.FindIndex(item => item.value.equals(value));
             return index >= 0;
         }
 
@@ -144,12 +144,12 @@ namespace Nextension
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal override Span<DItem> asSpan()
         {
-            return items.asSpan();
+            return items.AsSpan();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected override void removeDItemAtSwapBack(int index)
         {
-            items.removeAt(index);
+            items.RemoveAt(index);
         }
     }
 }

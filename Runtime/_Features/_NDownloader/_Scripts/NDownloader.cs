@@ -167,15 +167,15 @@ namespace Nextension
                 }
 
                 var pendingTasks = _scheduler.Pending;
-                var existTaskIndex = pendingTasks.findIndex(item => item.url.Equals(url));
+                var existTaskIndex = pendingTasks.FindIndex(item => item.url.Equals(url));
                 if (existTaskIndex >= 0)
                 {
                     var task = pendingTasks[existTaskIndex];
                     if (task.priority < priority)
                     {
-                        pendingTasks.removeAt(existTaskIndex);
+                        pendingTasks.RemoveAt(existTaskIndex);
                         task.priority = priority;
-                        pendingTasks.addAndSort(task);
+                        pendingTasks.AddAndSort(task);
                     }
                     return task;
                 }

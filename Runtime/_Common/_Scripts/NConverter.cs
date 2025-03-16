@@ -76,7 +76,7 @@ namespace Nextension
         /// </summary>
         /// <param name="inData"></param>
         /// <returns></returns>
-        public static byte[] getBytes(string inData)
+        public static byte[] getUTF8Bytes(string inData)
         {
             return Encoding.UTF8.GetBytes(inData);
         }

@@ -38,7 +38,7 @@ namespace Nextension
             {
                 return;
             }
-            var span = _actions.asSpan();
+            var span = _actions.AsSpan();
             for (int i = 0; i < count; i++)
             {
                 span[i].Invoke();
@@ -56,7 +56,7 @@ namespace Nextension
             {
                 return;
             }
-            var span = _actions.asSpan();
+            var span = _actions.AsSpan();
             if (onExceptionCallback != null)
             {
                 for (int i = 0; i < count; i++)
@@ -128,7 +128,7 @@ namespace Nextension
             {
                 return;
             }
-            var span = _actions.asSpan();
+            var span = _actions.AsSpan();   
             for (int i = 0; i < count; i++)
             {
                 span[i].Invoke(result);
@@ -146,7 +146,7 @@ namespace Nextension
             {
                 return;
             }
-            var span = _actions.asSpan();
+            var span = _actions.AsSpan();
             if (onExceptionCallback != null)
             {
                 for (int i = 0; i < count; i++)

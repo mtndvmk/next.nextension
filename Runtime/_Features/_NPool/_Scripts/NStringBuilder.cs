@@ -2,47 +2,36 @@ using System;
 
 namespace Nextension
 {
-    public struct NStringBuilder : IDisposable
+    public readonly struct NStringBuilder : IDisposable
     {
         public static NStringBuilder get()
         {
-            return new NStringBuilder()
-            {
-                _charArray = NPUArray<char>.get()
-            };
+            return new NStringBuilder(NPUArray<char>.get());
         }
         public static NStringBuilder getWithoutTracking()
         {
-            return new NStringBuilder()
-            {
-                _charArray = NPUArray<char>.getWithoutTracking()
-            };
+            return new NStringBuilder(NPUArray<char>.getWithoutTracking());
         }
         public static NStringBuilder get(int capacity)
         {
-            return new NStringBuilder()
-            {
-                _charArray = NPUArray<char>.get(capacity)
-            };
+            return new NStringBuilder(NPUArray<char>.get(capacity));
         }
         public static NStringBuilder getWithoutTracking(int capacity)
         {
-            return new NStringBuilder()
-            {
-                _charArray = NPUArray<char>.getWithoutTracking(capacity)
-            };
+            return new NStringBuilder(NPUArray<char>.getWithoutTracking(capacity));
         }
 
-        public char this[int index]
+        private NStringBuilder(NPUArray<char> arr)
         {
-            get { return _charArray[index]; }
+            _charArray = arr;
         }
 
-        private NPUArray<char> _charArray;
-        public int Count => _charArray.Count;
+        public readonly char this[int index] => _charArray[index];
 
-        public bool IsCreated => _charArray.IsCreated;
-        public bool IsReadOnly => _charArray.IsReadOnly;
+        private readonly NPUArray<char> _charArray;
+        public readonly int Count => _charArray.Count;
+        public readonly bool IsCreated => _charArray.IsCreated;
+        public readonly bool IsReadOnly => _charArray.IsReadOnly;
 
         public void stopTracking()
         {
@@ -54,6 +43,11 @@ namespace Nextension
             _charArray.Add(item);
             return this;
         }
+        public NStringBuilder AppendLine()
+        {
+            _charArray.Add('\n');
+            return this;
+        }
         public NStringBuilder Insert(int index, char item)
         {
             _charArray.Insert(index, item);
@@ -62,6 +56,12 @@ namespace Nextension
         public NStringBuilder Append(string value)
         {
             return Insert(Count, value);
+        }
+        public NStringBuilder AppendLine(string value)
+        {
+            Insert(Count, value);
+            AppendLine();
+            return this;
         }
         public unsafe NStringBuilder Insert(int index, string value)
         {
@@ -80,7 +80,7 @@ namespace Nextension
         {
             _charArray.Clear();
         }
-        public bool Contains(char item)
+        public readonly bool Contains(char item)
         {
             return _charArray.Contains(item);
         }
@@ -92,14 +92,14 @@ namespace Nextension
         {
             _charArray.Dispose();
         }
-        public unsafe override string ToString()
+        public readonly unsafe override string ToString()
         {
             fixed (byte* bPtr = _charArray.i_array.Collection.i_Items)
             {
                 return new string((char*)bPtr, 0, Count);
             }
         }
-        public unsafe string ToString(int startIndex, int length)
+        public readonly unsafe string ToString(int startIndex, int length)
         {
             if (startIndex < 0 || length <= 0 || startIndex + length >= Count)
             {

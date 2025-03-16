@@ -33,14 +33,14 @@ namespace Nextension.NEditor
                     if (baseType == null) continue;
                     if (baseType.FullName.StartsWith(nSingletonType.FullName))
                     {
-                        var awakeType = type.GetTypeInfo().GetDeclaredMethod("Awake");
-                        if (awakeType != null)
+                        var awakeMethod = type.GetTypeInfo().GetDeclaredMethod("Awake");
+                        if (awakeMethod != null)
                         {
                             throw new Exception($"Please override \"onAwake()\" instead using \"Awake()\" at [{type.FullName}]");
                         }
 
-                        var onDestroyType = type.GetMethod("OnDestroy");
-                        if (onDestroyType != null)
+                        var onDestroyMethod = type.GetTypeInfo().GetMethod("OnDestroy");
+                        if (onDestroyMethod != null)
                         {
                             throw new Exception("Please override onDestroy() instead using OnDestroy()");
                         }
@@ -55,11 +55,6 @@ namespace Nextension.NEditor
                 exception = e;
                 return true;
             }
-            finally
-            {
-
-            }
         }
-
     }
 }

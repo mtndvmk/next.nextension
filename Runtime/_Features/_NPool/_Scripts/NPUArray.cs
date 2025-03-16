@@ -5,57 +5,39 @@ using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    public struct NPUArray<T> : IList<T>, IDisposable where T : unmanaged
+    public readonly struct NPUArray<T> : IList<T>, IDisposable where T : unmanaged
     {
         public static NPUArray<T> get()
         {
-            var newArrayInt32 = new NPUArray<T>
-            {
-                i_array = NPArray<byte>.get()
-            };
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get());
             return newArrayInt32;
         }
         public static NPUArray<T> get(int capacity)
         {
-            var newArrayInt32 = new NPUArray<T>
-            {
-                i_array = NPArray<byte>.get()
-            };
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get());
             newArrayInt32.ensureCapacity(capacity);
             return newArrayInt32;
         }
         public static NPUArray<T> get(IEnumerable<T> collection)
         {
-            var newArrayInt32 = new NPUArray<T>
-            {
-                i_array = NPArray<byte>.get()
-            };
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get());
             newArrayInt32.AddRange(collection);
             return newArrayInt32;
         }
         public static NPUArray<T> getWithoutTracking()
         {
-            var newArrayInt32 = new NPUArray<T>
-            {
-                i_array = NPArray<byte>.getWithoutTracking()
-            };
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.getWithoutTracking());
             return newArrayInt32;
         }
         public static NPUArray<T> getWithoutTracking(int capacity)
         {
-            var newArrayInt32 = new NPUArray<T>
-            {
-                i_array = NPArray<byte>.getWithoutTracking()
-            };
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.getWithoutTracking());
             newArrayInt32.ensureCapacity(capacity);
             return newArrayInt32;
         }
         public static NPUArray<T> getWithoutTracking(IEnumerable<T> collection)
         {
-            var newArrayInt32 = new NPUArray<T>
-            {
-                i_array = NPArray<byte>.getWithoutTracking()
-            };
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.getWithoutTracking());
             newArrayInt32.AddRange(collection);
             return newArrayInt32;
         }
@@ -65,12 +47,18 @@ namespace Nextension
             i_array.stopTracking();
         }
 
-        internal NPArray<byte> i_array;
+        private NPUArray(NPArray<byte> arr)
+        {
+            i_array = arr;
+        }
+
+        internal readonly NPArray<byte> i_array;
 
         public int Count => i_array.Count / NUtils.sizeOf<T>();
         public bool IsCreated => i_array != null;
         public bool IsReadOnly => i_array.IsReadOnly;
         public int Capacity => i_array.Capacity / NUtils.sizeOf<T>();
+        public T[] Items => ToArray();
 
         public T this[int index]
         {
@@ -216,7 +204,7 @@ namespace Nextension
         public void CopyTo(NPUArray<T> dst)
         {
             dst.ensureCapacity(Count);
-            dst.i_array.copyFrom(i_array);
+            dst.i_array.CopyFrom(i_array);
         }
         public unsafe bool Remove(T item)
         {
@@ -359,7 +347,7 @@ namespace Nextension
         }
         public unsafe Span<T> AsSpan()
         {
-            return i_array.Collection.asSpan().asSpan<byte, T>();
+            return i_array.Collection.AsSpan().asSpan<byte, T>();
         }
         public T[] ToArray()
         {

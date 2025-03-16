@@ -55,7 +55,7 @@ namespace Nextension.Tween
             if (_controlledTweeners.tryTakeAndRemove(longKey, out var hashset))
             {
                 using var array = hashset.toNPArray();
-                foreach (var item in array.asSpan())
+                foreach (var item in array.AsSpan())
                 {
                     item.cancel();
                 }

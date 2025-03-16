@@ -360,7 +360,7 @@ namespace Nextension.NByteBase
         protected override byte[] onSerialize()
         {
             var length = Convert.ToUInt16(Value.Length);
-            return NUtils.merge(NConverter.getBytes(length), NConverter.getBytes(Value));
+            return NUtils.merge(NConverter.getBytes(length), NConverter.getUTF8Bytes(Value));
         }
     }
     [NByteBaseDefault(9)]
@@ -876,7 +876,7 @@ namespace Nextension.NByteBase
             {
                 if (item.Value == null || item.Key == null) continue;
                 var keyLengthBytes = new byte[] { Convert.ToByte(item.Key.Length) };
-                byte[] keyBytes = NConverter.getBytes(item.Key);
+                byte[] keyBytes = NConverter.getUTF8Bytes(item.Key);
                 bytes = NUtils.merge(bytes, keyLengthBytes, keyBytes, item.Value.getBytes());
                 count++;
             }

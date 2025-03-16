@@ -32,6 +32,7 @@ namespace Nextension.NEditor
         }
         internal void reload(bool isDeleteIfEmpty = true)
         {
+            ScriptableLoader.removeNullScriptableObjects();
             var current = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (current - _lastReloadTime < 300)
             {

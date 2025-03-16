@@ -26,7 +26,7 @@ namespace Nextension.UI
 
         private NButton _closeBgButton;
         private CanvasGroup _canvasGroup;
-        protected bool _isOpen = true;
+        protected bool _isShown = true;
         protected bool _isSetup;
 
         public RectTransform Scaler => _scaler;
@@ -35,11 +35,12 @@ namespace Nextension.UI
         public event Action onShowEvent;
         public event Action onHideEvent;
 
+        public bool IsShown => _isShown;
+
         protected virtual void Reset()
         {
             _target = GetComponentInChildren<RectTransform>(true);
         }
-
         protected virtual void Awake()
         {
             innerSetup();
@@ -92,67 +93,81 @@ namespace Nextension.UI
             _hideWhenClickOnOutSide = isClosable;
             _closeBgButton.Interactable = isClosable;
         }
-        protected void innerShow(bool isImmediate = false)
+        protected void innerShow(bool isImmediate = false, bool isForceAnimation = false)
         {
             innerSetup();
-            if (!_isOpen)
+            if (!_isShown)
             {
                 onBeforeShow();
                 onShowEvent?.Invoke();
-                _isOpen = true;
+                _isShown = true;
                 gameObject.setActive(true);
-                NTween.cancelAllTweeners(gameObject);
-                if (isImmediate)
-                {
-                    _scaler.localScale = Vector3.one;
-                    _canvasGroup.alpha = 1;
-                }
-                else
-                {
-                    if (_effectOption == EffectOption.Scale)
-                    {
-                        if (_punchScaleValue > 0)
-                        {
-                            NTween.scaleTo(_scaler, new float3(1 + _punchScaleValue), _effectDuration * 0.8f).onCompleted(() =>
-                            {
-                                NTween.scaleTo(_scaler, new float3(1), _effectDuration * 0.2f).setCancelControlKey(gameObject);
-                            }).setCancelControlKey(gameObject);
-                        }
-                        else
-                        {
-                            NTween.scaleTo(_scaler, new float3(1), _effectDuration).setCancelControlKey(gameObject);
-                        }
-                    }
-                    else
-                    {
-                        _scaler.localScale = Vector3.one;
-                    }
-
-                    if (_effectOption == EffectOption.MoveDown)
-                    {
-                        NTween.fromTo<float2>(_scaler.anchoredPosition, _anchoredPosition, _effectDuration, v => _scaler.anchoredPosition = v);
-                    }
-                    else
-                    {
-                        _scaler.anchoredPosition = _anchoredPosition;
-                    }
-
-                    NTween.fromTo(_canvasGroup.alpha, 1, _effectDuration, v => _canvasGroup.alpha = v).setCancelControlKey(gameObject);
-                }
+                runShowAnimation(isImmediate);
                 _canvasGroup.blocksRaycasts = true;
+            }
+            else if (isForceAnimation)
+            {
+                runHideAnimation(true);
+                runShowAnimation(isImmediate);
             }
         }
         protected void innerHide(bool isImmediate = false, bool isforce = false)
         {
             innerSetup();
-            if (!_isOpen && !isforce)
+            if (!_isShown && !isforce)
             {
                 return;
             }
             onBeforeHide();
             onHideEvent?.Invoke();
-            _isOpen = false;
+            _isShown = false;
+            runHideAnimation(isImmediate);
+            _canvasGroup.blocksRaycasts = false;
+        }
 
+        private void runShowAnimation(bool isImmediate = false)
+        {
+            NTween.cancelAllTweeners(gameObject);
+            if (isImmediate)
+            {
+                _scaler.localScale = Vector3.one;
+                _canvasGroup.alpha = 1;
+            }
+            else
+            {
+                if (_effectOption == EffectOption.Scale)
+                {
+                    if (_punchScaleValue > 0)
+                    {
+                        NTween.scaleTo(_scaler, new float3(1 + _punchScaleValue), _effectDuration * 0.8f).onCompleted(() =>
+                        {
+                            NTween.scaleTo(_scaler, new float3(1), _effectDuration * 0.2f).setCancelControlKey(gameObject);
+                        }).setCancelControlKey(gameObject);
+                    }
+                    else
+                    {
+                        NTween.scaleTo(_scaler, new float3(1), _effectDuration).setCancelControlKey(gameObject);
+                    }
+                }
+                else
+                {
+                    _scaler.localScale = Vector3.one;
+                }
+
+                if (_effectOption == EffectOption.MoveDown)
+                {
+                    NTween.fromTo<float2>(_scaler.anchoredPosition, _anchoredPosition, _effectDuration, v => _scaler.anchoredPosition = v);
+                }
+                else
+                {
+                    _scaler.anchoredPosition = _anchoredPosition;
+                }
+
+                NTween.fromTo(_canvasGroup.alpha, 1, _effectDuration, v => _canvasGroup.alpha = v).setCancelControlKey(gameObject);
+            }
+        }
+        private void runHideAnimation(bool isImmediate = false)
+        {
             NTween.cancelAllTweeners(gameObject);
             if (isImmediate)
             {
@@ -185,7 +200,6 @@ namespace Nextension.UI
                     gameObject.setActive(false);
                 }).setCancelControlKey(gameObject);
             }
-            _canvasGroup.blocksRaycasts = false;
         }
 
         protected virtual void onBeforeSetup()
@@ -199,6 +213,19 @@ namespace Nextension.UI
         protected virtual void onBeforeHide()
         {
 
+        }
+    }
+
+    public abstract class S_UITransition<T> : UITransition, ISingletonable where T : class, ISingletonable
+    {
+        public static T Instance => S_<T>.Instance;
+
+        protected virtual void OnValidate()
+        {
+            if (GetType() != typeof(T))
+            {
+                Debug.LogError($"Type is missmatch ({GetType()},{typeof(T)})", this);
+            }
         }
     }
 }

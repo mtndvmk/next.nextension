@@ -40,7 +40,7 @@ namespace Nextension
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T getAtWithoutChecks(int index)
+        public T GetAtWithoutChecks(int index)
         {
             return i_Items[index];
         }
@@ -59,7 +59,7 @@ namespace Nextension
                 i_Items = newItems;
             }
         }
-        public Span<T> asSpan()
+        public Span<T> AsSpan()
         {
             return new Span<T>(i_Items, 0, i_Count);
         }
@@ -67,7 +67,7 @@ namespace Nextension
         {
             if (collection is ICollection<T> collection2)
             {
-                copyFrom(collection2);
+                CopyFrom(collection2);
             }
             else
             {
@@ -79,7 +79,7 @@ namespace Nextension
                 Array.Clear(i_Items, i_Count, i_Items.Length - i_Count);
             }
         }
-        public void copyFrom(ICollection<T> collection)
+        public void CopyFrom(ICollection<T> collection)
         {
             var cCount = collection.Count;
             ensureCapacity(cCount);
@@ -239,14 +239,14 @@ namespace Nextension
                         if (NPArray<T>.PoolCount > 0)
                         {
                             using var poolArray = NPArray<T>.get();
-                            poolArray.copyFrom(collection2);
-                            poolArray.asSpan().CopyTo(i_Items.AsSpan(index));
+                            poolArray.CopyFrom(collection2);
+                            poolArray.AsSpan().CopyTo(i_Items.AsSpan(index));
                         }
                         else
                         {
                             var array = new NList<T>();
-                            array.copyFrom(collection2);
-                            array.asSpan().CopyTo(i_Items.AsSpan(index));
+                            array.CopyFrom(collection2);
+                            array.AsSpan().CopyTo(i_Items.AsSpan(index));
                         }
                     }
                     this.i_Count += count;
@@ -283,14 +283,14 @@ namespace Nextension
                         if (NPArray<T>.PoolCount > 0)
                         {
                             using var poolArray = NPArray<T>.get();
-                            poolArray.copyFrom(collection2);
-                            poolArray.asSpan().CopyTo(i_Items.AsSpan(index));
+                            poolArray.CopyFrom(collection2);
+                            poolArray.AsSpan().CopyTo(i_Items.AsSpan(index));
                         }
                         else
                         {
                             var array = new NList<T>();
-                            array.copyFrom(collection2);
-                            array.asSpan().CopyTo(i_Items.AsSpan(index));
+                            array.CopyFrom(collection2);
+                            array.AsSpan().CopyTo(i_Items.AsSpan(index));
                         }
                     }
                     this.i_Count += count;

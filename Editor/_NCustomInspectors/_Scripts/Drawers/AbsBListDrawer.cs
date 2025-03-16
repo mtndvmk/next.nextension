@@ -15,7 +15,7 @@ namespace Nextension.NEditor
             EditorGUI.PropertyField(position, property, label, true);
             if (!EditorGUIUtility.editingTextField)
             {
-                (NEditorHelper.getValue(property) as IBList).sort();
+                (NEditorHelper.getValue(property) as IBList).Sort();
             }
         }
     }

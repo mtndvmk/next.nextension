@@ -638,6 +638,39 @@ namespace Nextension
         {
             return new Vector2(vector2.x, vector2.y / y);
         }
+        public static Vector2 findNearest(ReadOnlySpan<Vector2> fromSpan, Vector2 dst)
+        {
+            int fromCount = fromSpan.Length;
+            if (fromCount == 0) throw new Exception("fromSpan is empty"); 
+            Vector2 result = fromSpan[0];
+            float min = (result - dst).sqrMagnitude;
+            for (int i = 1; i < fromCount; i++)
+            {
+                var from = fromSpan[i];
+                var dt = (from - dst).sqrMagnitude;
+                if (dt < min)
+                {
+                    result = from;
+                    min = dt;
+                }
+            }
+            return result;
+        }
+        public static Vector2 findNearest(ICollection<Vector2> fromCollection, Vector2 dst)
+        {
+            float min = float.MaxValue;
+            Vector2 result = default;
+            foreach (var from in fromCollection)
+            {
+                var dt = (from - dst).sqrMagnitude;
+                if (dt < min)
+                {
+                    min = dt;
+                    result = from;
+                }
+            }
+            return result;
+        }
         #endregion
 
         #region Vector3
@@ -781,6 +814,39 @@ namespace Nextension
         public static Vector3 div(this Vector3 vector3, Vector3 dividedFactor)
         {
             return new Vector3(vector3.x / dividedFactor.x, vector3.y / dividedFactor.y, vector3.z / dividedFactor.z);
+        }
+        public static Vector3 findNearest(ReadOnlySpan<Vector3> fromSpan, Vector3 dst)
+        {
+            int fromCount = fromSpan.Length;
+            if (fromCount == 0) throw new Exception("fromSpan is empty");
+            Vector3 result = fromSpan[0];
+            float min = (result - dst).sqrMagnitude;
+            for (int i = 1; i < fromCount; i++)
+            {
+                var from = fromSpan[i];
+                var dt = (from - dst).sqrMagnitude;
+                if (dt < min)
+                {
+                    result = from;
+                    min = dt;
+                }
+            }
+            return result;
+        }
+        public static Vector3 findNearest(ICollection<Vector3> fromCollection, Vector3 dst)
+        {
+            float min = float.MaxValue;
+            Vector2 result = default;
+            foreach (var from in fromCollection)
+            {
+                var dt = (from - dst).sqrMagnitude;
+                if (dt < min)
+                {
+                    min = dt;
+                    result = from;
+                }
+            }
+            return result;
         }
         #endregion
 
@@ -1577,7 +1643,7 @@ namespace Nextension
 
         #region Collection
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void copyTo<T>(this IEnumerable<T> colletion, IList<T> list)
+        public static void CopyTo<T>(this IEnumerable<T> colletion, IList<T> list)
         {
             list.Clear();
             foreach (var item in colletion)
@@ -1659,6 +1725,13 @@ namespace Nextension
             self.Add(item);
             self.Sort(comparison);
         }
+        public static void addRange<T>(this ICollection<T> self, Span<T> values)
+        {
+            foreach (T item in values)
+            {
+                self.Add(item);
+            }
+        }
         public static T first<T>(this HashSet<T> self)
         {
             var enumerator = self.GetEnumerator();
@@ -1725,7 +1798,7 @@ namespace Nextension
             }
             return true;
         }
-        public static bool contains<T>(this T[] self, T value)
+        public static bool Contains<T>(this T[] self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
             {
@@ -1736,7 +1809,7 @@ namespace Nextension
             }
             return false;
         }
-        public static bool contains<T>(this Span<T> self, T value)
+        public static bool Contains<T>(this Span<T> self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
             {
@@ -1747,7 +1820,7 @@ namespace Nextension
             }
             return false;
         }
-        public static int indexOf<T>(this T[] self, T value)
+        public static int IndexOf<T>(this T[] self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
             {
@@ -1758,7 +1831,7 @@ namespace Nextension
             }
             return -1;
         }
-        public static int indexOf<T>(this Span<T> self, T value)
+        public static int IndexOf<T>(this Span<T> self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
             {
@@ -1770,7 +1843,7 @@ namespace Nextension
             return -1;
         }
 
-        public static bool contains<T>(this ICollection<T> self, ICollection<T> b)
+        public static bool Contains<T>(this ICollection<T> self, ICollection<T> b)
         {
             foreach (var item in b)
             {
@@ -1781,7 +1854,7 @@ namespace Nextension
             }
             return true;
         }
-        public static bool contains<T>(this ICollection<T> self, Span<T> b)
+        public static bool Contains<T>(this ICollection<T> self, Span<T> b)
         {
             for (int i = 0, length = b.Length; i < length; i++)
             {
@@ -1813,7 +1886,7 @@ namespace Nextension
         }
         public static void removeLast(this IBList self)
         {
-            self.removeAt(self.Count - 1);
+            self.RemoveAt(self.Count - 1);
         }
         public static void removeLast<T>(this NativeList<T> self) where T : unmanaged
         {
@@ -1829,7 +1902,7 @@ namespace Nextension
         public static T takeAndRemoveAt<T>(this IBList<T> self, int index)
         {
             var item = self[index];
-            self.removeAt(index);
+            self.RemoveAt(index);
             return item;
         }
 
@@ -1844,6 +1917,16 @@ namespace Nextension
             if (!self.TryGetValue(key, out value)) return false;
             self.Remove(key);
             return true;
+        }
+
+        public static V getOrAddNew<K, V>(this IDictionary<K, V> self, K key) where V : class, new()
+        {
+            if (!self.TryGetValue(key, out var val))
+            {
+                val = createInstance<V>();
+                self.Add(key, val);
+            }
+            return val;
         }
 
         public static T takeAndRemoveLast<T>(this List<T> self)
@@ -2034,19 +2117,11 @@ namespace Nextension
         #endregion
 
         #region Random
-        private static Random s_random = initRandom();
-        private static Random initRandom()
-        {
-            uint seed = NConverter.bitConvertWithoutChecks<int, uint>(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().GetHashCode()) ^ 0x6E624EB7u;
-            if (seed == 0) new Random(0x6E624EB7u);
-            return new Random(seed);
-        }
         public static Random getRandom(uint seed = 0)
         {
             if (seed == 0)
             {
-                s_random.NextUInt();
-                return s_random;
+                return Random.CreateFromIndex(NConverter.bitConvert<int, uint>(DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode()));
             }
             return new Random(seed);
         }
@@ -2059,6 +2134,10 @@ namespace Nextension
             return randInt32(min, max, exclusiveNumbers, getRandom(seed));
         }
         public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers, Random rand)
+        {
+            return randInt32(min, max, exclusiveNumbers, ref rand);
+        }
+        public static int randInt32(int min, int max, ICollection<int> exclusiveNumbers, ref Random rand)
         {
             if (exclusiveNumbers == null || exclusiveNumbers.Count == 0)
             {
@@ -2081,9 +2160,14 @@ namespace Nextension
         /// </summary>
         public static int[] createRandomIntArray(int arrayLength, int fillCount, uint seed = 0)
         {
-            return createRandomIntArray(arrayLength, fillCount, getRandom(seed));
+            var rand = getRandom(seed);
+            return createRandomIntArray(arrayLength, fillCount, ref rand);
         }
         public static int[] createRandomIntArray(int arrayLength, int fillCount, Random rand)
+        {
+            return createRandomIntArray(arrayLength * fillCount, fillCount, ref rand);
+        }
+        public static int[] createRandomIntArray(int arrayLength, int fillCount, ref Random rand)
         {
             int[] array = new int[arrayLength];
             for (int i = 1; i < fillCount; i++)
@@ -2094,11 +2178,16 @@ namespace Nextension
             return array;
         }
 
-        public static int[] getRandomIndices(int maxIndex, int count, int minIndex = 0, uint seed = 0)
+        public static NPUArray<int> getRandomIndices(int maxIndex, int count, int minIndex = 0, uint seed = 0)
         {
-            return getRandomIndices(maxIndex, count, minIndex, getRandom(seed));
+            var rand = getRandom(seed);
+            return getRandomIndices(maxIndex, count, minIndex, ref rand);
         }
-        public static int[] getRandomIndices(int maxIndex, int count, int minIndex, Random rand)
+        public static NPUArray<int> getRandomIndices(int maxIndex, int count, int minIndex, Random rand)
+        {
+            return getRandomIndices(maxIndex, count, minIndex, ref rand);
+        }
+        public static NPUArray<int> getRandomIndices(int maxIndex, int count, int minIndex, ref Random rand)
         {
             Span<int> nums = stackalloc int[maxIndex - minIndex];
             int itemCount = 0;
@@ -2107,7 +2196,12 @@ namespace Nextension
                 nums[itemCount++] = i;
             }
             shuffle(nums, rand);
-            return nums[..(itemCount < count ? itemCount : count)].ToArray();
+            var result = NPUArray<int>.get();
+            foreach (var num in nums[..(itemCount < count ? itemCount : count)])
+            {
+                result.Add(num);
+            }
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2120,6 +2214,12 @@ namespace Nextension
             randIndex = rand.NextInt(list.Count);
             return list[randIndex];
         }
+        public static T randItem<T>(this IList<T> list, out int randIndex, ref Random rand)
+        {
+            randIndex = rand.NextInt(list.Count);
+            return list[randIndex];
+        }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T randItem<T>(this IList<T> list, uint seed = 0)
         {
@@ -2152,6 +2252,12 @@ namespace Nextension
             index = randInt32(0, self.Count, exclusiveIndices, rand);
             return self[index];
         }
+        public static T randItem<T>(this IList<T> self, out int index, ICollection<int> exclusiveIndices, ref Random rand)
+        {
+            index = randInt32(0, self.Count, exclusiveIndices, ref rand);
+            return self[index];
+        }
+        
         public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, Random rand)
         {
             using var validIndices = NPUArray<int>.getWithoutTracking();
@@ -2170,7 +2276,8 @@ namespace Nextension
         {
             return randItem(self, out _, exclusivePredicate, getRandom(seed));
         }
-        public static void shuffle<T>(this IList<T> list, int startIndex, int count, Random rand)
+        
+        public static void shuffle<T>(this IList<T> list, int startIndex, int count, ref Random rand)
         {
             int n = startIndex + count;
             if (n > list.Count) n = list.Count;
@@ -2182,42 +2289,64 @@ namespace Nextension
                 (list[n], list[k]) = (list[k], list[n]);
             }
         }
-        public static void shuffle<T>(Span<T> list, Random rand)
+        public static void shuffle<T>(this IList<T> list, int startIndex, int count, Random rand)
         {
-            int n = list.Length;
+            shuffle(list, startIndex, count, ref rand);
+        }
+
+        public static void shuffle<T>(Span<T> self, uint seed = 0)
+        {
+            shuffle(self, getRandom(seed));
+        }
+        public static void shuffle<T>(Span<T> self, ref Random rand)
+        {
+            int n = self.Length;
             while (n > 1)
             {
                 int k = rand.NextInt(n--);
-                (list[n], list[k]) = (list[k], list[n]);
+                (self[n], self[k]) = (self[k], self[n]);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, uint seed = 0)
+        public static void shuffle<T>(Span<T> self, Random rand)
         {
-            shuffle(list, 0, list.Count, getRandom(seed));
+            shuffle(self, ref rand);
         }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, Random rand)
+        public static void shuffle<T>(this IList<T> self, uint seed = 0)
         {
-            shuffle(list, 0, list.Count, rand);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, int count, uint seed = 0)
-        {
-            shuffle(list, 0, count, getRandom(seed));
+            shuffle(self, 0, self.Count, getRandom(seed));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void shuffle<T>(this IList<T> list, int count, Random rand)
+        public static void shuffle<T>(this IList<T> self, Random rand)
         {
-            shuffle(list, 0, count, rand);
+            shuffle(self, 0, self.Count, rand);
         }
-        public static void shuffle<T>(this IList<T> list, int startIndex, int count, uint seed = 0)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> self, ref Random rand)
         {
-            shuffle(list, startIndex, count, getRandom(seed));
+            shuffle(self, 0, self.Count, ref rand);
         }
-        public static void shuffle<T>(Span<T> list, uint seed = 0)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
+        public static void shuffle<T>(this IList<T> self, int count, uint seed = 0)
         {
-            shuffle(list, getRandom(seed));
+            shuffle(self, 0, count, getRandom(seed));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> self, int count, Random rand)
+        {
+            shuffle(self, 0, count, rand);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void shuffle<T>(this IList<T> self, int count, ref Random rand)
+        {
+            shuffle(self, 0, count, ref rand);
+        }
+        
+        public static void shuffle<T>(this IList<T> self, int startIndex, int count, uint seed = 0)
+        {
+            shuffle(self, startIndex, count, getRandom(seed));
         }
         #endregion
 

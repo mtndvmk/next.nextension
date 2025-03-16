@@ -154,6 +154,10 @@ namespace Nextension
                 _loadedNonPreloadSingletonScriptables.Add(scriptableObject);
             }
         }
+        public static void removeNullScriptableObjects()
+        {
+            getContainer()?.removeNullScriptableObjects();
+        }
         public static void updateScriptable(ScriptableObject scriptable)
         {
             getOrCreateContainer().updateScriptable(scriptable);

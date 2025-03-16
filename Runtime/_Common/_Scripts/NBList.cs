@@ -8,21 +8,21 @@ namespace Nextension
 {
     public interface IBList
     {
-        public void sort();
+        public void Sort();
         public int Count { get; }
-        public void removeAt(int index);
+        public void RemoveAt(int index);
     }
     public interface IBList<TValue> : IBList
     {
         public TValue this[int index] { get; set; }
-        public int bIndexOf(TValue item);
+        public int IndexOf(TValue item);
     }
     /// <summary>
     /// 
     /// </summary>
     /// <typeparam name="TValue">Value Type of List</typeparam>
     /// <typeparam name="TCompareKey">Key Type to compare Value in List</typeparam>
-    public abstract class AbsBList<TValue, TCompareKey> : IBList<TValue>, IEnumerable<TValue>
+    public abstract class AbsBList<TValue, TCompareKey> : IList<TValue>, IBList<TValue>, IEnumerable<TValue>
     {
         protected abstract int compareKey(TCompareKey k1, TCompareKey k2);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -92,10 +92,13 @@ namespace Nextension
         public AbsBList(IEnumerable<TValue> collection)
         {
             _list = new List<TValue>(collection);
-            sort();
+            Sort();
         }
 
         public int Count => _list.Count;
+
+        public bool IsReadOnly => false;
+
         public TValue this[int index]
         {
             get => _list[index];
@@ -106,27 +109,26 @@ namespace Nextension
                 _list[index] = value;
                 if (exeCompareKey(oldKey, newKey) != 0)
                 {
-                    sort();
+                    Sort();
                 }
             }
         }
 
         #region Query from TKey
-
-        public TValue bFind(TCompareKey searchKey)
+        public TValue Find(TCompareKey searchKey)
         {
-            var index = bFindIndex(searchKey);
+            var index = FindIndex(searchKey);
             if (index >= 0)
             {
                 return _list[index];
             }
             throw new KeyNotFoundException();
         }
-        public bool bContains(TCompareKey searchKey)
+        public bool Contains(TCompareKey searchKey)
         {
-            return bFindIndex(searchKey) >= 0;
+            return FindIndex(searchKey) >= 0;
         }
-        public int bFindIndex(TCompareKey searchKey)
+        public int FindIndex(TCompareKey searchKey)
         {
             int listCount = _list.Count;
             if (listCount == 0)
@@ -138,7 +140,7 @@ namespace Nextension
             int endIndex = listCount - 1;
             int midIndex;
             int compareResult;
-            var span = _list.asSpan();
+            var span = _list.AsSpan();
 
             while (startIndex < endIndex)
             {
@@ -168,9 +170,9 @@ namespace Nextension
                 return -1;
             }
         }
-        public int bFindInsertIndex(TCompareKey searchKey)
+        public int FindInsertIndex(TCompareKey searchKey)
         {
-            var span = _list.asSpan();
+            var span = _list.AsSpan();
             int listCount = span.Length;
             switch (listCount)
             {
@@ -231,9 +233,9 @@ namespace Nextension
             }
             return ++startIndex;
         }
-        public Span<int> bFindIndices(TCompareKey searchKey)
+        public Span<int> FindIndices(TCompareKey searchKey)
         {
-            var fIndex = bFindIndex(searchKey);
+            var fIndex = FindIndex(searchKey);
 
             if (fIndex == -1)
             {
@@ -241,7 +243,7 @@ namespace Nextension
             }
 
             List<int> indices = new();
-            var span = _list.asSpan();
+            var span = _list.AsSpan();
             int listCount = span.Length;
 
             for (int i = fIndex; i >= 0; i--)
@@ -269,46 +271,11 @@ namespace Nextension
                     break;
                 }
             }
-            return indices.asSpan();
+            return indices.AsSpan();
         }
-        /// <summary>
-        /// Enumerable indices without sort
-        /// </summary>
-        public IEnumerable<int> bFindIndicesWithoutSort(TCompareKey searchKey)
+        public int TryGetValue(TCompareKey searchKey, out TValue item)
         {
-            var fIndex = bFindIndex(searchKey);
-            if (fIndex == -1)
-            {
-                yield break;
-            }
-            int listCount = _list.Count;
-            for (int i = fIndex; i >= 0; i--)
-            {
-                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
-                {
-                    yield return i;
-                }
-                else
-                {
-                    break;
-                }
-            }
-            for (int i = fIndex + 1; i < listCount; ++i)
-            {
-                if (exeCompareKey(getCompareKeyFromValue(_list[i]), searchKey) == 0)
-                {
-                    yield return i;
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
-
-        public int bTryGetValue(TCompareKey searchKey, out TValue item)
-        {
-            var index = bFindIndex(searchKey);
+            var index = FindIndex(searchKey);
             if (index >= 0)
             {
                 item = _list[index];
@@ -319,10 +286,9 @@ namespace Nextension
             }
             return index;
         }
-
-        public bool removeKey(TCompareKey key)
+        public bool RemoveKey(TCompareKey key)
         {
-            var index = bFindIndex(key);
+            var index = FindIndex(key);
             if (index >= 0)
             {
                 _list.RemoveAt(index);
@@ -330,9 +296,9 @@ namespace Nextension
             }
             return false;
         }
-        public int removeAllKey(TCompareKey key)
+        public int RemoveAllKey(TCompareKey key)
         {
-            var indices = bFindIndices(key);
+            var indices = FindIndices(key);
             for (int i = indices.Length - 1; i >= 0; i--)
             {
                 _list.RemoveAt(indices[i]);
@@ -347,10 +313,10 @@ namespace Nextension
         /// <summary>
         /// Return true if item already exists, otherwise return false
         /// </summary>
-        public bool bFindInsertIndex(TValue value, out int insertIndex)
+        public bool FindInsertIndex(TValue value, out int insertIndex)
         {
             int listCount = _list.Count;
-            var span = _list.asSpan();
+            var span = _list.AsSpan();
             var searchKey = getCompareKeyFromValue(value);
             switch (listCount)
             {
@@ -422,9 +388,9 @@ namespace Nextension
             insertIndex = ++startIndex;
             return false;
         }
-        public int bIndexOf(TValue item)
+        public int IndexOf(TValue item)
         {
-            var index = bFindIndex(getCompareKeyFromValue(item));
+            var index = FindIndex(getCompareKeyFromValue(item));
             if (index >= 0)
             {
                 return exeFindIndexOf(item, index);
@@ -432,60 +398,60 @@ namespace Nextension
             return -1;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool bContains(TValue item)
+        public bool Contains(TValue item)
         {
-            return bIndexOf(item) >= 0;
+            return IndexOf(item) >= 0;
         }
 
         /// <summary>
         /// Returns sorted index list
         /// </summary>
-        public int findIndex(Predicate<TValue> predicate)
+        public int FindIndex(Predicate<TValue> predicate)
         {
             return _list.FindIndex(predicate);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void add(TValue item)
+        public void Add(TValue item)
         {
             _list.Add(item);
         }
         /// <summary>
         /// return false if item already exists in the list, otherwise return true
         /// </summary>
-        public bool addAndSortIfNotExist(TValue item)
+        public bool AddAndSortIfNotPresent(TValue item)
         {
-            if (bFindInsertIndex(item, out var insertIndex))
+            if (FindInsertIndex(item, out var insertIndex))
             {
                 _list.Insert(insertIndex, item);
             }
             return true;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void insert(int index, TValue item)
+        public void Insert(int index, TValue item)
         {
             _list.Insert(index, item);
         }
-        public int addAndSort(TValue item)
+        public int AddAndSort(TValue item)
         {
-            var insertIndex = bFindInsertIndex(getCompareKeyFromValue(item));
+            var insertIndex = FindInsertIndex(getCompareKeyFromValue(item));
             _list.Insert(insertIndex, item);
             return insertIndex;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void addRange(ICollection<TValue> collection)
+        public void AddRange(ICollection<TValue> collection)
         {
             _list.AddRange(collection);
         }
-        public void addRangeAndSort(ICollection<TValue> collection)
+        public void AddRangeAndSort(ICollection<TValue> collection)
         {
-            addRange(collection);
-            sort();
+            AddRange(collection);
+            Sort();
         }
 
-        public bool removeValue(TValue item)
+        public bool Remove(TValue item)
         {
-            var index = bIndexOf(item);
+            var index = IndexOf(item);
             if (index >= 0)
             {
                 _list.RemoveAt(index);
@@ -493,11 +459,11 @@ namespace Nextension
             }
             return false;
         }
-        public int removeAllValue(TValue item)
+        public int RemoveAllValue(TValue item)
         {
             int count = 0;
-            var indices = bFindIndices(getCompareKeyFromValue(item));
-            var span = _list.asSpan();
+            var indices = FindIndices(getCompareKeyFromValue(item));
+            var span = _list.AsSpan();
             for (int i = indices.Length - 1; i >= 0; i--)
             {
                 var index = indices[i];
@@ -514,44 +480,44 @@ namespace Nextension
         #region Others
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void sort()
+        public void Sort()
         {
             _list.Sort(exeCompareValue);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public List<TValue> toList()
+        public List<TValue> ToList()
         {
             return new List<TValue>(_list);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TValue[] toArray()
+        public TValue[] ToArray()
         {
             return _list.ToArray();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Span<TValue> asSpan()
+        public Span<TValue> AsSpan()
         {
-            return _list.asSpan();
+            return _list.AsSpan();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void copyTo(TValue[] array, int arrayIndex)
+        public void CopyTo(TValue[] array, int arrayIndex)
         {
             _list.CopyTo(array, arrayIndex);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void removeAt(int index)
+        public void RemoveAt(int index)
         {
             _list.RemoveAt(index);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void removeRange(int index, int count)
+        public void RemoveRange(int index, int count)
         {
             _list.RemoveRange(index, count);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void clear()
+        public void Clear()
         {
             _list.Clear();
         }
@@ -570,7 +536,6 @@ namespace Nextension
         {
             return _list.GetEnumerator();
         }
-
         #endregion
     }
     /// <summary>

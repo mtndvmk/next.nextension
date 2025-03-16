@@ -227,7 +227,7 @@ namespace Nextension
                 }
                 scriptable = ScriptableObject.CreateInstance(type);
                 AssetDatabase.CreateAsset(scriptable, filePath);
-                Debug.Log($"Create asset at `{filePath}`");
+                Debug.Log($"Create asset at `{filePath}`", scriptable);
             }
             return scriptable;
         }

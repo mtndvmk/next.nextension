@@ -64,6 +64,24 @@ namespace Nextension
             _preloadScriptables?.Clear();
             _nonPreloadScriptables?.Clear();
         }
+        internal void removeNullScriptableObjects()
+        {
+            for (int i = _preloadScriptables.Count - 1; i >= 0; i--)
+            {
+                if (_preloadScriptables[i] == null)
+                {
+                    _preloadScriptables.RemoveAt(i);
+                }
+            }
+            for (int i = _nonPreloadScriptables.Count - 1; i >= 0; i--)
+            {
+                if (_nonPreloadScriptables[i] == null || 
+                    !_nonPreloadScriptables[i].getScriptableObject())
+                {
+                    _nonPreloadScriptables.RemoveAt(i);
+                }
+            }
+        }
         internal void updateScriptable(ScriptableObject scriptable)
         {
             bool hasChanged = false;
