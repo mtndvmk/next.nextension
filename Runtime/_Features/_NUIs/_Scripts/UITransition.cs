@@ -1,5 +1,4 @@
 using Nextension.Tween;
-using System;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -14,7 +13,6 @@ namespace Nextension.UI
             MoveDown,
         }
 
-        [SerializeField] private RectTransform _target;
         [SerializeField] private RectTransform _scaler;
         [SerializeField] private float _effectDuration = 0.15f;
         [SerializeField] private float _fromScaleValue = 0.4f;
@@ -32,15 +30,8 @@ namespace Nextension.UI
         public RectTransform Scaler => _scaler;
         protected Vector2 _anchoredPosition;
 
-        public event Action onShowEvent;
-        public event Action onHideEvent;
-
         public bool IsShown => _isShown;
 
-        protected virtual void Reset()
-        {
-            _target = GetComponentInChildren<RectTransform>(true);
-        }
         protected virtual void Awake()
         {
             innerSetup();
@@ -50,8 +41,8 @@ namespace Nextension.UI
         {
             if (_isSetup) return;
 
-            _canvasGroup = _target.getOrAddComponent<CanvasGroup>();
-            _closeBgButton = _target.getOrAddComponent<NButton>();
+            _canvasGroup = gameObject.getOrAddComponent<CanvasGroup>();
+            _closeBgButton = gameObject.getOrAddComponent<NButton>();
 
             if (_addBlockingUIForScaler)
             {
@@ -99,7 +90,6 @@ namespace Nextension.UI
             if (!_isShown)
             {
                 onBeforeShow();
-                onShowEvent?.Invoke();
                 _isShown = true;
                 gameObject.setActive(true);
                 runShowAnimation(isImmediate);
@@ -119,7 +109,6 @@ namespace Nextension.UI
                 return;
             }
             onBeforeHide();
-            onHideEvent?.Invoke();
             _isShown = false;
             runHideAnimation(isImmediate);
             _canvasGroup.blocksRaycasts = false;

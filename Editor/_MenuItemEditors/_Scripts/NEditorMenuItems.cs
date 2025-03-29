@@ -7,7 +7,7 @@ namespace Nextension.NEditor
 {
     public class NEditorMenuItems
     {
-        [MenuItem("Nextension/Project/Force save selected items")]
+        [MenuItem("Nextension/Project/Force save project/Selected items", priority = 1)]
         public static void forceSaveProject_SelectedItems()
         {
             var objs = Selection.objects;
@@ -17,7 +17,7 @@ namespace Nextension.NEditor
             }
             Debug.Log($"Saved {objs.Length} objects");
         }
-        [MenuItem("Nextension/Project/Force save project - *.asset")]
+        [MenuItem("Nextension/Project/Force save project/*.asset")]
         public static void forceSaveProject_Asset()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
@@ -44,7 +44,7 @@ namespace Nextension.NEditor
             NAssetUtils.saveAssets();
             Debug.Log($"Saved {count} objects");
         }
-        [MenuItem("Nextension/Project/Force save project - *.prefab")]
+        [MenuItem("Nextension/Project/Force save project/*.prefab")]
         public static void forceSaveProject_Prefab()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
@@ -71,7 +71,7 @@ namespace Nextension.NEditor
             NAssetUtils.saveAssets();
             Debug.Log($"Saved {count} objects");
         }
-        [MenuItem("Nextension/Project/Force save project - all")]
+        [MenuItem("Nextension/Project/Force save project/All")]
         public static void forceSaveProject_All()
         {
             var paths = AssetDatabase.GetAllAssetPaths();
@@ -274,6 +274,54 @@ namespace Nextension.NEditor
             Undo.RecordObject(rectTf, "Stretch to parent");
             rectTf.stretchToParent();
             NAssetUtils.setDirty(rectTf);
+        }
+
+        private const string NPoolLogFullStackTraceSymbol = "NPOOL_TRACKING_PRINT_STACK_TRACE";
+
+        [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Enable", priority = 0)]
+        public static void enableNPoolLogFullStackTrace()
+        {
+            foreach (var group in EnumIndex<BuildTargetGroup>.asReadOnlySpan())
+            {
+                try
+                {
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group);
+                    PlayerSettings.GetScriptingDefineSymbols(buildTarget, out var defines);
+                    if (defines.Contains(NPoolLogFullStackTraceSymbol)) continue;
+                    defines = defines.add(NPoolLogFullStackTraceSymbol);
+                    PlayerSettings.SetScriptingDefineSymbols(buildTarget, defines);
+                }
+                catch (Exception) { }
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+        [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Enable", true)]
+        private static bool validateEnableNPoolLogFullStackTrace()
+        {
+            return !EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
+        }
+        [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Disable")]
+        public static void disableNPoolLogFullStackTrace()
+        {
+            foreach (var group in EnumIndex<BuildTargetGroup>.asReadOnlySpan())
+            {
+                try
+                {
+                    var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(group);
+                    PlayerSettings.GetScriptingDefineSymbols(buildTarget, out var defines);
+                    if (!defines.Contains(NPoolLogFullStackTraceSymbol)) continue;
+                    defines = defines.remove(NPoolLogFullStackTraceSymbol);
+                    PlayerSettings.SetScriptingDefineSymbols(buildTarget, defines);
+                }catch (Exception) { }
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+        [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Disable", true)]
+        private static bool validateDisableNPoolLogFullStackTrace()
+        {
+            return EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
         }
     }
 

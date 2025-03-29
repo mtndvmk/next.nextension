@@ -107,6 +107,17 @@ namespace Nextension
             get => get(enumType);
             set => set(enumType, value);
         }
+        public TEnum? enumOf(TValue val)
+        {
+            for (var i = 0; i < enumValues.Length; i++)
+            {
+                if (enumValues[i].equals(val))
+                {
+                    return getEnum(i);
+                }
+            }
+            return default;
+        }
         public Enumerator GetEnumerator()
         {
             return new Enumerator(this);
@@ -230,9 +241,9 @@ namespace Nextension
             private KeyValuePair<TEnum, TValue> _current;
             private int _index;
 
-            public KeyValuePair<TEnum, TValue> Current => _current;
+            public readonly KeyValuePair<TEnum, TValue> Current => _current;
 
-            object IEnumerator.Current => _current;
+            readonly object IEnumerator.Current => _current;
 
             public void Dispose()
             {

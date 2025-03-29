@@ -1892,6 +1892,10 @@ namespace Nextension
         {
             self.RemoveAt(self.Length - 1);
         }
+        public static void removeLast<T>(this NPUArray<T> self) where T : unmanaged
+        {
+            self.RemoveAt(self.Count - 1);
+        }
 
         public static T takeAndRemoveAt<T>(this List<T> self, int index)
         {
@@ -1942,6 +1946,12 @@ namespace Nextension
             return item;
         }
         public static T takeAndRemoveLast<T>(this NativeList<T> self) where T : unmanaged
+        {
+            var item = self[^1];
+            self.removeLast();
+            return item;
+        }
+        public static T takeAndRemoveLast<T>(this NPUArray<T> self) where T : unmanaged
         {
             var item = self[^1];
             self.removeLast();
@@ -2026,6 +2036,16 @@ namespace Nextension
             Array.Copy(items, 0, result, srcLength, itemsLength);
             return result;
         }
+        public static T[] remove<T>(this T[] self, params T[] items)
+        {
+            var result = new List<T>(self.Length);
+            foreach (var item in self)
+            {
+                if (!items.Contains(item)) result.Add(item);
+            }
+            return result.ToArray();
+        }
+
         public static T[] createOrAdd<T>(this T[] self, params T[] items)
         {
             if (self == null)
@@ -2235,6 +2255,37 @@ namespace Nextension
         {
             return list[rand.NextInt(list.Count)];
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this Span<T> self, uint seed = 0)
+        {
+            return randItem(self, out _, seed);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this Span<T> self, Random rand)
+        {
+            return randItem(self, out _, ref rand);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this Span<T> self, ref Random rand)
+        {
+            return randItem(self, out _, ref rand);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this Span<T> self, out int index, uint seed = 0)
+        {
+            return randItem(self, out index, getRandom(seed));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T randItem<T>(this Span<T> self, out int index, Random rand)
+        {
+            return randItem(self, out index, ref rand);
+        }
+        public static T randItem<T>(this Span<T> self, out int index, ref Random rand)
+        {
+            index = rand.NextInt(self.Length);
+            return self[index];
+        }
         /// <summary>
         /// get a random item in contain list, return default if self is empty
         /// </summary>
@@ -2257,8 +2308,8 @@ namespace Nextension
             index = randInt32(0, self.Count, exclusiveIndices, ref rand);
             return self[index];
         }
-        
-        public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, Random rand)
+
+        public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, ref Random rand)
         {
             using var validIndices = NPUArray<int>.getWithoutTracking();
             for (int i = self.Length - 1; i >= 0; i--)
@@ -2267,6 +2318,10 @@ namespace Nextension
             }
             index = validIndices[rand.NextInt(validIndices.Count)];
             return self[index];
+        }
+        public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, Random rand)
+        {
+            return randItem(self, out index, exclusivePredicate, ref rand);
         }
         public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, uint seed = 0)
         {

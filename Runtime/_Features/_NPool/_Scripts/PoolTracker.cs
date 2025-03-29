@@ -2,7 +2,6 @@
 #define NNEXT_DISABLE_NPOOL_TRACKING
 #endif
 #if !NNEXT_DISABLE_NPOOL_TRACKING
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,6 +45,8 @@ namespace Nextension
 
         private long _lastAccessTimeMs;
         private string _id;
+
+        public string Id => _id;
 
 #if NPOOL_TRACKING_PRINT_STACK_TRACE
         private System.Diagnostics.StackTrace _getStackTrace;
