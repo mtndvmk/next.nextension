@@ -15,8 +15,8 @@ namespace Nextension
         internal static Dictionary<T, int> enumToIndexTable;
 
 #if UNITY_EDITOR
-        private static int _hash;
-        internal static int Hash => _hash;
+        private static string _indexString;
+        internal static string IndexString => _indexString;
 #endif
 
         private static void createTable()
@@ -25,25 +25,30 @@ namespace Nextension
 
             Array.Sort(indexToEnumTable);
 
-#if UNITY_EDITOR
-            uint hash = (uint)NUtils.sizeOf<T>();
-#endif
             int enumCount = indexToEnumTable.Length;
             enumToIndexTable = new Dictionary<T, int>(enumCount);
             for (int i = 0; i < enumCount; ++i)
             {
                 enumToIndexTable[indexToEnumTable[i]] = i;
-#if UNITY_EDITOR
-                uint seed = NConverter.bitConvertWithoutChecks<T, uint>(indexToEnumTable[i]);
-                if (seed == 0) seed = 0x6E624EB7u;
-                hash ^= new Unity.Mathematics.Random(seed).state;
-#endif
             }
-
 #if UNITY_EDITOR
-            _hash = NConverter.bitConvertWithoutChecks<uint, int>(hash ^ (uint)indexToEnumTable.Length);
+            computeIndexString();
 #endif
         }
+
+#if UNITY_EDITOR
+        private static void computeIndexString()
+        {
+            var enumArr = indexToEnumTable;
+            var cacheIntArray = new int[enumArr.Length];
+            for (int i = 0; i < enumArr.Length; i++)
+            {
+                cacheIntArray[i] = NConverter.bitConvertDiffSize<T, int>(enumArr[i]);
+            }
+            var bytes = NConverter.convertArray<int, byte>(cacheIntArray);
+            _indexString = Convert.ToBase64String(bytes);
+        }
+#endif
 
         public static int EnumCount => indexToEnumTable.Length;
 

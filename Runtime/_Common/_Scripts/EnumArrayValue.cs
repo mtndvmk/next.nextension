@@ -27,38 +27,47 @@ namespace Nextension
         [SerializeField] private TValue[] enumValues = new TValue[EnumIndex<TEnum>.getCount()];
 #pragma warning disable 0414
         [SerializeField] private int[] enumArrayCache;
-        [SerializeField] private int hash;
+        [SerializeField] private string indexString;
 #pragma warning restore 0414
 
         #region Editor
 #if UNITY_EDITOR
+        private static string convertIntArrayToBaseString(int[] cacheIntArray)
+        {
+            if (cacheIntArray != null && cacheIntArray.Length != 0)
+            {
+                var bytes = NConverter.convertArray<int, byte>(cacheIntArray);
+                return Convert.ToBase64String(bytes);
+            }
+            return string.Empty;
+        }
         public bool refreshEditorCache()
         {
             if (NStartRunner.IsPlaying) return false;
-            if (enumArrayCache == null || enumArrayCache.Length == 0 || hash != EnumIndex<TEnum>.Hash)
+            bool isDirty = false;
+            if (enumArrayCache != null && enumArrayCache.Length != 0)
             {
-                hash = EnumIndex<TEnum>.Hash;
-
+                indexString = convertIntArrayToBaseString(this.enumArrayCache);
+                enumArrayCache = null;
+                isDirty = true;
+            }
+            if (isDirty || indexString != EnumIndex<TEnum>.IndexString)
+            {
                 Dictionary<TEnum, TValue> dict = null;
-                int cacheCount = enumArrayCache == null ? 0 : enumArrayCache.Length;
-                if (cacheCount > 0)
+                if (!string.IsNullOrEmpty(indexString))
                 {
+                    var bytes = Convert.FromBase64String(indexString);
+                    var cacheIntArray = NConverter.convertArray<byte, int>(bytes);
+                    var cacheCount = cacheIntArray.Length;
                     dict = new(cacheCount);
                     for (int i = 0; i < cacheCount; i++)
                     {
-                        var k = NConverter.bitConvertWithoutChecks<int, TEnum>(enumArrayCache[i]);
+                        var k = NConverter.bitConvertWithoutChecks<int, TEnum>(cacheIntArray[i]);
                         if (!EnumIndex<TEnum>.isValid(k) || i >= enumValues.Length) continue;
                         dict[k] = enumValues[i];
                     }
                 }
-
-                var enumArr = EnumIndex<TEnum>.indexToEnumTable;
-                enumValues = new TValue[enumArr.Length];
-                enumArrayCache = new int[enumArr.Length];
-                for (int i = 0; i < enumArr.Length; i++)
-                {
-                    enumArrayCache[i] = NConverter.bitConvertDiffSize<TEnum, int>(enumArr[i]);
-                }
+                indexString = EnumIndex<TEnum>.IndexString;
 
                 if (dict != null)
                 {
@@ -69,7 +78,7 @@ namespace Nextension
                 }
                 return true;
             }
-            return false;
+            return isDirty;
         }
 #endif
         #endregion
@@ -225,6 +234,7 @@ namespace Nextension
         {
 #if !UNITY_EDITOR
             enumArrayCache = null;
+            indexString = null;
 #endif
         }
 
@@ -247,7 +257,7 @@ namespace Nextension
 
             public void Dispose()
             {
-                
+
             }
 
             public bool MoveNext()
