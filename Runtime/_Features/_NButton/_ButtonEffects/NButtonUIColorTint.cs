@@ -43,7 +43,7 @@ namespace Nextension
         {
             if (_target)
             {
-                _target.SetColor(_normalColor);
+                _target.SetColor(Color.white);
             }
         }
 

@@ -8,6 +8,11 @@ namespace Nextension.Tween
     public static class NTween
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void schedule(NTweener tweener)
+        {
+            tweener.schedule();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void cancelAllTweeners(uint key)
         {
             NTweenManager.cancelFromUintControlKey(key);

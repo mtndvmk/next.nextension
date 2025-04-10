@@ -79,7 +79,6 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
-
         public static CombinedNTweener jumpTo(this Transform target, Vector3 destination, float jumpHeight, float duration, bool isLocalSpace = true)
         {
             var moveTweener = NTween.moveTo(target, destination, duration, isLocalSpace);
@@ -87,9 +86,25 @@ namespace Nextension.Tween
             var heightTweener = NTween.punchValue(0, jumpHeight, duration, f => currentHeight = f).setEase(EaseType.QuadOut);
 
             var combinedTweener = new CombinedNTweener(moveTweener, heightTweener);
+            combinedTweener.setCancelControlKey(target);
             combinedTweener.onUpdated(() =>
             {
                 target.plusPositionY(currentHeight, isLocalSpace);
+            });
+            combinedTweener.schedule();
+            return combinedTweener;
+        }
+        public static CombinedNTweener jumpTo(this Transform target, Vector3 destination, Vector3 jumpHeight, float duration, bool isLocalSpace = true)
+        {
+            var moveTweener = NTween.moveTo(target, destination, duration, isLocalSpace);
+            Vector3 currentHeight = Vector3.zero;
+            var heightTweener = NTween.punchValue(Vector3.zero, jumpHeight, duration, f => currentHeight = f).setEase(EaseType.QuadOut);
+
+            var combinedTweener = new CombinedNTweener(moveTweener, heightTweener);
+            combinedTweener.setCancelControlKey(target);
+            combinedTweener.onUpdated(() =>
+            {
+                target.plusPositionXYZ(currentHeight.x, currentHeight.y, currentHeight.z, isLocalSpace);
             });
             combinedTweener.schedule();
             return combinedTweener;

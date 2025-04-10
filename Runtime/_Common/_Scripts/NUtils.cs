@@ -952,6 +952,17 @@ namespace Nextension
                 self.position = self.position.plusZ(z);
             }
         }
+        public static void plusPositionXYZ(this Transform self, float x, float y, float z, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = self.localPosition.plusXYZ(x, y, z);
+            }
+            else
+            {
+                self.position = self.position.plusXYZ(x, y, z);
+            }
+        }
         public static void setEulerAnglesX(this Transform self, float x, bool isLocal = true)
         {
             if (isLocal)

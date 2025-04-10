@@ -25,6 +25,7 @@ namespace Nextension
         protected float _nextClickableTime;
         protected bool _isSetup;
         protected bool _isDown;
+        protected float _downTime;
 
 
 #if UNITY_EDITOR
@@ -187,6 +188,7 @@ namespace Nextension
                 return;
             }
             _isDown = true;
+            _downTime = Time.time;
 
             foreach (var listener in _listeners)
             {
@@ -223,8 +225,11 @@ namespace Nextension
 
             if (_isDown)
             {
+                if (Time.time - _downTime < 0.2f)
+                {
+                    invokeClickEvent();
+                }
                 _isDown = false;
-                invokeClickEvent();
             }
         }
         public void OnMouseEnter()
@@ -269,7 +274,7 @@ namespace Nextension
             }
             invokeEvent(onButtonExitEvent);
         }
-        
+
         public void setInteractableWithoutNotify(bool isInteractable)
         {
             _interactable = isInteractable;

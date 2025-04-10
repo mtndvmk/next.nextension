@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Nextension
@@ -6,34 +5,17 @@ namespace Nextension
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public class RectTransformConstraint : MonoBehaviour
     {
-        [ExecuteAlways, RequireComponent(typeof(RectTransform))]
-        internal class SourceConstraint : MonoBehaviour
-        {
-            private void OnValidate()
-            {
-                hideFlags = HideFlags.HideInInspector | HideFlags.DontSave;
-            }
-            public event Action onRectTransformDimensionsChange;
-            private void OnRectTransformDimensionsChange()
-            {
-                onRectTransformDimensionsChange?.Invoke();
-            }
-        }
-
         [SerializeField] private RectTransform _source;
         [SerializeField] private bool _freezeWidth;
         [SerializeField] private bool _freezeHeight;
         [SerializeField] private Vector2 _sizeOffset;
-        
+
         public RectTransform source
         {
             get => _source;
             set
             {
-                removeEvent();
-                _sourceController = null;
                 _source = value;
-                addEvent();
             }
         }
         public bool freezeWidth
@@ -64,37 +46,12 @@ namespace Nextension
             }
         }
 
-        private bool _isAddedEvent;
-        private SourceConstraint _sourceController;
-
 #if UNITY_EDITOR
         private bool _editor_freezeWidth;
         private bool _editor_freezeHeight;
         private Vector2 _editor_sizeOffset;
         private void OnValidate()
         {
-            if (_sourceController != null)
-            {
-                if (_source == null)
-                {
-                    removeEvent();
-                }
-                else
-                {
-                    if (_sourceController.gameObject != _source.gameObject)
-                    {
-                        source = _source;
-                    }
-                }
-            }
-            else
-            {
-                if (_source != null)
-                {
-                    addEvent();
-                }
-            }
-
             if (_editor_freezeWidth != _freezeWidth || _editor_freezeHeight != _freezeHeight || _editor_sizeOffset != _sizeOffset)
             {
                 _editor_freezeWidth = _freezeWidth;
@@ -104,51 +61,37 @@ namespace Nextension
             }
         }
 #endif
-        private void OnEnable()
+        private void LateUpdate()
         {
-            addEvent();
+            updateDimensions();
         }
-        private void OnDisable()
-        {
-            removeEvent();
-        }
-
-        private void addEvent()
-        {
-            if (_isAddedEvent && _sourceController != null) return;
-
-            if (!_sourceController && source)
-            {
-                _sourceController = source.getOrAddComponent<SourceConstraint>();
-            }
-            if (_sourceController)
-            {
-                _isAddedEvent = true;
-                _sourceController.onRectTransformDimensionsChange += updateDimensions;
-                updateDimensions();
-            }
-        }
-        private void removeEvent()
-        {
-            if (!_isAddedEvent) return;
-            if (_sourceController)
-            {
-                _sourceController.onRectTransformDimensionsChange -= updateDimensions;
-            }
-            _isAddedEvent = false;
-        }
-
         private void updateDimensions()
         {
             var rectTf = transform.asRectTransform();
-            var srcRect = _source.rect;
+            var srcRectSize = _source.rect.size;
+            if (_source.IsChildOf(rectTf))
+            {
+                if (_source.anchorMin != _source.anchorMax)
+                {
+                    _source.anchorMin = _source.anchorMax = (_source.anchorMin + _source.anchorMax) * 0.5f;
+                    _source.setSizeWithCurrentAnchors(srcRectSize);
+                }
+            }
             if (!_freezeWidth)
             {
-                rectTf.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, srcRect.size.x + _sizeOffset.x);
+                var newSize = srcRectSize.x + _sizeOffset.x;
+                if (newSize != rectTf.rect.width)
+                {
+                    rectTf.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newSize);
+                }
             }
             if (!_freezeHeight)
             {
-                rectTf.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, srcRect.size.y + _sizeOffset.y);
+                var newSize = srcRectSize.y + _sizeOffset.y;
+                if (newSize != rectTf.rect.height)
+                {
+                    rectTf.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, newSize);
+                }
             }
         }
     }

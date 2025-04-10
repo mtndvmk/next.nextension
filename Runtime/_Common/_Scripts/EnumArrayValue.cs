@@ -24,33 +24,17 @@ namespace Nextension
     [Serializable]
     public class EnumArrayValue<TEnum, TValue> : IEnumArrayValue, IEnumerable<TValue>, ISerializationCallbackReceiver where TEnum : unmanaged, Enum
     {
+        public readonly static EnumArrayValue<TEnum, TValue> Empty = new EnumArrayValue<TEnum, TValue>();
+
         [SerializeField] private TValue[] enumValues = new TValue[EnumIndex<TEnum>.getCount()];
-#pragma warning disable 0414
-        [SerializeField] private int[] enumArrayCache;
         [SerializeField] private string indexString;
-#pragma warning restore 0414
 
         #region Editor
 #if UNITY_EDITOR
-        private static string convertIntArrayToBaseString(int[] cacheIntArray)
-        {
-            if (cacheIntArray != null && cacheIntArray.Length != 0)
-            {
-                var bytes = NConverter.convertArray<int, byte>(cacheIntArray);
-                return Convert.ToBase64String(bytes);
-            }
-            return string.Empty;
-        }
         public bool refreshEditorCache()
         {
             if (NStartRunner.IsPlaying) return false;
             bool isDirty = false;
-            if (enumArrayCache != null && enumArrayCache.Length != 0)
-            {
-                indexString = convertIntArrayToBaseString(this.enumArrayCache);
-                enumArrayCache = null;
-                isDirty = true;
-            }
             if (isDirty || indexString != EnumIndex<TEnum>.IndexString)
             {
                 Dictionary<TEnum, TValue> dict = null;
@@ -67,8 +51,9 @@ namespace Nextension
                         dict[k] = enumValues[i];
                     }
                 }
-                indexString = EnumIndex<TEnum>.IndexString;
 
+                indexString = EnumIndex<TEnum>.IndexString;
+                enumValues = new TValue[EnumIndex<TEnum>.getCount()];
                 if (dict != null)
                 {
                     foreach (var item in dict)
@@ -91,6 +76,11 @@ namespace Nextension
 
         public void set(TEnum enumType, TValue val)
         {
+            if (this == Empty)
+            {
+                Debug.LogWarning("Cannot set value to Empty");
+                return;
+            }
             var index = EnumIndex<TEnum>.getIndex(enumType);
             if (index < 0) return;
             enumValues[index] = val;
@@ -105,6 +95,11 @@ namespace Nextension
         }
         public void setByIndex(int index, TValue val)
         {
+            if (this == Empty)
+            {
+                Debug.LogWarning("Cannot set value to Empty");
+                return;
+            }
             enumValues[index] = val;
         }
         public TValue getByIndex(int index)
@@ -213,6 +208,11 @@ namespace Nextension
         }
         public void set(EnumArrayValue<TEnum, TValue> arrValue)
         {
+            if (this == Empty)
+            {
+                Debug.LogWarning("Cannot set value to Empty");
+                return;
+            }
             Array.Copy(arrValue.enumValues, enumValues, Length);
         }
         public static EnumArrayValue<TEnum, TValue> createFrom(EnumListValue<TEnum, TValue> listValue)
@@ -233,7 +233,6 @@ namespace Nextension
         public void OnAfterDeserialize()
         {
 #if !UNITY_EDITOR
-            enumArrayCache = null;
             indexString = null;
 #endif
         }
@@ -242,12 +241,19 @@ namespace Nextension
         {
             public Enumerator(EnumArrayValue<TEnum, TValue> enumArrayValue)
             {
-                _enumArrayValue = enumArrayValue;
+                if (enumArrayValue == null || enumArrayValue.enumValues == null)
+                {
+                    _enumValues = Empty.enumValues;
+                }
+                else
+                {
+                    _enumValues = enumArrayValue.enumValues;
+                }
                 _current = default;
                 _index = 0;
             }
 
-            private readonly EnumArrayValue<TEnum, TValue> _enumArrayValue;
+            private readonly TValue[] _enumValues;
             private KeyValuePair<TEnum, TValue> _current;
             private int _index;
 
@@ -262,9 +268,9 @@ namespace Nextension
 
             public bool MoveNext()
             {
-                if (_index < _enumArrayValue.Length)
+                if (_index < _enumValues.Length)
                 {
-                    _current = new(EnumIndex<TEnum>.getEnum(_index), _enumArrayValue.enumValues[_index]);
+                    _current = new(EnumIndex<TEnum>.getEnum(_index), _enumValues[_index]);
                     _index++;
                     return true;
                 }

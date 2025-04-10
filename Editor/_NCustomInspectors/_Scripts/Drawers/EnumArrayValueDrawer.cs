@@ -44,9 +44,6 @@ namespace Nextension.NEditor
                             return;
                         }
 
-                        var enumNameStyle = new GUIStyle(GUI.skin.label);
-                        enumNameStyle.fontStyle = FontStyle.Bold;
-
                         if (arrValue.refreshEditorCache())
                         {
                             NAssetUtils.setDirty(property.serializedObject.targetObject);

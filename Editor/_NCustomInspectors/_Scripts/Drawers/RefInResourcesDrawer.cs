@@ -40,8 +40,11 @@ namespace Nextension.NEditor
             {
                 if (newObj.isNull())
                 {
-                    refInResources.setValue(null);
-                    NAssetUtils.setDirty(property.serializedObject.targetObject);
+                    if (!currentObj.isNull())
+                    {
+                        refInResources.setValue(null);
+                        NAssetUtils.setDirty(property.serializedObject.targetObject);
+                    }
                 }
                 else
                 {
