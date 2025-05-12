@@ -116,7 +116,7 @@ namespace Nextension
             }
             if (!_isSetup)
             {
-                INButtonListener[] listeners = GetComponentsInChildren<INButtonListener>();
+                using var listeners = gameObject.getComponentsInChildren_CachedList<INButtonListener>();
                 foreach (var listener in listeners)
                 {
                     try

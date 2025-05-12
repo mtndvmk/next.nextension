@@ -10,64 +10,54 @@ namespace Nextension
     {
         public static bool checkInPool(GameObject gameObject)
         {
-            var origin = gameObject.GetComponent<OriginInstance>();
-            if (origin == null)
+            if (!gameObject.TryGetComponent<OriginInstance>(out var origin))
             {
                 Debug.LogWarning($"{gameObject.name} is not from pool");
                 return false;
             }
             else
             {
-                if (origin.IsSharedPool)
-                {
-                    var pool = SharedInstancesPool.getPool(origin.Id);
-                    if (pool != null)
-                    {
-                        return pool.poolContains(gameObject);
-                    }
-                    else
-                    {
-                        Debug.LogError($"Can't find pool - {origin.Id}");
-                    }
-                }
-                else
-                {
-                    Debug.LogError("Only support unique pool");
-                }
+                return origin.IsInPool;
             }
-            return false;
         }
         public static void release(GameObject gameObject)
         {
-            var origin = gameObject.GetComponent<OriginInstance>();
-            if (origin == null)
+            if (!gameObject.TryGetComponent<OriginInstance>(out var origin))
             {
                 Debug.LogError($"{gameObject.name} is not from pool");
             }
             else
             {
-                if (origin.IsSharedPool)
-                {
-                    var pool = SharedInstancesPool.getPool(origin.Id);
-                    if (pool != null)
-                    {
-                        pool.release(gameObject, gameObject, origin);
-                    }
-                    else
-                    {
-                        Debug.LogError($"Can't find pool - {origin.Id}");
-                    }
-                }
-                else
-                {
-                    Debug.LogError("Only support unique pool");
-                }
+                origin.release();
             }
         }
         public static void release(Component component)
         {
             release(component.gameObject);
         }
+        public static void releaseOrDestroy(GameObject gameObject)
+        {
+            if (!gameObject.TryGetComponent<OriginInstance>(out var origin))
+            {
+                NUtils.destroy(gameObject);
+            }
+            else
+            {
+                origin.release();
+            }
+        }
+        public static void releaseOrDestroy(Component component)
+        {
+            releaseOrDestroy(component.gameObject);
+        }
+        public static void release(this OriginInstance origin)
+        {
+            if (!origin.IsInPool)
+            {
+                origin.Pool.release(origin);
+            }
+        }
+
         public static SharedPoolWrapper<T> getSharedPool<T>(this T prefab) where T : Object
         {
             var go = InstancesPoolUtil.getGameObject(prefab);
@@ -91,6 +81,12 @@ namespace Nextension
         }
     }
 
+    public interface IInstancePool
+    {
+        public int Id { get; }
+        void release(OriginInstance origin);
+    }
+
     public interface IInstancePool<T> where T : Object
     {
         T get(Transform parent = null, bool worldPositionStays = true);
@@ -103,7 +99,7 @@ namespace Nextension
     }
 
     [Serializable]
-    public class InstancesPool<T> : ISerializationCallbackReceiver, IInstancePool<T>
+    public class InstancesPool<T> : ISerializationCallbackReceiver, IInstancePool, IInstancePool<T>
         where T : Object
     {
         [SerializeField] private T _prefab;
@@ -114,7 +110,6 @@ namespace Nextension
         private int _currentStartupInstanceCount;
         private uint _clonedCount;
 
-        private OriginInstance _origin;
         [NonSerialized] private InstancesPool<GameObject> _sharedPool;
         [NonSerialized] private List<T> _instancePool;
 
@@ -125,10 +120,22 @@ namespace Nextension
             {
                 _instancePool = new List<T>(_startupInstanceCount);
                 Id = InstancesPoolUtil.computePoolId(_prefab);
+                if (_useOriginPrefab)
+                {
+                    getGameObject(_prefab).getOrAddComponent<OriginInstance>().setPool(this);
+                }
+                else
+                {
+                    _copiedPrefab = Object.Instantiate(_prefab, InstancesPoolContainer.CopiedPrefabContainer, true);
+                    _copiedPrefab.name = _prefab.name;
+                    getGameObject(_copiedPrefab).getOrAddComponent<OriginInstance>().setPool(this);
+                }
+                if (MaxPoolInstanceCount == 0)
+                {
+                    MaxPoolInstanceCount = IPoolable.DEFAULT_MAX_POOL_ITEM_COUNT;
+                }
             }
         }
-
-        internal readonly static bool IS_GENERIC_OF_GAMEOBJECT = typeof(T).Equals(typeof(GameObject));
 
         public uint MaxPoolInstanceCount { get; set; }
         public int Id { get; private set; }
@@ -149,11 +156,6 @@ namespace Nextension
             if (_useOriginPrefab)
             {
                 return _prefab;
-            }
-            if (!_copiedPrefab)
-            {
-                _copiedPrefab = Object.Instantiate(_prefab, InstancesPoolContainer.CopiedPrefabContainer, true);
-                _copiedPrefab.name = _prefab.name;
             }
             return _copiedPrefab;
         }
@@ -188,25 +190,9 @@ namespace Nextension
             _sharedPool ??= SharedInstancesPool.getOrCreatePool(getGameObject(_prefab), _startupInstanceCount);
         private T createNewInstance()
         {
-            if (_origin == null)
-            {
-                var go = getGameObject(getPrefab());
-                if (go.TryGetComponent(out _origin))
-                {
-                    Debug.LogWarning($"Already OriginInstance component in {go.name}");
-                }
-                else
-                {
-                    _origin = go.AddComponent<OriginInstance>();
-                    _origin.setPoolId(Id);
-                }
-                if (MaxPoolInstanceCount == 0)
-                {
-                    MaxPoolInstanceCount = IPoolable.DEFAULT_MAX_POOL_ITEM_COUNT;
-                }
-            }
             var ins = Object.Instantiate(getPrefab(), InstancesPoolContainer.Container, true);
-            ins.name = $"{_origin.name} [PoolClone_{_clonedCount++}]";
+            ins.name = $"{_prefab.name} [PoolClone_{_clonedCount++}]";
+            ins.getOrAddComponent<OriginInstance>().setPool(this);
             return ins;
         }
         private void createStartupInstances()
@@ -246,8 +232,8 @@ namespace Nextension
 
                 var go = getGameObject(ins);
                 go.transform.setParent(parent, worldPositionStays);
-                using var poolableArray = NPList<IPoolable>.getWithoutTracking();
-                go.GetComponentsInChildren(true, poolableArray.Collection);
+
+                using var poolableArray = go.getComponentsInChildren_CachedList<IPoolable>();
                 foreach (var poolable in poolableArray)
                 {
                     poolable.onSpawn();
@@ -281,76 +267,6 @@ namespace Nextension
                 yield return get(parent, worldPositionStays);
             }
         }
-        internal void release(T instance, GameObject go, OriginInstance origin)
-        {
-            if (_disableSharedPool)
-            {
-                if (origin.IsInPool)
-                {
-                    Debug.LogWarning($"Instance has been in pool", instance);
-                    return;
-                }
-                if (origin.Id != _origin.Id)
-                {
-                    Debug.LogWarning($"OriginId [{origin.Id}], [{_origin.Id}] not match, try release by SharedInstancesPool", go);
-                    SharedInstancesPool.getPool(origin.Id)?.release(go);
-                    return;
-                }
-
-                using var poolableArray = NPList<IPoolable>.getWithoutTracking();
-                go.GetComponentsInChildren(true, poolableArray.Collection);
-
-                if (_instancePool.Count >= MaxPoolInstanceCount)
-                {
-                    foreach (var poolable in poolableArray)
-                    {
-                        poolable.onDespawn();
-                        poolable.onDestroy();
-                    }
-                    NUtils.destroy(go);
-                    return;
-                }
-                else
-                {
-                    _instancePool.Add(instance);
-                }
-
-                go.transform.setParent(InstancesPoolContainer.Container);
-                foreach (var poolable in poolableArray)
-                {
-                    poolable.onDespawn();
-                }
-            }
-            else
-            {
-                SharedPool.release(getGameObject(instance), go, origin);
-            }
-        }
-        public void release(T instance)
-        {
-            EditorCheck.checkEditorMode();
-            if (_disableSharedPool)
-            {
-                if (_origin == null)
-                {
-                    Debug.LogWarning($"Origin of pool is null?", instance);
-                    return;
-                }
-
-                var go = getGameObject(instance);
-                if (!go.TryGetComponent<OriginInstance>(out var origin))
-                {
-                    Debug.LogWarning($"Missing OriginInstance on object: {instance.name}", instance);
-                    return;
-                }
-
-                release(instance, go, origin);
-            }
-            else
-            {
-                SharedPool.release(getGameObject(instance));
-            }
-        }
         public void clearPool()
         {
             clearPool(true);
@@ -365,8 +281,7 @@ namespace Nextension
                     foreach (var item in _instancePool)
                     {
                         var go = getGameObject(item);
-                        using var poolableArray = NPList<IPoolable>.getWithoutTracking();
-                        go.GetComponentsInChildren(true, poolableArray.Collection);
+                        using var poolableArray = go.getComponentsInChildren_CachedList<IPoolable>();
                         foreach (var poolable in poolableArray)
                         {
                             poolable.onDestroy();
@@ -424,22 +339,92 @@ namespace Nextension
             });
 #endif
         }
+
+        public void release(OriginInstance origin)
+        {
+            release(InstancesPoolUtil.getInstanceFromGO<T>(origin.gameObject));
+        }
+
+        public void release(T instance)
+        {
+            using var otherOrigins = getGameObject(instance).getComponentsInChildren_CachedList<OriginInstance>(true);
+            int otherCount = otherOrigins.Count;
+            if (otherCount > 1)
+            {
+                for (int i = 0; i < otherCount; ++i)
+                {
+                    var tempGO = otherOrigins[i].gameObject;
+                    tempGO.transform.setParent(InstancesPoolContainer.Container);
+                }
+                for (int i = 0; i < otherCount; ++i)
+                {
+                    otherOrigins[i].release();
+                }
+                return;
+            }
+
+            var origin = otherOrigins[0];
+            var go = origin.gameObject;
+
+            if (_disableSharedPool)
+            {
+                if (origin.IsInPool)
+                {
+                    Debug.LogWarning($"Instance has been in pool", instance);
+                    return;
+                }
+                if (origin.Id != Id)
+                {
+                    Debug.LogWarning($"OriginId [{origin.Id}], [{Id}] not match, try release by SharedInstancesPool", go);
+                    SharedInstancesPool.getPool(origin.Id)?.release(go);
+                    return;
+                }
+
+                using var poolableArray = go.getComponentsInChildren_CachedList<IPoolable>();
+                if (_instancePool.Count >= MaxPoolInstanceCount)
+                {
+                    foreach (var poolable in poolableArray)
+                    {
+                        poolable.onDespawn();
+                        poolable.onDestroy();
+                    }
+                    NUtils.destroy(go);
+                    return;
+                }
+                else
+                {
+                    _instancePool.Add(instance);
+                }
+
+                go.transform.setParent(InstancesPoolContainer.Container);
+                foreach (var poolable in poolableArray)
+                {
+                    poolable.onDespawn();
+                }
+            }
+            else
+            {
+                SharedPool.release(getGameObject(instance));
+            }
+        }
     }
 
-    public struct SharedPoolWrapper<T> : IInstancePool<T> where T : Object
+    public readonly struct SharedPoolWrapper<T> : IInstancePool<T> where T : Object
     {
-        public readonly int poolId;
+        private readonly int _poolId;
+        public readonly int Id => _poolId;
+
         public SharedPoolWrapper(int poolId)
         {
-            this.poolId = poolId;
+            this._poolId = poolId;
         }
         public T get(Transform parent = null, bool worldPositionStays = true)
         {
-            return InstancesPoolUtil.getInstanceFromGO<T>(SharedInstancesPool.getPool(poolId).get(parent, worldPositionStays));
+            return InstancesPoolUtil.getInstanceFromGO<T>(SharedInstancesPool.getPool(_poolId).get(parent, worldPositionStays));
         }
         public T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
         {
-            var pool = SharedInstancesPool.getPool(poolId);
+            var pool = SharedInstancesPool.getPool(_poolId);
             var go = pool.get(parent, worldPositionStays);
             releaseWaitable.startWaitable().addCompletedEvent(() =>
             {
@@ -449,7 +434,7 @@ namespace Nextension
         }
         public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
         {
-            var pool = SharedInstancesPool.getPool(poolId);
+            var pool = SharedInstancesPool.getPool(_poolId);
             var go = pool.get(parent, worldPositionStays);
             new NWaitSecond(delaySeconds).startWaitable().addCompletedEvent(() =>
             {
@@ -466,15 +451,15 @@ namespace Nextension
         }
         public void release(T instance)
         {
-            SharedInstancesPool.getPool(poolId).release(InstancesPoolUtil.getGameObject(instance));
+            SharedInstancesPool.getPool(_poolId).release(InstancesPoolUtil.getGameObject(instance));
         }
         public void clearPool()
         {
-            SharedInstancesPool.clearSharedPool(poolId);
+            SharedInstancesPool.clearSharedPool(_poolId);
         }
         public bool poolContains(T instance)
         {
-            return SharedInstancesPool.getPool(poolId).poolContains(InstancesPoolUtil.getGameObject(instance));
+            return SharedInstancesPool.getPool(_poolId).poolContains(InstancesPoolUtil.getGameObject(instance));
         }
     }
 }

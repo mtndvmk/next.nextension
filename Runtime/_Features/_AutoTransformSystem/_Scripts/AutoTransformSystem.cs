@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -48,9 +49,21 @@ namespace Nextension
             }
         }
 
+        internal class TransformDisableData
+        {
+            public readonly Func<bool> isActive;
+            public readonly AutoTransformHandle handler;
+            public TransformDisableData(Func<bool> check, AutoTransformHandle handler)
+            {
+                this.isActive = check;
+                this.handler = handler;
+            }
+        }
+
         private static TransformAccessArray _transformAccessArray;
         private static Job _job;
         private static List<AutoTransformHandle> _handlers;
+        private static List<TransformDisableData> _stopOnDisableDataList;
 
         private readonly static SharedStatic<float> _deltaTime = SharedStatic<float>.GetOrCreate<Job>();
 
@@ -63,6 +76,7 @@ namespace Nextension
                 _transformAccessArray.Dispose();
                 _job.autoTransformDatas.Dispose();
                 _handlers.Clear();
+                _stopOnDisableDataList.Clear();
                 NUpdater.onUpdateEvent.remove(update);
             }
         }
@@ -75,6 +89,7 @@ namespace Nextension
                 _transformAccessArray = new TransformAccessArray(4);
                 _job.autoTransformDatas = new NativeList<AutoTransformData>(4, AllocatorManager.Persistent);
                 _handlers = new(4);
+                _stopOnDisableDataList = new();
                 NUpdater.onUpdateEvent.add(update);
             }
         }
@@ -84,14 +99,31 @@ namespace Nextension
             {
                 _deltaTime.Data = Time.deltaTime;
                 _job.Schedule(_transformAccessArray).Complete();
+                if (_stopOnDisableDataList.Count > 0)
+                {
+                    for (int i = _stopOnDisableDataList.Count - 1; i >= 0; i--)
+                    {
+                        var data = _stopOnDisableDataList[i];
+                        if (!data.isActive())
+                        {
+                            stop(data.handler);
+                            _stopOnDisableDataList.removeAtSwapBack(i);
+                        }
+                    }
+                }
             }
         }
 
-        public static AutoTransformHandle start(AbsAutoTransform autoTransform)
+        public static AutoTransformHandle start(AbsAutoTransform autoTransform, bool isStopOnDisable = false)
         {
-            return start(autoTransform.transform, autoTransform.AutoTransformType, autoTransform.AutoValue, autoTransform.IsLocalSpace);
+            var handler = start(autoTransform.transform, autoTransform.AutoTransformType, autoTransform.AutoValue, autoTransform.IsLocalSpace, false);
+            if (isStopOnDisable)
+            {
+                _stopOnDisableDataList.Add(new TransformDisableData(() => autoTransform.isActiveAndEnabled, handler));
+            }
+            return handler;
         }
-        public static AutoTransformHandle start(Transform transform, AutoTransformType type, float3 data, bool isLocalSpace)
+        public static AutoTransformHandle start(Transform transform, AutoTransformType type, float3 data, bool isLocalSpace, bool isStopOnDisable)
         {
             ensureSetup();
             _transformAccessArray.Add(transform);
@@ -103,6 +135,10 @@ namespace Nextension
             });
             var handler = new AutoTransformHandle(_transformAccessArray.length - 1);
             _handlers.Add(handler);
+            if (isStopOnDisable)
+            {
+                _stopOnDisableDataList.Add(new TransformDisableData(() => transform.gameObject.activeInHierarchy, handler));
+            }
             return handler;
         }
 

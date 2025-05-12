@@ -12,6 +12,44 @@ namespace Nextension
             var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get());
             return newArrayInt32;
         }
+        public static NPUArray<T> get(T t0)
+        {
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get())
+            {
+                t0
+            };
+            return newArrayInt32;
+        }
+        public static NPUArray<T> get(T t0, T t1)
+        {
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get())
+            {
+                t0,
+                t1
+            };
+            return newArrayInt32;
+        }
+        public static NPUArray<T> get(T t0, T t1, T t2)
+        {
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get())
+            {
+                t0,
+                t1,
+                t2
+            };
+            return newArrayInt32;
+        }
+        public static NPUArray<T> get(T t0, T t1, T t2, T t3)
+        {
+            var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get())
+            {
+                t0,
+                t1,
+                t2,
+                t3
+            };
+            return newArrayInt32;
+        }
         public static NPUArray<T> get(int capacity)
         {
             var newArrayInt32 = new NPUArray<T>(NPArray<byte>.get());

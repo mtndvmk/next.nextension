@@ -11,19 +11,20 @@ namespace Nextension.Tween
         }
         public static void cancelAllTweenersInGameObject(this GameObject target, bool includeChildren, bool includeInActive = false)
         {
-            Component[] components;
+            NPList<Component> components;
             if (includeChildren)
             {
-                components = target.GetComponentsInChildren<Component>(includeInActive);
+                components = target.getComponentsInChildren_CachedList<Component>(includeInActive);
             }
             else
             {
-                components = target.GetComponents<Component>();
+                components = target.getComponents_CachedList<Component>();
             }
             foreach (var com in components)
             {
                 NTween.cancelAllTweeners(com);
             }
+            components.Dispose();
         }
 
         public static NRunnableTweener moveTo(this Transform target, Vector3 destination, float duration, bool isLocalSpace = true)

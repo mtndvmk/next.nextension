@@ -2472,6 +2472,34 @@ namespace Nextension
             return target.gameObject.getOrAddComponent<T>();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T getOrAddComponent<T>(this UnityEngine.Object target) where T : Component
+        {
+            if (target is GameObject go)
+            {
+                return go.getOrAddComponent<T>();
+            }
+            else if (target is Component component)
+            {
+                return component.gameObject.getOrAddComponent<T>();
+            }
+            else
+            {
+                throw new Exception($"target is not a GameObject or Component, type: {target.GetType()}");
+            }
+        }
+        internal static NPList<T> getComponents_CachedList<T>(this GameObject target)
+        {
+            var list = NPList<T>.get();
+            target.GetComponents(list.Collection);
+            return list;
+        }
+        internal static NPList<T> getComponentsInChildren_CachedList<T>(this GameObject target, bool isIncludeInactive = false)
+        {
+            var list = NPList<T>.get();
+            target.GetComponentsInChildren(isIncludeInactive, list.Collection);
+            return list;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void removeComponent(Component c)
         {
             GameObject.DestroyImmediate(c);

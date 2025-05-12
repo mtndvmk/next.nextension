@@ -1,6 +1,4 @@
-﻿using System;
-using UnityEngine;
-using Object = UnityEngine.Object;
+﻿using UnityEngine;
 
 namespace Nextension
 {
@@ -8,7 +6,7 @@ namespace Nextension
     {
         public static GameObject getGameObject<T>(T instance) where T : Object
         {
-            if (InstancesPool<T>.IS_GENERIC_OF_GAMEOBJECT)
+            if (UnityGeneric<T>.IsGameObject)
             {
                 return instance as GameObject;
             }
@@ -23,7 +21,7 @@ namespace Nextension
         }
         public static T getInstanceFromGO<T>(GameObject go) where T : Object
         {
-            if (InstancesPool<T>.IS_GENERIC_OF_GAMEOBJECT)
+            if (UnityGeneric<T>.IsGameObject)
             {
                 return go as T;
             }

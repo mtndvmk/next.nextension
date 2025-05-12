@@ -1,16 +1,18 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Nextension
 {
     public class OriginInstance : MonoBehaviour, IPoolable
     {
-        [SerializeField] private int _id;
-        public int Id => _id;
+        public int Id => Pool.Id;
 
         public bool IsInPool { get; private set; } = true;
         public bool IsSharedPool => SharedInstancesPool.exists(Id);
+        public IInstancePool Pool { get; private set; }
 
-        internal void setPoolId(int id)
+
+        internal void setPool(IInstancePool pool)
         {
 #if UNITY_EDITOR
             if (TryGetComponent<INotAllowInstancesPool>(out var notSupport))
@@ -19,7 +21,7 @@ namespace Nextension
             }
             isOrigin = true;
 #endif
-            _id = id;
+            Pool = pool;
         }
 
         void IPoolable.onSpawn()
@@ -40,7 +42,7 @@ namespace Nextension
             var alls = FindObjectsByType<OriginInstance>(FindObjectsInactive.Include, FindObjectsSortMode.InstanceID);
             foreach (var o in alls)
             {
-                if (o.isOrigin && o._id == _id)
+                if (o.isOrigin && o.Id == Id)
                 {
                     UnityEditor.EditorGUIUtility.PingObject(o);
                     return;
