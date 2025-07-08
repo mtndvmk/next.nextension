@@ -22,6 +22,12 @@ namespace Nextension.Tween
         {
             NTweenManager.cancelFromObjectControlKey(key);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void updateDefaultUpdateMode(NTweener.UpdateMode updateMode)
+        {
+            NTweener.defaultUpdateMode = updateMode;
+        }
+
         #region Transform Tween
         public static NRunnableTweener moveTo(Transform target, float3 destination, float duration, bool isLocalSpace = true)
         {

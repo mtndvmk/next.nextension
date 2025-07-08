@@ -146,7 +146,8 @@ namespace Nextension.Tween
                     continue;
                 }
                 var startTime = tweener.startTime;
-                if (TweenStaticManager.currentTime > startTime)
+                var currentTime = tweener.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTime : TweenStaticManager.currentUnscaledTime;
+                if (currentTime > startTime)
                 {
                     var endTime = startTime + tweener.duration;
                     if (tweener.Status == RunState.None)
@@ -155,7 +156,7 @@ namespace Nextension.Tween
                     }
                     onTweenerUpdated(i);
                     tweener.invokeOnUpdate();
-                    if (TweenStaticManager.currentTime >= endTime)
+                    if (currentTime >= endTime)
                     {
                         removeAt(i);
                         tweener.invokeOnComplete();

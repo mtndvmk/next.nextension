@@ -9,6 +9,7 @@ namespace Nextension
         [SerializeField] private Transform _target;
         [SerializeField] private float _zoomRatio = 1.1f;
         [SerializeField] private float _zoomTime = 0.1f;
+        [SerializeField] private NTweener.UpdateMode _updateMode;
 
         private NRunnableTweener _effectTweener;
         private Vector3 _originScale;
@@ -37,7 +38,7 @@ namespace Nextension
             {
                 _effectTweener.cancel();
             }
-            _effectTweener = NTween.scaleTo(_target, _originScale, _zoomTime);
+            _effectTweener = NTween.scaleTo(_target, _originScale, _zoomTime).setUpdateMode(_updateMode);
         }
 
         private void Reset()

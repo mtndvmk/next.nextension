@@ -12,7 +12,12 @@ namespace Nextension
 
         internal abstract float3 AutoValue { get; }
         internal abstract AutoTransformType AutoTransformType { get; }
-        
+
+        public bool IsStartOnEnable
+        {
+            get => _isStartOnEnable;
+            set => _isStartOnEnable = value;
+        }
         public bool IsLocalSpace
         {
             get => _isLocalSpace;

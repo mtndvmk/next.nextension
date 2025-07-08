@@ -7,10 +7,20 @@ namespace Nextension.Tween
 {
     public abstract class NTweener : ICancelable
     {
+        public enum UpdateMode : byte
+        {
+            ScaleTime,
+            UnscaledTime,
+        }
+
         private static uint _maxId;
+
+        internal static UpdateMode defaultUpdateMode = UpdateMode.ScaleTime;
+
         public NTweener()
         {
             id = ++_maxId;
+            updateMode = defaultUpdateMode;
         }
 
         public override int GetHashCode()
@@ -20,11 +30,13 @@ namespace Nextension.Tween
 
         internal readonly uint id;
         internal bool isFinalized;
-        public RunState Status { get; private set; }
+        internal UpdateMode updateMode;
         internal float scheduledTime;
+        internal float scheduledUnscaleTime;
         internal CancelControlKey controlKey;
 
         internal bool isScheduled => scheduledTime > 0;
+        public RunState Status { get; private set; }
 
         private Action onStartedEvent;
         private Action onUpdatedEvent;
@@ -158,6 +170,18 @@ namespace Nextension.Tween
             innerSetCancelControlKey(NTweenManager.createKey(uintKey));
             return this;
         }
+        public NTweener setUpdateMode(UpdateMode updateMode)
+        {
+            if (Status != RunState.None)
+            {
+                Debug.LogWarning("Tweener has been started, update mode will not be changed");
+            }
+            else
+            {
+                this.updateMode = updateMode;
+            }
+            return this;
+        }
         private void innerSetCancelControlKey(CancelControlKey cancelControlKey)
         {
             if (!controlKey.isDefault())
@@ -203,6 +227,7 @@ namespace Nextension.Tween
             if (Status == RunState.None && !isScheduled)
             {
                 scheduledTime = Time.time;
+                scheduledUnscaleTime = Time.unscaledTime;
                 onRun();
             }
         }
@@ -212,14 +237,17 @@ namespace Nextension.Tween
             if (Status == RunState.None && !isScheduled)
             {
                 scheduledTime = Time.time;
+                scheduledUnscaleTime = Time.unscaledTime;
                 onSchedule();
             }
         }
+
         internal void resetState()
         {
             isFinalized = false;
             Status = RunState.None;
             scheduledTime = 0;
+            scheduledUnscaleTime = 0;
             onResetState();
         }
         public void removeAllEvents()
@@ -323,7 +351,7 @@ namespace Nextension.Tween
         protected virtual void onInnerCanceled() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onResetState() { }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal virtual void forceComplete() { }
 
@@ -335,7 +363,7 @@ namespace Nextension.Tween
         private readonly T _tweener;
 
         internal float delayTime;
-        internal float startTime => scheduledTime + delayTime;
+        internal float startTime => delayTime + (updateMode == UpdateMode.ScaleTime ? scheduledTime : scheduledUnscaleTime);
 
         internal GenericNTweener()
         {
@@ -392,6 +420,11 @@ namespace Nextension.Tween
         public new T cancelWhen(Func<bool> condition)
         {
             base.cancelWhen(condition);
+            return _tweener;
+        }
+        public new T setUpdateMode(UpdateMode updateMode)
+        {
+            base.setUpdateMode(updateMode);
             return _tweener;
         }
     }

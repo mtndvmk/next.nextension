@@ -58,10 +58,10 @@ namespace Nextension.Tween
             {
                 if (NUtils.checkBitMask(_mask, index))
                 {
-                    var currentTime = TweenStaticManager.currentTimeInJob.Data;
                     var data = _jobDataNativeArr[index];
                     var common = data.common;
                     TValue result;
+                    var currentTime = common.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
                     if (currentTime >= common.startTime)
                     {
                         var deltaTime = currentTime - common.startTime;

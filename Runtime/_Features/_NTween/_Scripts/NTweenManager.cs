@@ -40,6 +40,9 @@ namespace Nextension.Tween
             var currentTime = Time.time;
             TweenStaticManager.currentTime = TweenStaticManager.currentTimeInJob.Data = currentTime;
 
+            var currentUnscaledTime = Time.unscaledTime;
+            TweenStaticManager.currentUnscaledTime = TweenStaticManager.currentUnscaledTimeInJob.Data = currentUnscaledTime;
+
             _cancelControlManager.cancelInvalid();
 
             int combinedCount = _queuedCombinedTweeners.Count;
@@ -48,7 +51,7 @@ namespace Nextension.Tween
                 for (int i = combinedCount - 1; i >= 0; i--)
                 {
                     var tweener = _queuedCombinedTweeners.GetAtWithoutChecks(i);
-                    if (tweener.startTime <= currentTime)
+                    if (tweener.startTime <= (tweener.updateMode == NTweener.UpdateMode.ScaleTime ? currentTime : currentUnscaledTime))
                     {
                         tweener.invokeOnStart();
                         _queuedCombinedTweeners.removeAtSwapBackWithoutChecks(i);

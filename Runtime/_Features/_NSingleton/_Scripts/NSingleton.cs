@@ -122,6 +122,7 @@ namespace Nextension
                 }
                 else
                 {
+                    onDestroy();
                     onQuitApp();
                 }
             }

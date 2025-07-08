@@ -5,6 +5,7 @@ namespace Nextension.Tween
     [BurstCompile]
     internal struct CommonJobData
     {
+        public NTweener.UpdateMode updateMode;
         public EaseType easeType;
         public float startTime;
         public float duration;

@@ -12,6 +12,7 @@ namespace Nextension
         [SerializeField] private Color _downColor = new Color32(0xC8, 0xC8, 0xC8, 0xFF);
         [SerializeField] private Color _disableColor = new Color32(0xC8, 0xC8, 0xC8, 0x80);
         [SerializeField] private float _duration = 0.1f;
+        [SerializeField] private NTweener.UpdateMode _updateMode;
 
         private NTweener _colorTweener;
 
@@ -105,7 +106,7 @@ namespace Nextension
             }
             else
             {
-                _colorTweener = NTween.fromTo(_target.GetColor(), color, _duration, resultColor => _target.SetColor(resultColor));
+                _colorTweener = NTween.fromTo(_target.GetColor(), color, _duration, _target.SetColor).setUpdateMode(_updateMode);
                 _colorTweener.setCancelControlKey(_target);
             }
         }

@@ -671,6 +671,12 @@ namespace Nextension
             }
             return result;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static float maxAxis(this Vector2 vector2)
+        {
+            return Mathf.Max(vector2.x, vector2.y);
+        }
         #endregion
 
         #region Vector3
@@ -848,6 +854,12 @@ namespace Nextension
             }
             return result;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static float maxAxis(this Vector3 vector3)
+        {
+            return Mathf.Max(vector3.x, vector3.y, vector3.z);
+        }
         #endregion
 
         #region Vector4
@@ -874,6 +886,12 @@ namespace Nextension
         public static Quaternion toQuaternion(this float4 f4)
         {
             return NConverter.bitConvertWithoutChecks<float4, Quaternion>(f4);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static float maxAxis(this Vector4 vector4)
+        {
+            return Mathf.Max(vector4.x, vector4.y, vector4.z, vector4.w);
         }
         #endregion
 
@@ -1119,32 +1137,40 @@ namespace Nextension
             self.localScale = Vector3.one;
         }
 
-        public static Vector2 getBotomLeft(this Rect rect)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static Vector2 getBottomLeft(this Rect rect)
         {
             float x = rect.x;
             float y = rect.y;
             return new Vector2(x, y);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static Vector2 getTopLeft(this Rect rect)
         {
             float x = rect.x;
             float yMax = rect.yMax;
             return new Vector2(x, yMax);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
         public static Vector2 getTopRight(this Rect rect)
         {
             float xMax = rect.xMax;
             float yMax = rect.yMax;
             return new Vector2(xMax, yMax);
         }
-        public static Vector2 getBotomRight(this Rect rect)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [BurstCompile]
+        public static Vector2 getBottomRight(this Rect rect)
         {
             float y = rect.y;
             float xMax = rect.xMax;
             return new Vector2(xMax, y);
         }
 
-        public static Vector3 getBotomLeft(this RectTransform self, bool isWorldSpace = true)
+        public static Vector3 getBottomLeft(this RectTransform self, bool isWorldSpace = true)
         {
             Rect rect = self.rect;
             float x = rect.x;
@@ -1189,7 +1215,7 @@ namespace Nextension
                 return point;
             }
         }
-        public static Vector3 getBotomRight(this RectTransform self, bool isWorldSpace = true)
+        public static Vector3 getBottomRight(this RectTransform self, bool isWorldSpace = true)
         {
             Rect rect = self.rect;
             float y = rect.y;
@@ -2148,11 +2174,15 @@ namespace Nextension
         #endregion
 
         #region Random
+        private static uint s_randCount;
         public static Random getRandom(uint seed = 0)
         {
             if (seed == 0)
             {
-                return Random.CreateFromIndex(NConverter.bitConvert<int, uint>(DateTimeOffset.Now.ToUnixTimeMilliseconds().GetHashCode()));
+                var randIndex = (DateTimeOffset.Now.ToUnixTimeMilliseconds() + s_randCount).GetHashCode() & 0x7fffffff;
+                var rand = Random.CreateFromIndex(NConverter.bitConvert<int, uint>(randIndex));
+                s_randCount = rand.state;
+                return rand;
             }
             return new Random(seed);
         }

@@ -197,7 +197,12 @@ namespace Nextension
         }
         private void createStartupInstances()
         {
-            while (_instancePool.Count < _startupInstanceCount)
+            initializeInstancesInPool(_startupInstanceCount);
+        }
+        public void initializeInstancesInPool(int count)
+        {
+            EditorCheck.checkEditorMode();
+            while (_instancePool.Count < count)
             {
                 _instancePool.Add(createNewInstance());
             }
@@ -221,6 +226,7 @@ namespace Nextension
             if (_disableSharedPool)
             {
                 T ins;
+                bool isNewInstance = false;
                 if (_instancePool.Count > 0)
                 {
                     ins = _instancePool.takeAndRemoveLast();
@@ -228,12 +234,20 @@ namespace Nextension
                 else
                 {
                     ins = createNewInstance();
+                    isNewInstance = true;
                 }
 
                 var go = getGameObject(ins);
                 go.transform.setParent(parent, worldPositionStays);
 
                 using var poolableArray = go.getComponentsInChildren_CachedList<IPoolable>();
+                if (isNewInstance)
+                {
+                    foreach (var poolable in poolableArray)
+                    {
+                        poolable.onCreated();
+                    }
+                }
                 foreach (var poolable in poolableArray)
                 {
                     poolable.onSpawn();
@@ -413,11 +427,18 @@ namespace Nextension
     {
         private readonly int _poolId;
         public readonly int Id => _poolId;
-
+        public uint MaxPoolInstanceCount
+        {
+            get => SharedInstancesPool.getPool(_poolId).MaxPoolInstanceCount;
+            set => SharedInstancesPool.getPool(_poolId).MaxPoolInstanceCount = value;
+        }
         public SharedPoolWrapper(int poolId)
         {
             this._poolId = poolId;
         }
+
+        public readonly InstancesPool<GameObject> Pool => SharedInstancesPool.getPool(_poolId);
+
         public T get(Transform parent = null, bool worldPositionStays = true)
         {
             return InstancesPoolUtil.getInstanceFromGO<T>(SharedInstancesPool.getPool(_poolId).get(parent, worldPositionStays));
@@ -460,6 +481,10 @@ namespace Nextension
         public bool poolContains(T instance)
         {
             return SharedInstancesPool.getPool(_poolId).poolContains(InstancesPoolUtil.getGameObject(instance));
+        }
+        public void initializeInstancesInPool(int count)
+        {
+            SharedInstancesPool.getPool(_poolId).initializeInstancesInPool(count);
         }
     }
 }

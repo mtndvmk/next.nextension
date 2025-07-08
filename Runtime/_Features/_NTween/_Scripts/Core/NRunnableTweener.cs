@@ -47,6 +47,7 @@ namespace Nextension.Tween
         {
             return new()
             {
+                updateMode = updateMode,
                 easeType = easeType,
                 startTime = startTime,
                 duration = duration,

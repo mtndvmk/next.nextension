@@ -7,7 +7,7 @@ namespace Nextension
     public interface IPoolable
     {
         public const int DEFAULT_MAX_POOL_ITEM_COUNT = 100;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onCreate() { }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onCreated() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void onSpawn() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDespawn() { }
         [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDestroy() { }
@@ -37,7 +37,7 @@ namespace Nextension
             else
             {
                 item = NUtils.createInstance<T>();
-                item.onCreate();
+                item.onCreated();
                 _countAll++;
             }
             item.onSpawn();
