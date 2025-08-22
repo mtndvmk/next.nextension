@@ -7,20 +7,19 @@ using Unity.Jobs;
 namespace Nextension
 {
     [BurstCompile]
-    public struct SetValueJob<T> : IJobParallelFor where T : unmanaged
+    public unsafe struct SetValueJob<T> : IJobParallelFor where T : unmanaged
     {
-        [NativeDisableUnsafePtrRestriction] private IntPtr _target;
+        [NativeDisableUnsafePtrRestriction] private readonly T* _target;
         private readonly T _value;
 
         public SetValueJob(IntPtr target, T value)
         {
-            _target = target;
+            _target = (T*)target;
             _value = value;
         }
-
         public unsafe void Execute(int index)
         {
-            ((T*)_target)[index] = _value;
+            _target[index] = _value;
         }
     }
     public static class SetValueUtil
@@ -28,11 +27,11 @@ namespace Nextension
         public static void setAllValue<T>(T[] target, T value) where T : unmanaged
         {
             int length = target.Length;
-            if (length >= 32)
+            if (length >= 0)
             {
                 var gcHandle = GCHandle.Alloc(target, GCHandleType.Pinned);
                 var job = new SetValueJob<T>(gcHandle.AddrOfPinnedObject(), value);
-                job.RunByRef(target.Length);
+                job.Run(target.Length);
                 gcHandle.Free();
             }
             else

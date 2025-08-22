@@ -85,7 +85,7 @@ namespace Nextension.TextureLoader
                     }
                 }
 
-                await _setting.apply(tex);
+                _setting.apply(tex);
                 setResult(tex, tex.width, tex.height);
             }
             catch (Exception e)

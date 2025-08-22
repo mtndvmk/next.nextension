@@ -34,36 +34,12 @@ namespace Nextension.TextureLoader
             }
         }
 
-        private void compress(Texture2D tex)
-        {
-            if (compressType != CompressType.NoCompress)
-            {
-                if (tex.width % 4 == 0 && tex.height % 4 == 0)
-                {
-                    switch (compressType)
-                    {
-                        case TextureSetting.CompressType.LowQuality:
-                            tex.Compress(false);
-                            return;
-                        case TextureSetting.CompressType.HighQuality:
-                            tex.Compress(true);
-                            break;
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"Texture has dimensions ({tex.width} x {tex.height}) which are not multiples of 4. Compress will not work.");
-                }
-            }
-        }
-
-        internal async Task apply(Texture2D tex)
+        internal void apply(Texture2D tex)
         {
             if (isReadable || compressType != CompressType.NoCompress)
             {
                 tex.Apply(false, false);
-                await new NWaitFrame(1);
-                compress(tex);
+                NTextureUtils.compressWithLog(tex, compressType);
             }
             else
             {

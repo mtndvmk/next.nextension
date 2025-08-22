@@ -120,7 +120,7 @@ namespace Nextension.TextureLoader
                 tex.LoadRawTextureData(handle.AddrOfPinnedObject(), rawDataBuffer.Length);
                 handle.Free();
             }
-            await _setting.apply(tex);
+            _setting.apply(tex);
             return tex;
         }
     }

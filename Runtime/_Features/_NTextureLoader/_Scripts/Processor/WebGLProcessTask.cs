@@ -110,7 +110,7 @@ namespace Nextension.TextureLoader
                     {
                         tex.LoadRawTextureData(completeData.DataPtr, completeData.length);
                     }
-                    await _setting.apply(tex);
+                    _setting.apply(tex);
                     setResult(tex, completeData.originWidth, completeData.originHeight);
                 }
                 else
@@ -123,7 +123,7 @@ namespace Nextension.TextureLoader
                 setError(e);
             }
         }
-        internal async void exeCompleteLoadIntoTexture(WebGLLoadIntoTextureCompleteData completeData)
+        internal void exeCompleteLoadIntoTexture(WebGLLoadIntoTextureCompleteData completeData)
         {
             try
             {
@@ -131,7 +131,7 @@ namespace Nextension.TextureLoader
                 {
                     var texPtr = new IntPtr(completeData.texPtr);
                     var tex = Texture2D.CreateExternalTexture(completeData.originWidth, completeData.originHeight, TextureFormat.RGBA32, false, true, texPtr);
-                    await _setting.apply(tex);
+                    _setting.apply(tex);
 
                     setResult(tex, completeData.originWidth, completeData.originHeight);
                 }

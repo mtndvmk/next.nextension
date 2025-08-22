@@ -152,7 +152,7 @@ namespace Nextension.TextureLoader
                     tex = _setting.createTexture(width, height, TextureFormat.BGRA32);
                 }
                 tex.LoadRawTextureData(inData);
-                await _setting.apply(tex);
+                _setting.apply(tex);
                 setResult(tex, tex.width, tex.height);
             }
             catch (Exception e)

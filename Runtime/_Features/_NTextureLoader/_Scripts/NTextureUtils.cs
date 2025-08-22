@@ -18,6 +18,41 @@ namespace Nextension.TextureLoader
     }
     public static class NTextureUtils
     {
+        public static bool isDimensionMultipleOf4(Texture texture)
+        {
+            return (texture.width & 3) == 0 && (texture.height & 3) == 0;
+        }
+        public static void compress(Texture2D texture, TextureSetting.CompressType compressType)
+        {
+            if (compressType == TextureSetting.CompressType.NoCompress || !isDimensionMultipleOf4(texture))
+            {
+                return;
+            }
+            compressWithoutChecks(texture, compressType);
+        }
+        public static void compressWithLog(Texture2D texture, TextureSetting.CompressType compressType)
+        {
+            if (compressType == TextureSetting.CompressType.NoCompress || !isDimensionMultipleOf4(texture))
+            {
+                Debug.LogWarning($"Texture has dimensions ({texture.width} x {texture.height}) which are not multiples of 4. Compress will not work.");
+                return;
+            }
+            compressWithoutChecks(texture, compressType);
+        }
+        public static void compressWithoutChecks(Texture2D texture, TextureSetting.CompressType compressType)
+        {
+            switch (compressType)
+            {
+                case TextureSetting.CompressType.NoCompress:
+                    break;
+                case TextureSetting.CompressType.LowQuality:
+                    texture.Compress(false);
+                    break;
+                case TextureSetting.CompressType.HighQuality:
+                    texture.Compress(true);
+                    break;
+            }
+        }
         public static ImageExtension getImageExtension(Stream stream)
         {
             Span<byte> bytes = stackalloc byte[8];
@@ -148,10 +183,10 @@ namespace Nextension.TextureLoader
             originColorNativeArr.Dispose();
             result.LoadRawTextureData(resizedColorNativeArr);
             resizedColorNativeArr.Dispose();
-            await setting.apply(result);
+            setting.apply(result);
             return result;
         }
-        public static async Task<Texture2D> asyncResizeTextureUseBlit(Texture2D src, int maxDimension)
+        public static Texture2D resizeTextureUseBlit(Texture2D src, int maxDimension, TextureSetting.CompressType compressType = TextureSetting.CompressType.LowQuality)
         {
             if (src == null) return null;
             var srcWidth = src.width;
@@ -174,11 +209,41 @@ namespace Nextension.TextureLoader
             Texture2D result = new Texture2D(outWidth, outHeight, TextureFormat.RGBA32, false);
             result.ReadPixels(new Rect(0, 0, result.width, result.height), 0, 0);
             result.Apply(false, false);
-            await new NWaitFrame(1);
-            result.Compress(false);
+            compress(result, compressType);
 
             RenderTexture.active = currentRT;
             RenderTexture.ReleaseTemporary(tempRenderTexture);
+            return result;
+        }
+
+        public static Texture2D getTextureFromRT(RenderTexture src, int maxDimension = int.MaxValue, TextureSetting.CompressType compressType = TextureSetting.CompressType.LowQuality)
+        {
+            if (src == null) return null;
+            var srcWidth = src.width;
+            var srcHeight = src.height;
+            float higher = Mathf.Max(srcWidth, srcHeight);
+            float ratio;
+            if (higher <= maxDimension)
+            {
+                ratio = 1;
+            }
+            else
+            {
+                ratio = higher / maxDimension;
+            }
+
+            var outWidth = (int)(srcWidth / ratio);
+            var outHeight = (int)(srcHeight / ratio);
+
+            RenderTexture currentRT = RenderTexture.active;
+            RenderTexture.active = src;
+
+            Texture2D result = new Texture2D(outWidth, outHeight, TextureFormat.RGBA32, false);
+            result.ReadPixels(new Rect(0, 0, result.width, result.height), 0, 0);
+            result.Apply(false, false);
+            compress(result, compressType);
+
+            RenderTexture.active = currentRT;
             return result;
         }
 
