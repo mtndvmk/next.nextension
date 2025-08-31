@@ -88,7 +88,7 @@ namespace Nextension.TextureLoader
         /// <summary>
         /// A `T` item is a color
         /// </summary>
-        public static async Task<(NativeArray<T>, int, int)> asyncResizeColor<T>(NativeArray<T> src, int srcWidth, int srcHeight, int maxDimension) where T : unmanaged
+        public static async Task<(NativeArray<Color32>, int, int)> asyncResizeColor32(NativeArray<Color32> src, int srcWidth, int srcHeight, int maxDimension)
         {
             float higher = Mathf.Max(srcWidth, srcHeight);
 
@@ -107,9 +107,9 @@ namespace Nextension.TextureLoader
             outHeight = (int)(srcHeight / ratio);
             var targetSize = outWidth * outHeight;
 
-            var dst = new NativeArray<T>(targetSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var dst = new NativeArray<Color32>(targetSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            var job = new Job_ResizeTexture_PixelData<T>()
+            var job = new Job_ResizeTexture()
             {
                 src = src,
                 dst = dst,
@@ -177,7 +177,7 @@ namespace Nextension.TextureLoader
             }
 
             var originColorNativeArr = new NativeArray<Color32>(src.GetPixels32(), Allocator.TempJob);
-            (var resizedColorNativeArr, var outWidth, var outHeight) = await asyncResizeColor(originColorNativeArr, srcWidth, srcHeight, maxDimension);
+            (var resizedColorNativeArr, var outWidth, var outHeight) = await asyncResizeColor32(originColorNativeArr, srcWidth, srcHeight, maxDimension);
             var setting = new TextureSetting();
             Texture2D result = setting.createTexture(outWidth, outHeight);
             originColorNativeArr.Dispose();
@@ -280,11 +280,11 @@ namespace Nextension.TextureLoader
         /// <summary>
         /// Convert binary of RGBA color array (32bit) to binary of RGB color array (24bit)
         /// </summary>
-        public static async Task<NativeArray<T>> asyncConvertT32ToT24<T>(NativeArray<T> src) where T : unmanaged
+        public static async Task<NativeArray<byte>> asyncConvertByte32ToByte24(NativeArray<byte> src)
         {
             int colorCount = src.Length / 4;
-            var nativeDst = new NativeArray<T>(colorCount * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            var job = new Job_ConvertT32ToT24<T>()
+            var nativeDst = new NativeArray<byte>(colorCount * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var job = new Job_ConvertByte32ToByte24()
             {
                 src = src,
                 dst = nativeDst,
@@ -295,11 +295,11 @@ namespace Nextension.TextureLoader
         }
 
         [BurstCompile]
-        private struct Job_ResizeTexture_PixelData<T> : IJobParallelFor where T : unmanaged
+        private struct Job_ResizeTexture : IJobParallelFor
         {
-            [NativeDisableParallelForRestriction, WriteOnly] public NativeArray<T> dst;
+            [NativeDisableParallelForRestriction, WriteOnly] public NativeArray<Color32> dst;
 
-            [NativeDisableParallelForRestriction, ReadOnly] public NativeArray<T> src;
+            [NativeDisableParallelForRestriction, ReadOnly] public NativeArray<Color32> src;
             [ReadOnly] public int srcWidth;
             [ReadOnly] public int srcHeight;
             [ReadOnly] public int outWidth;
@@ -369,11 +369,11 @@ namespace Nextension.TextureLoader
             }
         }
         [BurstCompile]
-        private struct Job_ConvertT32ToT24<T> : IJobParallelFor where T : unmanaged
+        private struct Job_ConvertByte32ToByte24 : IJobParallelFor
         {
-            [NativeDisableParallelForRestriction, WriteOnly] public NativeArray<T> dst;
+            [NativeDisableParallelForRestriction, WriteOnly] public NativeArray<byte> dst;
 
-            [NativeDisableParallelForRestriction, ReadOnly] public NativeArray<T> src;
+            [NativeDisableParallelForRestriction, ReadOnly] public NativeArray<byte> src;
 
             public void Execute(int index)
             {

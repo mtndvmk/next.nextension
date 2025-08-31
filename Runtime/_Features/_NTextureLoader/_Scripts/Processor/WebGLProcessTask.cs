@@ -101,7 +101,7 @@ namespace Nextension.TextureLoader
                     if (_setting.forceNoAlpha)
                     {
                         var nativeBytes = NConverter.convertToNativeArray<byte>(completeData.DataPtr, completeData.length, Allocator.TempJob);
-                        var nativeBinary24 = await NTextureUtils.asyncConvertT32ToT24(nativeBytes);
+                        var nativeBinary24 = await NTextureUtils.asyncConvertByte32ToByte24(nativeBytes);
                         tex.LoadRawTextureData(nativeBinary24);
                         nativeBytes.Dispose();
                         nativeBinary24.Dispose();

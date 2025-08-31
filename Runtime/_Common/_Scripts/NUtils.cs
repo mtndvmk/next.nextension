@@ -2171,6 +2171,14 @@ namespace Nextension
             Array.Copy(self, startIndex, result, 0, length);
             return result;
         }
+        public unsafe static void fill<T>(this T[] self, T value) where T : unmanaged
+        {
+            if (self.Length == 0) return;
+            fixed (T* ptr = self)
+            {
+                UnsafeUtility.MemCpyReplicate(ptr, &value, UnsafeUtility.SizeOf<T>(), self.Length);
+            }
+        }
         #endregion
 
         #region Random

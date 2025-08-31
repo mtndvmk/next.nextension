@@ -580,11 +580,7 @@ namespace Nextension
         {
             int prime = HashHelpers.GetPrime(capacity);
             buckets = new int[prime];
-            SetValueUtil.setAllValue(buckets, -1);
-            //for (int i = buckets.Length - 1; i >= 0; i--)
-            //{
-            //    buckets[i] = -1;
-            //}
+            buckets.fill(-1);
 
             entries = new Entry[prime];
             freeList = -1;
@@ -665,7 +661,7 @@ namespace Nextension
         private void Resize(int newSize, bool forceNewHashCodes)
         {
             int[] array = new int[newSize];
-            SetValueUtil.setAllValue(array, -1);
+            array.fill(-1);
 
             Entry[] array2 = new Entry[newSize];
             Array.Copy(entries, 0, array2, 0, count);
