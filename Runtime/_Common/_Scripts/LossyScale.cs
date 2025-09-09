@@ -13,6 +13,7 @@ namespace Nextension
             get => _relativeTransform;
             set => _relativeTransform = value;
         }
+
         public Vector3 Scale
         {
             get => _scale;
@@ -23,6 +24,13 @@ namespace Nextension
         {
             _scale = transform.lossyScale;
         }
+
+        [ContextMenu("Set scale to Vector3.one")]
+        public void setToOne()
+        {
+            _scale = Vector3.one;
+        }
+
         private void LateUpdate()
         {
 #if UNITY_EDITOR

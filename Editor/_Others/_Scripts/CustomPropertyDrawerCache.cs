@@ -68,6 +68,15 @@ namespace Nextension.NEditor
             }
             return false;
         }
+
+        public static void forceDraw(Rect position, SerializedProperty property, GUIContent label)
+        {
+            if (!draw(position, property, label))
+            {
+                EditorGUI.PropertyField(position, property, label);
+            }
+        }
+
         public static float? getPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (property == null || property.boxedValue == null) return default; 
@@ -79,7 +88,12 @@ namespace Nextension.NEditor
             }
             return default;
         }
-
+        public static float forceGetPropertyHeight(SerializedProperty property, GUIContent label, bool includeChildren = true)
+        {
+            var height = getPropertyHeight(property, label);
+            if (height.HasValue) return height.Value;
+            else return EditorGUI.GetPropertyHeight(property, label, includeChildren);
+        }
 
         private class Cache
         {

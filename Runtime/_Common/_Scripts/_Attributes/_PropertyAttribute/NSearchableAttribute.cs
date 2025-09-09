@@ -18,6 +18,7 @@ namespace Nextension
         {
             this.searchType = searchType;
             this.baseType = baseType;
+            this.order = NAttributeOrder.SEARCHABLE;
         }
     }
 }

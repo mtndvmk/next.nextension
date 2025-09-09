@@ -3121,6 +3121,42 @@ namespace Nextension
                 self.AddListener(new UnityAction(call));
             }
         }
+
+        /// <summary>
+        /// Get value of object from name of method, field or property 
+        /// </summary>
+        public static object getValue(object obj, string name)
+        {
+            var objType = obj.GetType();
+            var allBindingFlag = getAllBindingFlags();
+
+            var methodInfo = objType.GetMethod(name, allBindingFlag);
+            if (methodInfo != null)
+            {
+                if (methodInfo.IsStatic)
+                {
+                    return methodInfo.Invoke(null, null);
+                }
+                else
+                {
+                    return methodInfo.Invoke(obj, null);
+                }
+            }
+            else
+            {
+                var fieldInfo = objType.getField(name, allBindingFlag);
+                if (fieldInfo != null)
+                {
+                    return fieldInfo.GetValue(obj);
+                }
+                var property = objType.GetProperty(name, allBindingFlag);
+                if (property != null)
+                {
+                    return property.GetValue(obj);
+                }
+                return null;
+            }
+        }
         #endregion
     }
 }

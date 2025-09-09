@@ -8,7 +8,7 @@ namespace Nextension
     {
         public NReadOnlyAttribute() 
         {
-            order = 1;
+            order = NAttributeOrder.READONLY;
         }
     }
 }

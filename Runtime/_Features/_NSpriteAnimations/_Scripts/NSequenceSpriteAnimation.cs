@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Nextension
@@ -10,24 +12,29 @@ namespace Nextension
             SpriteRenderer,
             Image
         }
+
         [SerializeField] private TargetType _targetType;
-        [SerializeField] private SpriteRenderer _spriteRenderer;
-        [SerializeField] private Image _image;
-        [SerializeField] private Sprite[] _spriteFrames;
-        [SerializeField] private uint _fps;
+        [NIndent, SerializeField, NShowIf(nameof(_targetType), TargetType.SpriteRenderer)] private SpriteRenderer _spriteRenderer;
+        [NIndent, SerializeField, NShowIf(nameof(_targetType), TargetType.Image)] private Image _image;
+        [SerializeField] private List<Sprite> _spriteFrames;
+        [SerializeField] private bool _playOnEnable;
+        [SerializeField] private uint _fps = 12;
         [SerializeField] private bool _isLoop;
-        [SerializeField] private bool _autoPlayOnEnable;
-        [SerializeField] private bool _autoDisableOnEndOfFrames;
-        [SerializeField] private bool _autoClearSpriteOnEndOfFrames;
+        [NIndent, NShowIf(nameof(_isLoop)), SerializeField] private float _delayInNewLoop;
+        [NIndent, NShowIf(nameof(_isLoop)), SerializeField] private bool _isBackAndForthLoop;
+
+        [SerializeField, NSlider(-1, nameof(MaxIndex))] private int _requestFrameIndex = -1;
+        [Header("Event")] public UnityEvent onEndOfAnimation;
 
         private int _currentFrameIndex = 0;
-        private int _requestFrameIndex = -1;
-        private float _startPlayTime;
+        private float _nextFrameTime;
+        private bool _loopbackIsBacking;
 
-        
-        public float Duration => _fps == 0 ? 0 : (float)_spriteFrames.Length / _fps;
+        public float Duration => _fps == 0 ? 0 : (float)FrameCount / _fps;
         public int CurrentFrameIndex => _currentFrameIndex;
-        public int FrameCount => _spriteFrames.Length;
+        public int FrameCount => _spriteFrames == null ? 0 : _spriteFrames.Count;
+        public bool IsPlaying => _requestFrameIndex >= 0;
+        public int MaxIndex => FrameCount - 1;
 
         private void Reset()
         {
@@ -35,51 +42,54 @@ namespace Nextension
             _image = GetComponent<Image>();
             _targetType = _image.isNull() ? TargetType.SpriteRenderer : TargetType.Image;
         }
+
+        private void OnValidate()
+        {
+            _currentFrameIndex = _requestFrameIndex;
+            setSprite(_currentFrameIndex);
+        }
+
         private void OnEnable()
         {
-            if (_autoPlayOnEnable)
+            if (_playOnEnable)
             {
                 play();
             }
         }
+        
         private void OnDisable()
         {
             stop();
         }
         private void Update()
         {
-            if (_requestFrameIndex == _spriteFrames.Length - 1)
-            {
-                if (_autoClearSpriteOnEndOfFrames)
-                {
-                    setSprite(null);
-                }
-                if (_autoDisableOnEndOfFrames)
-                {
-                    enabled = false;
-                }
-                else if (!_isLoop)
-                {
-                    return;
-                }
-            }
-            if (_spriteFrames.Length == 0 || _requestFrameIndex < 0)
+            if (_requestFrameIndex < 0 || _fps == 0 || FrameCount == 0)
             {
                 return;
             }
 
-            var deltaTime = Time.time - _startPlayTime;
-            _requestFrameIndex = (int)(deltaTime * _fps);
-
-            if (_requestFrameIndex >= _spriteFrames.Length)
+            var lastestFrameIndex = _spriteFrames.Count - 1;
+            
+            if (Time.time >= _nextFrameTime)
             {
                 if (_isLoop)
                 {
-                    _requestFrameIndex %= _spriteFrames.Length;
+                    if (_isBackAndForthLoop)
+                    {
+                        updateNextFrameOnBackAndForthLoop(lastestFrameIndex);
+                    }
+                    else
+                    {
+                        updateNextFrameOnForthLoop(lastestFrameIndex);
+                    }
                 }
                 else
                 {
-                    _requestFrameIndex = _spriteFrames.Length - 1;
+
+                    if (_requestFrameIndex < lastestFrameIndex)
+                    {
+                        _requestFrameIndex++;
+                    }
                 }
             }
 
@@ -87,9 +97,77 @@ namespace Nextension
             {
                 _currentFrameIndex = _requestFrameIndex;
                 setSprite(_spriteFrames[_currentFrameIndex]);
+                
+                if (_requestFrameIndex >= lastestFrameIndex && !_isLoop)
+                {
+                    onEndOfAnimation?.Invoke();
+                    stop();
+                }
             }
         }
 
+        private void updateNextFrameOnBackAndForthLoop(int lastestFrameIndex)
+        {
+            if (_requestFrameIndex <= 0)
+            {
+                _loopbackIsBacking = false;
+                _requestFrameIndex = 1;
+            }
+            else if (_requestFrameIndex >= lastestFrameIndex)
+            {
+                _loopbackIsBacking = true;
+                _requestFrameIndex = lastestFrameIndex - 1;
+            }
+            else
+            {
+                if (_loopbackIsBacking)
+                {
+                    _requestFrameIndex--;
+                }
+                else
+                {
+                    _requestFrameIndex++;
+                }
+            }
+            if (_requestFrameIndex == 0)
+            {
+                _nextFrameTime = Time.time + 1f / _fps + _delayInNewLoop;
+            }
+            else
+            {
+                _nextFrameTime = Time.time + 1f / _fps;
+            }
+        }
+        private void updateNextFrameOnForthLoop(int lastestFrameIndex)
+        {
+            if (_requestFrameIndex >= lastestFrameIndex)
+            {
+                _requestFrameIndex = 0;
+                _nextFrameTime = Time.time + 1f / _fps + _delayInNewLoop;
+            }
+            else
+            {
+                _requestFrameIndex++;
+                _nextFrameTime = Time.time + 1f / _fps;
+            }
+        }
+
+        private void setSprite(int frameIndex)
+        {
+            if (_spriteFrames == null || _spriteFrames.Count == 0)
+            {
+                return;
+            }
+            if (frameIndex < 0 || frameIndex >= _spriteFrames.Count)
+            {
+                _currentFrameIndex = 0;
+            }
+            else
+            {
+                _currentFrameIndex = frameIndex;
+            }
+            setSprite(_spriteFrames[_currentFrameIndex]);
+        }
         private void setSprite(Sprite sprite)
         {
             switch (_targetType)
@@ -109,14 +187,51 @@ namespace Nextension
             }
         }
 
-        public void play()
+        public void play(int startFrameIndex = 0)
         {
-            _requestFrameIndex = 0;
-            _startPlayTime = Time.time;
+            if (_fps == 0)
+            {
+                Debug.LogWarning("Can't play sequence sprite animation with fps = 0");
+                return;
+            }
+            _requestFrameIndex = startFrameIndex;
+            _nextFrameTime = Time.time + 1 / _fps;
         }
+
+        public void play(ICollection<Sprite> sprites, uint fps, int startFrameIndex = 0)
+        {
+            if (sprites.Count == 0)
+            {
+                Debug.LogWarning("Can't play sequence sprite animation with empty sprites");
+                return;
+            }
+            if (fps == 0)
+            {
+                Debug.LogWarning("Can't play sequence sprite animation with fps = 0");
+                return;
+            }
+            _spriteFrames.Clear();
+            _spriteFrames.AddRange(sprites);
+            _fps = fps;
+            play(startFrameIndex);
+        }
+
         public void stop()
         {
-            _requestFrameIndex = -1;
+            if (IsPlaying)
+            {
+                _requestFrameIndex = -1;
+            }
+        }
+
+        public void stopAndClearFrames()
+        {
+            if (IsPlaying)
+            {
+                stop();
+                _spriteFrames.Clear();
+                _currentFrameIndex = 0;
+            }
         }
     }
 }

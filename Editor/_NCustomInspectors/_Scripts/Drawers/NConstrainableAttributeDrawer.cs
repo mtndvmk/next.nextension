@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,16 +9,38 @@ namespace Nextension.NEditor
     [CustomPropertyDrawer(typeof(NConstrainableAttribute))]
     public class NConstrainableAttributeDrawer : PropertyDrawer
     {
-        private static HashSet<int> _contrainedSet = new HashSet<int>();
+        private static HashSet<int> _constrainedSet = new HashSet<int>();
+
+        private static Texture2D _disabled_contrained_texture;
+        private static Texture2D _enabled_contrained_texture;
 
         private int _id;
         private Vector3 _cacheValue;
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        private static void loadTextures([CallerFilePath] string filePath = null)
         {
-            var height = CustomPropertyDrawerCache.getPropertyHeight(property, label);
-            if (height.HasValue) return height.Value;
-            return EditorGUI.GetPropertyHeight(property, label, true);
+            if (_disabled_contrained_texture == null)
+            {
+                var queryString = "_NCustomInspectors";
+                var textureDir = Path.Combine(filePath[..(filePath.IndexOf(queryString) + queryString.Length)], "_Textures");
+
+
+                var disabled_contrained_texture_path = Path.Combine(textureDir, "disable_constrained.png");
+                var enable_contrained_texture_path = Path.Combine(textureDir, "enable_constrained.png");
+
+                var d_bytes = File.ReadAllBytes(disabled_contrained_texture_path);
+                _disabled_contrained_texture = new Texture2D(2, 2);
+                _disabled_contrained_texture.LoadImage(d_bytes);
+
+                var e_bytes = File.ReadAllBytes(enable_contrained_texture_path);
+                _enabled_contrained_texture = new Texture2D(2, 2);
+                _enabled_contrained_texture.LoadImage(e_bytes);
+            }
+        }
+
+        static NConstrainableAttributeDrawer()
+        {
+            loadTextures();
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -27,22 +51,36 @@ namespace Nextension.NEditor
                 {
                     _id = (property.serializedObject.targetObject.GetInstanceID() + property.propertyPath).GetHashCode();
                 }
-                var isConstrained = _contrainedSet.Contains(_id);
+                var isConstrained = _constrainedSet.Contains(_id);
 
                 _cacheValue = property.vector3Value;
                 var togglePosition = position;
                 togglePosition.width = 19;
-                togglePosition.x = position.width + 1;
-                position.width -= togglePosition.width * 2;
-                isConstrained = EditorGUI.Toggle(togglePosition, isConstrained);
-                EditorGUI.PropertyField(position, property, label);
+                togglePosition.x = position.width * 0.4f - 15;
+                togglePosition.height *= 1.2f;
+                togglePosition.y = 0;
+                GUIContent buttonGuiContent;
                 if (isConstrained)
                 {
-                    _contrainedSet.Add(_id);
+                    buttonGuiContent = new GUIContent(_enabled_contrained_texture, "Disable constrained proportions");
+                }
+                else
+                {
+                    buttonGuiContent = new GUIContent(_disabled_contrained_texture, "Enable constrained proportions");
+                }
+
+                if (GUI.Button(togglePosition, buttonGuiContent, EditorStyles.linkLabel))
+                {
+                    isConstrained = !isConstrained;
+                }
+
+                EditorGUI.PropertyField(position, property, label);
+
+                if (isConstrained)
+                {
+                    _constrainedSet.Add(_id);
                     var vector3Value = property.vector3Value;
 
-                    EditorGUI.BeginChangeCheck();
-                    EditorGUI.EndChangeCheck();
                     float ratio;
 
                     if (property.vector3Value.x != _cacheValue.x)
@@ -102,7 +140,7 @@ namespace Nextension.NEditor
                 }
                 else
                 {
-                    _contrainedSet.Remove(_id);
+                    _constrainedSet.Remove(_id);
                 }
             }
             else

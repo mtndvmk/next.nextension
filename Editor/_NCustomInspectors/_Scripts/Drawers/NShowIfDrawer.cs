@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Nextension.NEditor
 {
-    [CustomPropertyDrawer(typeof(NShowIfAttribute))]
+    [CustomPropertyDrawer(typeof(NShowIfAttribute), true)]
     public class NShowIfDrawer : PropertyDrawer
     {
         private bool _isShow;
@@ -25,41 +25,26 @@ namespace Nextension.NEditor
         }
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorGUI.BeginChangeCheck();
             if (_isShow)
             {
+                EditorGUI.BeginChangeCheck();
                 if (!CustomPropertyDrawerCache.draw(position, property, label))
                 {
                     EditorGUI.PropertyField(position, property, label);
                 }
+                EditorGUI.EndChangeCheck();
             }
         }
         private bool isShow(SerializedProperty property)
         {
             try
             {
-                var parentValue = NEditorHelper.getParentValue(property);
-                if (parentValue != null)
+                var containerObj = NEditorHelper.getContainerObject(property);
+                if (containerObj != null)
                 {
-                    var parentType = parentValue.GetType();
-                    var predicateName = ((NShowIfAttribute)attribute).predicateName;
-                    var methodInfo = parentType.GetMethod(predicateName, NUtils.getAllBindingFlags());
-                    if (methodInfo != null)
+                    if (attribute is NShowIfAttribute nShowIf)
                     {
-                        bool result;
-                        if (methodInfo.IsStatic)
-                        {
-                            result = (bool)methodInfo.Invoke(null, null);
-                        }
-                        else
-                        {
-                            result = (bool)methodInfo.Invoke(parentValue, null);
-                        }
-                        return result;
-                    }
-                    else
-                    {
-                        Debug.LogError($"Can't found method {predicateName} in {parentType}");
+                        return nShowIf.check(containerObj);
                     }
                 }
                 return false;

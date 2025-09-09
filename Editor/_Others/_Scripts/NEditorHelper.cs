@@ -30,20 +30,20 @@ namespace Nextension.NEditor
         {
             return getFieldInfo(property, out var _);
         }
-        public static T getAttribute<T>(SerializedProperty property) where T : System.Attribute
+        public static T getAttribute<T>(SerializedProperty property) where T : Attribute
         {
             var fieldInfo = getFieldInfo(property);
             return fieldInfo.GetCustomAttribute<T>();
         }
 
-        public static FieldInfo getFieldInfo(SerializedProperty property, out object qObject)
+        public static FieldInfo getFieldInfo(SerializedProperty property, out object valueOfProperty)
         {
             try
             {
                 var path = property.propertyPath.Replace(".Array.data[", "[");
                 var elements = path.Split('.');
 
-                qObject = property.serializedObject.targetObject;
+                valueOfProperty = property.serializedObject.targetObject;
                 FieldInfo fieldInfo = null;
 
                 for (int i = 0; i < elements.Length; ++i)
@@ -54,14 +54,14 @@ namespace Nextension.NEditor
                         var elementName = element.Substring(0, element.IndexOf("["));
                         var index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
 
-                        var qType = qObject.GetType();
+                        var qType = valueOfProperty.GetType();
                         fieldInfo = qType.getField(elementName, NUtils.getAllBindingFlags());
-                        qObject = (fieldInfo.GetValue(qObject) as IList)[index];
+                        valueOfProperty = (fieldInfo.GetValue(valueOfProperty) as IList)[index];
                     }
                     else
                     {
-                        fieldInfo = qObject.GetType().getField(element, NUtils.getAllBindingFlags());
-                        qObject = fieldInfo.GetValue(qObject);
+                        fieldInfo = valueOfProperty.GetType().getField(element, NUtils.getAllBindingFlags());
+                        valueOfProperty = fieldInfo.GetValue(valueOfProperty);
                     }
                 }
 
@@ -70,46 +70,48 @@ namespace Nextension.NEditor
             catch (Exception e)
             {
                 Debug.LogException(e);
-                qObject = default;
+                valueOfProperty = default;
                 return default;
             }
         }
-        public static object getParentValue(SerializedProperty property)
+        public static object getContainerObject(SerializedProperty property)
         {
             try
             {
                 var path = property.propertyPath.Replace(".Array.data[", "[");
                 var elements = path.Split('.');
                 FieldInfo fieldInfo = null;
-                object qObject = property.serializedObject.targetObject;
+                object containerObject = property.serializedObject.targetObject;
 
                 if (elements.Length == 1)
                 {
-                    return qObject;
+                    return containerObject;
                 }
                 else
                 {
 
                     for (int i = 0; i < elements.Length - 1; ++i)
                     {
+                        var containerType = containerObject.GetType();
                         var element = elements[i];
-                        if (element.Contains("["))
-                        {
-                            var elementName = element.Substring(0, element.IndexOf("["));
-                            var index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                        var indexOfBracket = element.IndexOf("[");
 
-                            var qType = qObject.GetType();
-                            fieldInfo = qType.getField(elementName, NUtils.getAllBindingFlags());
-                            qObject = (fieldInfo.GetValue(qObject) as IList)[index];
+                        if (indexOfBracket >= 0)
+                        {
+                            var elementName = element[..indexOfBracket];
+                            var index = Convert.ToInt32(element[indexOfBracket..].Replace("[", "").Replace("]", ""));
+
+                            fieldInfo = containerType.getField(elementName, NUtils.getAllBindingFlags());
+                            containerObject = (fieldInfo.GetValue(containerObject) as IList)[index];
                         }
                         else
                         {
-                            fieldInfo = qObject.GetType().getField(element, NUtils.getAllBindingFlags());
-                            qObject = fieldInfo.GetValue(qObject);
+                            fieldInfo = containerType.getField(element, NUtils.getAllBindingFlags());
+                            containerObject = fieldInfo.GetValue(containerObject);
                         }
                     }
 
-                    return qObject;
+                    return containerObject;
                 }
             }
             catch (Exception e)
