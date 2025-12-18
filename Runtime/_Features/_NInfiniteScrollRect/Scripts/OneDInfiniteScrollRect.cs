@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using UnityEngine;
@@ -10,6 +9,7 @@ namespace Nextension
     {
         [SerializeField] protected float _spacing;
         [SerializeField] protected float _extendVisibleRange;
+        [SerializeField] protected bool _isReverse;
 
         public float Spacing
         {
@@ -19,7 +19,7 @@ namespace Nextension
                 if (_spacing != value)
                 {
                     _spacing = value;
-                    recalculateCellPositions();
+                    setDirtyPosition(0);
                 }
             }
         }
@@ -31,11 +31,23 @@ namespace Nextension
                 if (value != _extendVisibleRange)
                 {
                     _extendVisibleRange = value;
-                    setDirty();
+                    setDirtyLayout();
                 }
             }
         }
 
+        public bool IsReverse
+        {
+            get => _isReverse;
+            set
+            {
+                if (_isReverse != value)
+                {
+                    _isReverse = value;
+                    setDirtyPosition(0);
+                }
+            }
+        }
         protected NList<FTAnchor> _cellFTAnchorList = new NList<FTAnchor>();
         protected FTIndex _visibleIndices = new FTIndex(-1, -1);
 
@@ -111,28 +123,43 @@ namespace Nextension
                 return getToVisibleIndex_0To1(bottomMostY, middleIndex + 1, toIndex);
             }
         }
-        protected override unsafe void recalculateCellPositions(int startIndex = 1)
+        protected override unsafe void exeCalculateCellPositions(int startIndex = 1)
         {
-            setDirty();
-            if (startIndex <= _visibleIndices.fromIndex)
+            setDirtyLayout();
+            if (_isReverse)
             {
                 for (int i = _visibleIndices.fromIndex; i <= _visibleIndices.toIndex; i++)
                 {
                     hideCell(i);
                 }
                 _visibleIndices = new FTIndex(-1, -1);
+                startIndex = 0;
             }
-            else if (_visibleIndices.fromIndex <= startIndex && startIndex <= _visibleIndices.toIndex)
+            else
             {
-                for (int i = startIndex; i <= _visibleIndices.toIndex; i++)
+
+                if (startIndex <= _visibleIndices.fromIndex || _cellFTAnchorList[0].from != 0)
                 {
-                    hideCell(i);
+
+                    _cellFTAnchorList[0] = new FTAnchor(0, _cellFTAnchorList[0].size);
+                    for (int i = _visibleIndices.fromIndex; i <= _visibleIndices.toIndex; i++)
+                    {
+                        hideCell(i);
+                    }
+                    _visibleIndices = new FTIndex(-1, -1);
                 }
-                _visibleIndices.toIndex = startIndex - 1;
-            }
-            if (startIndex <= 0)
-            {
-                startIndex = 1;
+                else if (_visibleIndices.fromIndex <= startIndex && startIndex <= _visibleIndices.toIndex)
+                {
+                    for (int i = startIndex; i <= _visibleIndices.toIndex; i++)
+                    {
+                        hideCell(i);
+                    }
+                    _visibleIndices.toIndex = startIndex - 1;
+                }
+                if (startIndex <= 0)
+                {
+                    startIndex = 1;
+                }
             }
 
             int cellCount = DataList.Count;
@@ -141,13 +168,11 @@ namespace Nextension
                 return;
             }
 
-            var gcHandle = GCHandle.Alloc(_cellFTAnchorList.i_Items, GCHandleType.Pinned);
-            var cellFTAnchorListStartPtr = ((FTAnchor*)gcHandle.AddrOfPinnedObject()) + startIndex;
-            var job = new CalculateCellPositionJob(cellFTAnchorListStartPtr, cellCount - startIndex, _spacing);
-            var jobHandle = job.ScheduleByRef();
-
-            jobHandle.Complete();
-            gcHandle.Free();
+            fixed (FTAnchor* cellFTAnchorListStartPtr = &_cellFTAnchorList.i_Items[startIndex])
+            {
+                var job = new CalculateCellPositionJob(cellFTAnchorListStartPtr, cellCount - startIndex, _spacing, _isReverse);
+                job.RunByRef();
+            }
         }
         public override void clear()
         {
@@ -162,19 +187,34 @@ namespace Nextension
             [NativeDisableUnsafePtrRestriction] private FTAnchor* _cellFTAnchorList;
             private float _spacing;
             private int _count;
+            private bool _isReverse;
 
-            public CalculateCellPositionJob(FTAnchor* cellFTAnchorList, int count, float spacing)
+            public CalculateCellPositionJob(FTAnchor* cellFTAnchorList, int count, float spacing, bool isReverse)
             {
                 _cellFTAnchorList = cellFTAnchorList;
                 _count = count;
                 _spacing = spacing;
+                _isReverse = isReverse;
             }
             public void Execute()
             {
-                for (int i = 0; i < _count; i++)
+                if (_isReverse)
                 {
-                    var prevFTAnchorTo = _cellFTAnchorList[i - 1].to;
-                    _cellFTAnchorList[i] = new FTAnchor(prevFTAnchorTo - _spacing, _cellFTAnchorList[i].size);
+                    var index = _count - 1;
+                    _cellFTAnchorList[index] = new FTAnchor(0, _cellFTAnchorList[index].size);
+                    for (int i = index - 1; i >= 0; i--)
+                    {
+                        var prevFTAnchorTo = _cellFTAnchorList[i + 1].to;
+                        _cellFTAnchorList[i] = new FTAnchor(prevFTAnchorTo - _spacing, _cellFTAnchorList[i].size);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < _count; i++)
+                    {
+                        var prevFTAnchorTo = _cellFTAnchorList[i - 1].to;
+                        _cellFTAnchorList[i] = new FTAnchor(prevFTAnchorTo - _spacing, _cellFTAnchorList[i].size);
+                    }
                 }
             }
         }

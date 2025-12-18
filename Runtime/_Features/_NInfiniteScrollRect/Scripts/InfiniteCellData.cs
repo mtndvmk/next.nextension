@@ -4,8 +4,9 @@ namespace Nextension
 {
     public class InfiniteCellData
     {
+        public readonly static Vector2 PositiveInfinitySize = Vector2.positiveInfinity;
         public int Index { get; internal set; } = -1;
-        public Vector2 CellSize { get; internal set; }
+        public Vector2 CellSize { get; internal set; } = Vector2.positiveInfinity;
         public Vector3 CellScale { get; internal set; } = Vector3.one;
         public InfiniteScrollRect InfiniteScrollRect { get; internal set; }
         public InfiniteCell InfiniteCell => InfiniteScrollRect?.getShowingCell(Index);
@@ -23,11 +24,11 @@ namespace Nextension
         {
             if (CellSize != newSize)
             {
-                this.CellSize = newSize;
                 if (InfiniteScrollRect)
                 {
                     InfiniteScrollRect.updateCellSize(Index, newSize);
                 }
+                this.CellSize = newSize;
             }
         }
         public void setScale(Vector3 newScale)

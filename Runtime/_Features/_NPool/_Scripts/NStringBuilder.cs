@@ -71,6 +71,24 @@ namespace Nextension
                 return this;
             }
         }
+        public NStringBuilder Append(ReadOnlySpan<char> value)
+        {
+            return Insert(Count, value);
+        }
+        public NStringBuilder AppendLine(ReadOnlySpan<char> value)
+        {
+            Insert(Count, value);
+            AppendLine();
+            return this;
+        }
+        public unsafe NStringBuilder Insert(int index, ReadOnlySpan<char> value)
+        {
+            fixed (char* p = value)
+            {
+                _charArray.InsertRangeWithoutChecks(index, p, value.Length);
+                return this;
+            }
+        }
         public NStringBuilder SetValue(int index, char value)
         {
             _charArray[index] = value;

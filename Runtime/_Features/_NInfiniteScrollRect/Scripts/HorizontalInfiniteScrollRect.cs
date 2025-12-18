@@ -77,13 +77,14 @@ namespace Nextension
             float anchorX = direction == Direction.RIGHT_LEFT ? 1 : 0;
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
+                var cell = showCell(i);
                 var cellTopFTAnchor = _cellFTAnchorList[i];
                 var posX = direction == Direction.RIGHT_LEFT ? cellTopFTAnchor.from : -cellTopFTAnchor.to;
-                var cell = showCell(i, new Vector2(posX, 0));
                 var cellRectTransform = cell.rectTransform();
                 cellRectTransform.anchorMin = cellRectTransform.anchorMin.setX(anchorX);
                 cellRectTransform.anchorMax = cellRectTransform.anchorMax.setX(anchorX);
                 cellRectTransform.pivot = cellRectTransform.pivot.setX(1);
+                cellRectTransform.anchoredPosition = new Vector2(posX, 0);
                 cell.transform.SetAsLastSibling();
             }
             _visibleIndices = newVisibleIndices;
@@ -176,7 +177,7 @@ namespace Nextension
             contentWidth += newSize.x;
             scrollRect.content.sizeDelta = new Vector2(contentWidth, scrollRectSizeDelta.y);
             _cellFTAnchorList[index] = new FTAnchor(_cellFTAnchorList[index].from, newSize.x);
-            recalculateCellPositions(index);
+            setDirtyPosition(index);
         }
         protected override void updateContentAnchorAndPivot()
         {

@@ -31,6 +31,7 @@ namespace Nextension.UI
         protected Vector2 _anchoredPosition;
 
         public bool IsShown => _isShown;
+        public bool IsHidden => !gameObject.activeSelf;
 
         protected virtual void Awake()
         {
@@ -57,13 +58,14 @@ namespace Nextension.UI
 
             _closeBgButton.Interactable = _hideWhenClickOnOutSide;
 
-            onBeforeSetup();
+            onDerivedSetup();
             _isSetup = true;
 
             if (_hideOnSetup)
             {
                 innerHide(true, true);
             }
+
         }
 
         public void hide()
@@ -89,7 +91,7 @@ namespace Nextension.UI
             innerSetup();
             if (!_isShown)
             {
-                onBeforeShow();
+                onDerivedBeforeShow();
                 _isShown = true;
                 gameObject.setActive(true);
                 runShowAnimation(isImmediate);
@@ -108,7 +110,7 @@ namespace Nextension.UI
             {
                 return;
             }
-            onBeforeHide();
+            onDerivedBeforeHide();
             _isShown = false;
             runHideAnimation(isImmediate);
             _canvasGroup.blocksRaycasts = false;
@@ -145,7 +147,7 @@ namespace Nextension.UI
 
                 if (_effectOption == EffectOption.MoveDown)
                 {
-                    NTween.fromTo<float2>(_scaler.anchoredPosition, _anchoredPosition, _effectDuration, v => _scaler.anchoredPosition = v);
+                    NTween.fromTo(_scaler.anchoredPosition, _anchoredPosition, _effectDuration, setScalerAnchorPosition);
                 }
                 else
                 {
@@ -181,31 +183,37 @@ namespace Nextension.UI
                 if (_effectOption == EffectOption.MoveDown)
                 {
                     var targetAnchorPos = _anchoredPosition.plusY(_scaler.rect.size.x / -10);
-                    NTween.fromTo<float2>(_scaler.anchoredPosition, targetAnchorPos, _effectDuration, v => _scaler.anchoredPosition = v);
+                    NTween.fromTo(_scaler.anchoredPosition, targetAnchorPos, _effectDuration, setScalerAnchorPosition);
                 }
 
-                NTween.fromTo(_canvasGroup.alpha, 0, _effectDuration, v => _canvasGroup.alpha = v).onCompleted(() =>
-                {
-                    gameObject.setActive(false);
-                }).setCancelControlKey(gameObject);
+                NTween.fromTo(_canvasGroup.alpha, 0, _effectDuration, v => _canvasGroup.alpha = v).onCompleted(deactiveGameObject).setCancelControlKey(gameObject);
             }
         }
 
-        protected virtual void onBeforeSetup()
+        protected void setScalerAnchorPosition(float2 anchorPosition)
+        {
+            _scaler.anchoredPosition = anchorPosition;
+        }
+        protected void deactiveGameObject()
+        {
+            gameObject.setActive(false);
+        }
+
+        protected virtual void onDerivedSetup()
         {
 
         }
-        protected virtual void onBeforeShow()
+        protected virtual void onDerivedBeforeShow()
         {
 
         }
-        protected virtual void onBeforeHide()
+        protected virtual void onDerivedBeforeHide()
         {
 
         }
     }
 
-    public abstract class S_UITransition<T> : UITransition, ISingletonable where T : class, ISingletonable
+    public abstract class S_UITransition<T> : UITransition, ISingletonable where T : UITransition, ISingletonable
     {
         public static T Instance => S_<T>.Instance;
 

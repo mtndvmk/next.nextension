@@ -34,6 +34,7 @@ namespace Nextension.NEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginChangeCheck();
             if (property.propertyType == SerializedPropertyType.Enum)
             {
                 if (searchTextFieldStyle == null)
@@ -89,6 +90,7 @@ namespace Nextension.NEditor
                 }
                 EditorGUI.PropertyField(position, property, label);
             }
+            EditorGUI.EndChangeCheck();
         }
 
         private void DrawSearchBar(Rect position, GUIContent label)

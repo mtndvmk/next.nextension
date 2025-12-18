@@ -96,6 +96,7 @@ namespace Nextension
         public bool IsCreated => i_array != null;
         public bool IsReadOnly => i_array.IsReadOnly;
         public int Capacity => i_array.Capacity / NUtils.sizeOf<T>();
+        public bool IsDisposed => i_array.IsDisposed;
         public T[] Items => ToArray();
 
         public T this[int index]
@@ -175,6 +176,24 @@ namespace Nextension
                 }
             }
         }
+        public unsafe void AddRange(T[] items)
+        {
+            AddRange(items.AsSpan());
+        }
+        public unsafe void AddRange(ReadOnlySpan<T> items)
+        {
+            var addSizeInBytes = NUtils.sizeOf<T>() * items.Length;
+            var byteArray = i_array.Collection;
+            ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
+            fixed (T* tPtr = items)
+            {
+                fixed (byte* dst = &byteArray.i_Items[byteArray.i_Count])
+                {
+                    Buffer.MemoryCopy(tPtr, dst, addSizeInBytes, addSizeInBytes);
+                    byteArray.i_Count += addSizeInBytes;
+                }
+            }
+        }
         public unsafe void AddRange(ICollection<T> collection)
         {
             int addSizeInBytes = collection.Count * NUtils.sizeOf<T>();
@@ -188,20 +207,6 @@ namespace Nextension
                     ((T*)bPtr)[startIndex++] = item;
                 }
                 byteArray.i_Count += addSizeInBytes;
-            }
-        }
-        public unsafe void AddRange(T[] items)
-        {
-            var addSizeInBytes = NUtils.sizeOf<T>() * items.Length;
-            var byteArray = i_array.Collection;
-            ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
-            fixed (T* tPtr = items)
-            {
-                fixed (byte* dst = &byteArray.i_Items[byteArray.i_Count])
-                {
-                    Buffer.MemoryCopy(tPtr, dst, addSizeInBytes, addSizeInBytes);
-                    byteArray.i_Count += addSizeInBytes;
-                }
             }
         }
 
@@ -360,28 +365,25 @@ namespace Nextension
             i_array.Dispose();
         }
 
-        private unsafe UnsafeArrayEnumerator<T> GetUnsafeArrayEnumerator()
+        private unsafe Enumerator GetUnsafeEnumerator()
         {
-            fixed (byte* intPtr = i_array.Collection.i_Items)
-            {
-                return new UnsafeArrayEnumerator<T>(intPtr, (uint)Count);
-            }
+            return new Enumerator(this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return GetUnsafeArrayEnumerator();
+            return GetUnsafeEnumerator();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return GetUnsafeArrayEnumerator();
+            return GetUnsafeEnumerator();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public UnsafeArrayEnumerator<T> GetEnumerator()
+        public Enumerator GetEnumerator()
         {
-            return GetUnsafeArrayEnumerator();
+            return GetUnsafeEnumerator();
         }
         public unsafe Span<T> AsSpan()
         {
@@ -390,6 +392,54 @@ namespace Nextension
         public T[] ToArray()
         {
             return AsSpan().ToArray();
+        }
+        public unsafe struct Enumerator : IEnumerator<T>
+        {
+            public Enumerator(NPUArray<T> targetArray)
+            {
+                this.targetArray = targetArray;
+                fixed (byte* intPtr = targetArray.i_array.Collection.i_Items)
+                {
+                    this.array = (T*)intPtr;
+                }
+                count = (uint)targetArray.Count;
+                _current = default;
+                _index = 0;
+            }
+
+            internal readonly NPUArray<T> targetArray;
+            internal readonly T* array;
+            internal readonly uint count;
+
+            private uint _index;
+            private T _current;
+
+            public readonly T Current => _current;
+            object IEnumerator.Current => _current;
+
+            public void Dispose()
+            {
+                targetArray.Dispose();
+            }
+            public bool MoveNext()
+            {
+                if (_index < count)
+                {
+                    _current = array[_index++];
+                    return true;
+                }
+                return false;
+            }
+            public void Reset()
+            {
+                _index = 0;
+                _current = default;
+            }
+
+            public Enumerator GetEnumerator()
+            {
+                return this;
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ namespace Nextension.NEditor
         {
             try
             {
+                EditorGUI.BeginChangeCheck();
                 var nonPreloadScriptable = NEditorHelper.getValue<NonPreloadScriptable>(property);
                 if (_scriptableObject == null || nonPreloadScriptable.getScriptableObject() != _scriptableObject)
                 {
@@ -27,6 +28,10 @@ namespace Nextension.NEditor
             {
                 Debug.LogException(e);
                 base.OnGUI(position, property, label);
+            }
+            finally
+            {
+                EditorGUI.EndChangeCheck();
             }
         }
         ~NonPreloadScriptableDrawer()

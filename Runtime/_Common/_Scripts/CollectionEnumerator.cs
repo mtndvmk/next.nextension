@@ -41,8 +41,8 @@ namespace Nextension
         private uint _index;
         private T _current;
 
-        public T Current => _current;
-        object IEnumerator.Current
+        public readonly T Current => _current;
+        readonly object IEnumerator.Current
         {
             get
             {
@@ -54,7 +54,7 @@ namespace Nextension
             }
         }
 
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
         public bool MoveNext()
@@ -72,7 +72,7 @@ namespace Nextension
             _current = default;
         }
 
-        public ArrayEnumerator<T> GetEnumerator()
+        public readonly ArrayEnumerator<T> GetEnumerator()
         {
             return this;
         }
@@ -82,7 +82,7 @@ namespace Nextension
         public UnsafeArrayEnumerator(void* array, uint itemCount)
         {
             this.array = (T*)array;
-            maxIndex = itemCount;
+            this.itemCount = itemCount;
 
             _current = default;
             _index = startIndex = 0;
@@ -108,18 +108,18 @@ namespace Nextension
         }
 
         internal readonly T* array;
-        internal readonly uint maxIndex;
+        internal readonly uint itemCount;
         internal readonly uint startIndex;
 
         private uint _index;
         private T _current;
 
-        public T Current => _current;
-        object IEnumerator.Current
+        public readonly T Current => _current;
+        readonly object IEnumerator.Current
         {
             get
             {
-                if (_index == startIndex || _index == maxIndex)
+                if (_index == startIndex || _index == itemCount)
                 {
                     throw new InvalidOperationException("InvalidOperation_EnumOpCantHappen");
                 }
@@ -127,12 +127,12 @@ namespace Nextension
             }
         }
 
-        public void Dispose()
+        public readonly void Dispose()
         {
         }
         public bool MoveNext()
         {
-            if (_index < maxIndex)
+            if (_index < itemCount)
             {
                 _current = array[_index++];
                 return true;
@@ -145,7 +145,101 @@ namespace Nextension
             _current = default;
         }
 
-        public UnsafeArrayEnumerator<T> GetEnumerator()
+        public readonly UnsafeArrayEnumerator<T> GetEnumerator()
+        {
+            return this;
+        }
+    }
+    public struct RandomEnumerator<T> : IEnumerator<T> where T : unmanaged
+    {
+        private readonly NPUArray<T> _values;
+        private T _current;
+        private int _remainingCount;
+        private Unity.Mathematics.Random _rand;
+        private bool _isDisposable;
+
+        public RandomEnumerator(ReadOnlySpan<T> values, uint seed = 0)
+        {
+            this._values = NPUArray<T>.getWithoutTracking();
+            this._values.AddRange(values);
+
+            this._remainingCount = _values.Count;
+            this._rand = NUtils.getRandom(seed);
+
+            _isDisposable = true;
+            _current = default;
+        }
+        public RandomEnumerator(ref NPUArray<T> values, uint seed = 0)
+        {
+            this._values = values;
+            this._remainingCount = _values.Count;
+            this._rand = NUtils.getRandom(seed);
+
+            _isDisposable = false;
+            _current = default;
+        }
+        public RandomEnumerator(IEnumerable<T> values, uint seed = 0)
+        {
+            this._values = NPUArray<T>.getWithoutTracking();
+            this._values.AddRange(values);
+
+            this._remainingCount = _values.Count;
+            this._rand = NUtils.getRandom(seed);
+
+            _isDisposable = true;
+            _current = default;
+        }
+        public RandomEnumerator(ReadOnlySpan<T> values, ref Unity.Mathematics.Random rand)
+        {
+            this._values = NPUArray<T>.getWithoutTracking();
+            this._values.AddRange(values);
+
+            this._remainingCount = _values.Count;
+            this._rand = rand;
+
+            _isDisposable = true;
+            _current = default;
+        }
+        public RandomEnumerator(IEnumerable<T> values, ref Unity.Mathematics.Random rand)
+        {
+            this._values = NPUArray<T>.getWithoutTracking();
+            this._values.AddRange(values);
+
+            this._remainingCount = _values.Count;
+            this._rand = rand;
+
+            _isDisposable = true;
+            _current = default;
+        }
+        public readonly T Current => _current;
+
+        readonly object IEnumerator.Current => _current;
+
+        public readonly void Dispose()
+        {
+            if (_isDisposable)
+                _values.Dispose();
+        }
+
+        public bool MoveNext()
+        {
+            if (_remainingCount > 0)
+            {
+                _remainingCount--;
+                var randIndex = _rand.NextInt(_remainingCount);
+                _current = _values[randIndex];
+                (_values[randIndex], _values[_remainingCount]) = (_values[_remainingCount], _values[randIndex]);
+                return true;
+            }
+            return false;
+        }
+
+        public void Reset()
+        {
+            _remainingCount = _values.Count;
+        }
+
+        public readonly RandomEnumerator<T> GetEnumerator()
         {
             return this;
         }

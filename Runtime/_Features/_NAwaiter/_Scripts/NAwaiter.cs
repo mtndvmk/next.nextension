@@ -7,26 +7,9 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public static class NAwaiter
+    public readonly struct NWaitUntil : IWaitable
     {
-        public static void runDelay(float second, Action delayCallback)
-        {
-            _ = runDelayAsync(second, delayCallback);
-        }
-        public static async NWaitable runDelayAsync(float second, Action delayCallback)
-        {
-            if (delayCallback == null)
-            {
-                throw new NullReferenceException("NAwaiter.runDelay.delayCallback");
-            }
-            await new NWaitSecond(second);
-            delayCallback.Invoke();
-        }
-    }
-
-    public struct NWaitUntil : IWaitable
-    {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         internal readonly Func<bool> predicate;
 
         NLoopType IWaitable.LoopType => loopType;
@@ -52,9 +35,9 @@ namespace Nextension
             return func;
         }
     }
-    public struct NWaitFrame : IWaitable
+    public readonly struct NWaitFrame : IWaitable
     {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         internal readonly uint waitFrame;
 
         NLoopType IWaitable.LoopType => loopType;
@@ -80,9 +63,9 @@ namespace Nextension
             return func;
         }
     }
-    public struct NWaitSecond : IWaitable
+    public readonly struct NWaitSecond : IWaitable
     {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         internal readonly float waitSecond;
 
         NLoopType IWaitable.LoopType => loopType;
@@ -108,9 +91,9 @@ namespace Nextension
             return func;
         }
     }
-    public struct NWaitRealtimeSecond : IWaitable
+    public readonly struct NWaitRealtimeSecond : IWaitable
     {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         internal readonly float waitSecond;
 
         NLoopType IWaitable.LoopType => loopType;
@@ -136,9 +119,9 @@ namespace Nextension
             return func;
         }
     }
-    public struct NWaitJobHandle : IWaitable
+    public readonly struct NWaitJobHandle : IWaitable
     {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         internal readonly JobHandle jobHandle;
         bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
@@ -165,9 +148,9 @@ namespace Nextension
             return func;
         }
     }
-    public struct NWaitRoutine : IWaitableFromCancelable
+    public readonly struct NWaitRoutine : IWaitableFromCancelable
     {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         internal readonly IEnumerator routine;
         bool IWaitableFromCancelable.IsIgnoreFirstFrameCheck => true;
 
@@ -194,9 +177,9 @@ namespace Nextension
             return (func, data);
         }
     }
-    public struct CombineNWaitable : IWaitable
+    public readonly struct CombineNWaitable : IWaitable
     {
-        public NLoopType loopType;
+        public readonly NLoopType loopType;
         public readonly NWaitable[] waitables;
 
         NLoopType IWaitable.LoopType => loopType;
@@ -271,18 +254,18 @@ namespace Nextension
         }
 
         Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        {            
+            return conditionCheck;
+        }
+
+        NWaitableResult conditionCheck()
         {
-            long timeMs = this.timeMs;
-            NWaitableResult func()
+            var deltaTimeMs = NUpdater.CurrentTimeMs - NUpdater.LatestUpdatedTimeMs;
+            if (deltaTimeMs <= timeMs)
             {
-                var deltaTimeMs = NUpdater.CurrentTimeMs - NUpdater.LatestUpdatedTimeMs;
-                if (deltaTimeMs <= timeMs)
-                {
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
+                return NWaitableResult.Completed;
             }
-            return func;
+            return NWaitableResult.None;
         }
     }
 }

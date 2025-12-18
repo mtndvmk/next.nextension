@@ -142,7 +142,7 @@ namespace Nextension
             }
             if (!_container)
             {
-                _container = NAssetUtils.createInMainResources<SingletonScriptableContainer>(SingletonScriptableContainer.FileNameInResource);
+                _container = NEditorAssetUtils.createInMainResources<SingletonScriptableContainer>(SingletonScriptableContainer.FileNameInResource);
                 NAssetUtils.refresh();
             }
             return _container;

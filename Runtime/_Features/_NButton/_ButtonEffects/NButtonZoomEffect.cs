@@ -10,9 +10,11 @@ namespace Nextension
         [SerializeField] private float _zoomRatio = 1.1f;
         [SerializeField] private float _zoomTime = 0.1f;
         [SerializeField] private NTweener.UpdateMode _updateMode;
+        [SerializeField] private bool _isResetScaleOnInteractable = true;
 
         private NRunnableTweener _effectTweener;
         private Vector3 _originScale;
+        private bool _isDown;
 
         public float ZoomRatio { get => _zoomRatio; set => _zoomRatio = value; }
         public float ZoomTime { get => _zoomTime; set => _zoomTime = value; }
@@ -22,7 +24,11 @@ namespace Nextension
             if (!enabled) return;
             if (_effectTweener == null || _effectTweener.isFinalized)
             {
-                _originScale = transform.localScale;
+                if (!_isDown)
+                {
+                    _isDown = true;
+                    _originScale = transform.localScale;
+                }
             }
             else
             {
@@ -39,6 +45,20 @@ namespace Nextension
                 _effectTweener.cancel();
             }
             _effectTweener = NTween.scaleTo(_target, _originScale, _zoomTime).setUpdateMode(_updateMode);
+            _isDown = false;
+        }
+
+        public override void onInteractableChanged(bool isInteractable)
+        {
+            if (isInteractable && _isResetScaleOnInteractable)
+            {
+                if (_isDown)
+                {
+                    _effectTweener.cancel();
+                    _isDown = false;
+                    transform.localScale = _originScale;
+                }
+            }
         }
 
         private void Reset()

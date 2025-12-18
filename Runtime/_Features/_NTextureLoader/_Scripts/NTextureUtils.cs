@@ -5,8 +5,9 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+using Nextension.TextureLoader;
 
-namespace Nextension.TextureLoader
+namespace Nextension
 {
     public enum ImageExtension
     {
@@ -214,6 +215,32 @@ namespace Nextension.TextureLoader
             RenderTexture.active = currentRT;
             RenderTexture.ReleaseTemporary(tempRenderTexture);
             return result;
+        }
+
+        public static Texture2D cloneNonReadableUseBlit(Texture src)
+        {
+            int w = src.width;
+            int h = src.height;
+
+            var rt = RenderTexture.GetTemporary(
+                w, h, 0,
+                RenderTextureFormat.Default,
+                RenderTextureReadWrite.Linear
+            );
+
+            Graphics.Blit(src, rt);
+
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+
+            Texture2D newTex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            newTex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            newTex.Apply();
+
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(rt);
+
+            return newTex;
         }
 
         public static Texture2D getTextureFromRT(RenderTexture src, int maxDimension = int.MaxValue, TextureSetting.CompressType compressType = TextureSetting.CompressType.LowQuality)

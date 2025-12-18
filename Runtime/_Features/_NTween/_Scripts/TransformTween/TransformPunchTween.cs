@@ -19,6 +19,38 @@ namespace Nextension.Tween
                 this._target = target;
                 _transformTweenType = transformTweenType;
             }
+            private void applyValue(TValue value)
+            {
+                switch (_transformTweenType)
+                {
+                    case TransformTweenType.Local_Position:
+                        _target.localPosition = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
+                        break;
+                    case TransformTweenType.World_Position:
+                        _target.position = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
+                        break;
+                    case TransformTweenType.Local_Scale:
+                        _target.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
+                        break;
+                    case TransformTweenType.Uniform_Local_Scale:
+                        var x = NConverter.bitConvertWithoutChecks<TValue, float>(value);
+                        _target.localScale = new(x, x, x);
+                        break;
+                    case TransformTweenType.Local_Rotation:
+                        _target.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
+                        break;
+                    case TransformTweenType.World_Rotation:
+                        _target.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
+                        break;
+                    default:
+                        throw new NotImplementedException(_transformTweenType.ToString());
+                }
+            }
+            protected override void onResetState()
+            {
+                base.onResetState();
+                applyValue(origin);
+            }
             public override TransformPunchData<TValue> getJobData()
             {
                 var jobData = new TransformPunchData<TValue>()
@@ -65,7 +97,7 @@ namespace Nextension.Tween
             [ReadOnly] private NativeArray<byte> _mask;
             [ReadOnly] private NativeArray<TransformPunchData<TValue>> _jobDataNativeArr;
 
-            internal Job(NativeArray<TransformPunchData<TValue>> jobDataNativeArr, NativeArray<byte> mask)
+            internal Job(in NativeArray<TransformPunchData<TValue>> jobDataNativeArr, in NativeArray<byte> mask)
             {
                 _jobDataNativeArr = jobDataNativeArr;
                 _mask = mask;

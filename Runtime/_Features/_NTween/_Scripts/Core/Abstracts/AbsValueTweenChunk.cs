@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Unity.Collections;
+﻿using Unity.Collections;
 using Unity.Jobs;
 
 namespace Nextension.Tween
@@ -14,7 +13,7 @@ namespace Nextension.Tween
 
         public AbsValueTweenChunk() : base()
         {
-            _results = new NativeArray<TValue>(ChunkSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _results = new NativeArray<TValue>(CHUNK_SIZE, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
 
         protected override void onTweenerUpdated(int maskIndex)
@@ -28,10 +27,9 @@ namespace Nextension.Tween
             base.dispose();
             _results.Dispose();
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected sealed override JobHandle onScheduleJob()
         {
-            return _job.ScheduleParallelByRef(ChunkSize, 64, default);
+            return _job.ScheduleParallelByRef(CHUNK_SIZE, 64, default);
         }
     }
 }

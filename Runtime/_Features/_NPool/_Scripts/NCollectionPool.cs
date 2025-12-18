@@ -17,6 +17,8 @@ namespace Nextension
 
         public TCollection Collection => _collection;
 
+        public bool IsDisposed => _pool.contains(this as TPool);
+
         protected NCollectionPool()
         {
             _collection = NUtils.createInstance<TCollection>();
@@ -43,13 +45,12 @@ namespace Nextension
 #endif
         }
 
-        public static void release(TPool pool)
+        internal static void release(TPool pool)
         {
-            if (!_pool.release(pool))
+            if (_pool.release(pool))
             {
-                Debug.LogWarning("Can't find TPool in usingPool");
+                pool.Clear();
             }
-            pool.Clear();
         }
 
         public static void setMaxItemInPool(int count)

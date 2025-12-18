@@ -4,9 +4,9 @@ using UnityEngine;
 namespace Nextension
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class NConstrainableAttribute : PropertyAttribute 
+    public class NConstrainableAttribute : PropertyAttribute
     {
-        public NConstrainableAttribute() 
+        public NConstrainableAttribute()
         {
             this.order = NAttributeOrder.CONSTRAINABLE;
         }

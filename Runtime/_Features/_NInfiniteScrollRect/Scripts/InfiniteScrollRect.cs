@@ -31,19 +31,21 @@ namespace Nextension
             }
         }
 
-        public InfiniteCell cellPrefab;
         public ScrollRect scrollRect;
+        public InfiniteCell cellPrefab;
+
         public List<InfiniteCellData> DataList { get; internal set; } = new List<InfiniteCellData>();
+        public event Action<InfiniteCell> onCreateNewCell;
+
         protected Dictionary<int, InfiniteCell> _cellTable = new Dictionary<int, InfiniteCell>();
         protected Queue<InfiniteCell> _cellPool = new Queue<InfiniteCell>();
 
         private NTweener _snapAnimation;
         private bool _isDirtyLayout;
+        private int _dirtyPositionIndex = -1;
 
-        private Func<InfiniteCell> _instantiateCellFunc;
-        private Action<InfiniteCell> _destroyCellItemFunc;
+        private IComponentInstantiate<InfiniteCell> _componentInstantiate;
 
-#if UNITY_EDITOR
         protected virtual void Reset()
         {
             scrollRect = GetComponent<ScrollRect>();
@@ -54,16 +56,22 @@ namespace Nextension
             {
                 await new NWaitFrame(1);
                 updateContentAnchorAndPivot();
-                recalculateCellPositions();
+                setDirtyPosition(0);
             }
         }
-#endif
+
         protected virtual void Awake()
         {
+            if (!scrollRect) scrollRect = GetComponent<ScrollRect>();
             scrollRect.onValueChanged.AddListener((_) => onLayoutUpdated());
         }
         protected virtual void LateUpdate()
         {
+            if (_dirtyPositionIndex >= 0)
+            {
+                exeCalculateCellPositions(_dirtyPositionIndex);
+                _dirtyPositionIndex = -1;
+            }
             if (_isDirtyLayout)
             {
                 forceUpdateLayout();
@@ -74,12 +82,12 @@ namespace Nextension
             stopSnapping();
         }
 
-        protected virtual InfiniteCell getCell()
+        protected virtual InfiniteCell getCellFromPool()
         {
             InfiniteCell cell;
-            if (_instantiateCellFunc != null && _destroyCellItemFunc != null)
+            if (_componentInstantiate != null)
             {
-                cell = _instantiateCellFunc();
+                cell = _componentInstantiate.getComponent();
                 cell.transform.SetParent(scrollRect.content, false);
                 return cell;
             }
@@ -92,6 +100,7 @@ namespace Nextension
                 else
                 {
                     cell = Instantiate(cellPrefab, scrollRect.content);
+                    onCreateNewCell?.Invoke(cell);
                 }
 
                 cell.gameObject.SetActive(true);
@@ -101,9 +110,9 @@ namespace Nextension
         protected void releaseCell(InfiniteCell cell)
         {
             cell.CellData = null;
-            if (_instantiateCellFunc != null && _destroyCellItemFunc != null)
+            if (_componentInstantiate != null)
             {
-                _destroyCellItemFunc(cell);
+                _componentInstantiate.release(cell.gameObject);
             }
             else
             {
@@ -118,9 +127,13 @@ namespace Nextension
                 releaseCell(cell);
             }
         }
-        protected void setDirty()
+        protected void setDirtyLayout()
         {
             _isDirtyLayout = true;
+        }
+        protected void setDirtyPosition(int index = 0)
+        {
+            _dirtyPositionIndex = index;
         }
 
         public void forceUpdateLayout()
@@ -133,11 +146,15 @@ namespace Nextension
 
         public virtual void add(InfiniteCellData data)
         {
+            if (data.CellSize.Equals(InfiniteCellData.PositiveInfinitySize))
+            {
+                data.CellSize = cellPrefab.rectTransform().rect.size;
+            }
             data.Index = DataList.Count;
             data.InfiniteScrollRect = this;
             DataList.Add(data);
             onAddedNewItem(data);
-            setDirty();
+            setDirtyLayout();
         }
         protected virtual void onAddedNewItem(InfiniteCellData data)
         {
@@ -150,7 +167,7 @@ namespace Nextension
             DataList.RemoveAt(index);
             hideCell(index);
             onRemovedItem(index, removedData);
-            recalculateCellPositions(index);
+            setDirtyPosition(index);
         }
         protected virtual void onRemovedItem(int index, InfiniteCellData data)
         {
@@ -167,7 +184,7 @@ namespace Nextension
             data.InfiniteScrollRect = this;
             DataList.Insert(index, data);
             onAddedNewItem(data);
-            recalculateCellPositions(index);
+            setDirtyPosition(index);
         }
         public void addRange(IEnumerable<InfiniteCellData> dataEnumerable)
         {
@@ -195,7 +212,7 @@ namespace Nextension
             if (!gameObject.activeInHierarchy || duration <= 0)
             {
                 scrollRect.content.anchoredPosition = contentAnchorPosition;
-                setDirty();
+                setDirtyLayout();
             }
             else
             {
@@ -218,8 +235,7 @@ namespace Nextension
                 scrollRect.content.anchoredPosition = tPos;
             });
         }
-
-        protected InfiniteCell showCell(int index, Vector2 cellAnchoredPosition)
+        protected InfiniteCell showCell(int index)
         {
             if (_cellTable.ContainsKey(index))
             {
@@ -227,12 +243,11 @@ namespace Nextension
             }
             else
             {
-                var cell = getCell();
+                var cell = getCellFromPool();
                 var cellData = DataList[index];
                 cell.internalUpdateCellData(index, cellData);
 
                 var cellRectTf = cell.rectTransform();
-                cellRectTf.anchoredPosition = cellAnchoredPosition;
                 cellRectTf.localScale = cellData.CellScale;
                 cellRectTf.setSizeWithCurrentAnchors(cellData.CellSize);
                 _cellTable.Add(index, cell);
@@ -250,7 +265,7 @@ namespace Nextension
                 releaseCell(cell);
             }
             _cellTable.Clear();
-            setDirty();
+            setDirtyLayout();
         }
 
         public void updateCellSize(int index, Vector2 newSize)
@@ -260,7 +275,7 @@ namespace Nextension
             cellData.CellSize = newSize;
             hideCell(index);
             onCellSizeUpdated(index, oldSize, newSize);
-            setDirty();
+            setDirtyLayout();
         }
         public void updateCellScale(int index, Vector3 newScale)
         {
@@ -268,17 +283,25 @@ namespace Nextension
             cellData.CellScale = newScale;
             _cellTable[index].transform.localScale = newScale;
         }
-        protected virtual void onCellSizeUpdated(int index, Vector2 oldSize, Vector2 newSize) { }
-        protected abstract void recalculateCellPositions(int startIndex = 1);
-        protected abstract void updateContentAnchorAndPivot();
-        public void overrideCellInstantiation(Func<InfiniteCell> instantiateCellFunc, Action<InfiniteCell> destroyCellItemFunc)
+        public void forceCalculateCellPositions(int startIndex)
         {
-            _instantiateCellFunc = instantiateCellFunc;
-            _destroyCellItemFunc = destroyCellItemFunc;
+            exeCalculateCellPositions(startIndex);
+        }
+        protected virtual void onCellSizeUpdated(int index, Vector2 oldSize, Vector2 newSize) { }
+        protected abstract void exeCalculateCellPositions(int startIndex);
+        protected abstract void updateContentAnchorAndPivot();
+
+        public void overrideCellInstantiation(ComponentInstantiate<InfiniteCell> componentInstantiate)
+        {
+            _componentInstantiate = componentInstantiate;
+        }
+        public void overrideCellInstantiation(Func<InfiniteCell> instantiateFunc, Action<GameObject> destroyFunc)
+        {
+            _componentInstantiate = new ComponentInstantiate<InfiniteCell>(instantiateFunc, destroyFunc);
         }
         public void resetCellInstantiationFunc()
         {
-            overrideCellInstantiation(default, default);
+            _componentInstantiate = null;
         }
         public InfiniteCell getShowingCell(int index)
         {

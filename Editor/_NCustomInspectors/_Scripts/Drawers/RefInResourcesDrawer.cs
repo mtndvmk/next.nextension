@@ -13,9 +13,10 @@ namespace Nextension.NEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginChangeCheck();
             var refInResources = NEditorHelper.getValue<IRefInResources>(property);
             var guid = refInResources.getGuid();
-            var currentObj = NAssetUtils.loadMainAssetFromGUID(guid, out _);
+            var currentObj = NEditorAssetUtils.loadMainAssetFromGUID(guid, out _);
             var refType = refInResources.getRefValueType();
             if (!guid.isNullOrEmpty() && (currentObj == null || !currentObj.GetType().isInherited(refType)))
             {
@@ -26,7 +27,7 @@ namespace Nextension.NEditor
             var guiContent = new GUIContent(property.displayName);
             var newObj = EditorGUI.ObjectField(position, guiContent, currentObj, refType, false);
 
-            bool isInResources = NAssetUtils.getPathInResources(newObj, out var newPath);
+            bool isInResources = NEditorAssetUtils.getPathInResources(newObj, out var newPath);
 
             if (isInResources)
             {
@@ -51,6 +52,8 @@ namespace Nextension.NEditor
                     Debug.LogError($"Object [{newObj.name}] does not exist in the Resources directory", newObj);
                 }
             }
+
+            EditorGUI.EndChangeCheck();
         }
     }
 }

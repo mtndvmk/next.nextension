@@ -1,173 +1,80 @@
 using Nextension.Tween;
 using UnityEditor;
 using UnityEngine;
-using Unity.Mathematics;
 
 namespace Nextension.NEditor
 {
-    [CustomEditor(typeof(AbsAutoAlternate<>), true), CanEditMultipleObjects]
+    [CustomEditor(typeof(AbsAutoAlternate), true), CanEditMultipleObjects]
     public class AbsAutoAlternate_Editor : Editor
     {
+        void OnEnable()
+        {
+            if (Application.isPlaying)
+            {
+                EditorApplication.update += Repaint;
+            }
+        }
+
+        void OnDisable()
+        {
+            EditorApplication.update -= Repaint;
+        }
         public override void OnInspectorGUI()
         {
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUILayout.PropertyField(serializedObject.FindProperty("m_Script"));
-            EditorGUI.EndDisabledGroup();
-
-            SerializedProperty iterator = serializedObject.GetIterator();
-            iterator.NextVisible(true);
-
-            bool isFromToOnly = false;
-            AutoAlternateColor.AutoAlternateColorType? autoAlternateColorType = null;
-
-            bool isAutoAlternateColor = target.GetType() == typeof(AutoAlternateColor);
-            bool isAutoAlterScale = !isAutoAlternateColor && target.GetType() == typeof(AutoAlternateScale);
-
-            bool isUniformScale = false;
-            if (isAutoAlterScale)
+            base.OnInspectorGUI();
+            var obj = serializedObject.targetObject as AbsAutoAlternate;
+            if (obj.IsRunning)
             {
-                var uniformScaleProperty = serializedObject.FindProperty("_isUniformScale");
-                EditorGUILayout.PropertyField(uniformScaleProperty);
-                isUniformScale = (bool)NEditorHelper.getValue(uniformScaleProperty);
+                EditorGUI.BeginDisabledGroup(true);
+                var currentTime = obj.CurrentTime;
+                var totalTime = obj.FromToDuration;
+                var normalizedTime = totalTime > 0 ? currentTime / totalTime : 0;
+                EditorGUILayout.Slider($"Time ({normalizedTime:0.##})", currentTime,  0, totalTime);
+                EditorGUI.EndDisabledGroup();
             }
 
-
-            while (iterator.NextVisible(false))
+            if (Application.isPlaying)
             {
-                var iteratorName = iterator.name;
-                if (iteratorName == "_onlyFromTo")
+                if (obj.IsRunning)
                 {
-                    isFromToOnly = iterator.boolValue;
-                    EditorGUILayout.PropertyField(iterator);
-                }
-                else
-                {
-                    if (isAutoAlternateColor)
+                    if (obj.IsPaused)
                     {
-                        if (iteratorName == "_autoAlternateColorType")
+                        EditorGUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Resume"))
                         {
-                            autoAlternateColorType = (AutoAlternateColor.AutoAlternateColorType)iterator.intValue;
-                            EditorGUILayout.PropertyField(iterator);
+                            obj.resume();
                         }
-                        else if (iteratorName == "_graphic")
+                        if (GUILayout.Button("Stop"))
                         {
-                            if (autoAlternateColorType == AutoAlternateColor.AutoAlternateColorType.Graphic)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
+                            obj.stop();
                         }
-                        else if (iteratorName == "_spriteRenderer")
-                        {
-                            if (autoAlternateColorType == AutoAlternateColor.AutoAlternateColorType.SpriteRenderer)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else if (iteratorName == "_material")
-                        {
-                            if (autoAlternateColorType == AutoAlternateColor.AutoAlternateColorType.Material)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else if (iteratorName == "_canvasRenderer")
-                        {
-                            if (autoAlternateColorType == AutoAlternateColor.AutoAlternateColorType.CanvasRenderer)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else if (iteratorName == "_delayToFrom")
-                        {
-                            if (!isFromToOnly)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else
-                        {
-                            EditorGUILayout.PropertyField(iterator);
-                        }
-                    }
-                    else if (isAutoAlterScale)
-                    {
-                        if (iteratorName == "_isUniformScale")
-                        {
-                            continue;
-                        }
-                        if (iteratorName == "_fromValue")
-                        {
-                            if (isUniformScale)
-                            {
-                                var v = EditorGUILayout.FloatField("From value", ((float3)iterator.boxedValue).x);
-                                iterator.boxedValue = new float3(v);
-                            }
-                            else
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else if (iteratorName == "_toValue")
-                        {
-                            if (isUniformScale)
-                            {
-                                var v = EditorGUILayout.FloatField("To value", ((float3)iterator.boxedValue).x);
-                                iterator.boxedValue = new float3(v);
-                            }
-                            else
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else if (iteratorName == "_delayToFrom")
-                        {
-                            if (!isFromToOnly)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
-                        }
-                        else
-                        {
-                            EditorGUILayout.PropertyField(iterator);
-                        }
+                        EditorGUILayout.EndHorizontal();
                     }
                     else
                     {
-                        if (iteratorName == "_delayToFrom")
+                        EditorGUILayout.BeginHorizontal();
+                        if (GUILayout.Button("Pause"))
                         {
-                            if (!isFromToOnly)
-                            {
-                                EditorGUILayout.PropertyField(iterator);
-                            }
+                            obj.pause();
                         }
-                        else
+                        if (GUILayout.Button("Stop"))
                         {
-                            EditorGUILayout.PropertyField(iterator);
+                            obj.stop();
                         }
+                        EditorGUILayout.EndHorizontal();
                     }
+                }
+                else
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Start"))
+                    {
+                        obj.startImmediate();
+                    }
+                    EditorGUILayout.EndHorizontal();
                 }
             }
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Capture fromValue"))
-            {
-                ((IAutoAlternate)target).captureFromValue();
-            }
-            if (GUILayout.Button("Capture toValue"))
-            {
-                ((IAutoAlternate)target).captureToValue();
-            }
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Reset to fromValue"))
-            {
-                ((IAutoAlternate)target).resetToFromValue();
-            }
-            if (GUILayout.Button("Reset to toValue"))
-            {
-                ((IAutoAlternate)target).resetToToValue();
-            }
-            EditorGUILayout.EndHorizontal();
             serializedObject.ApplyModifiedProperties();
         }
     }

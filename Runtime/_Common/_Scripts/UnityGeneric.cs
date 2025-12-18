@@ -2,8 +2,9 @@ using UnityEngine;
 
 namespace Nextension
 {
-    public struct UnityGeneric<T>
+    public readonly struct UnityGeneric<T> where T : UnityEngine.Object
     {
-        internal readonly static bool IsGameObject = typeof(T).Equals(typeof(GameObject));
+        public readonly static bool IsComponent = typeof(T).IsSubclassOf(typeof(Component));
+        public readonly static bool IsGameObject = typeof(T) == typeof(GameObject);
     }
 }

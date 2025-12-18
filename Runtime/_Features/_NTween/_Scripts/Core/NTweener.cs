@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension.Tween
@@ -28,15 +27,26 @@ namespace Nextension.Tween
             return NConverter.bitConvertWithoutChecks<uint, int>(id);
         }
 
-        internal readonly uint id;
+        protected bool _isStarted;
+        protected int _totalLoopCount = 0;
+        protected int _remainingLoopCount = 0;
+        protected float _startNormalizedTime;
+        protected float _currentNormalizedTime;
+
+        internal float duration;
         internal bool isFinalized;
         internal UpdateMode updateMode;
+        internal readonly uint id;
         internal float scheduledTime;
         internal float scheduledUnscaleTime;
         internal CancelControlKey controlKey;
 
         internal bool isScheduled => scheduledTime > 0;
+        internal bool isLooping => _totalLoopCount != _remainingLoopCount;
+        
         public RunState Status { get; private set; }
+        public float Time { get; internal set; }
+        public float NormalizedTime => duration == 0 ? 0 : Mathf.Clamp01(Time / duration);
 
         private Action onStartedEvent;
         private Action onUpdatedEvent;
@@ -50,8 +60,20 @@ namespace Nextension.Tween
         {
             await new NWaitTweener(this);
         }
-
-
+        /// <summary>
+        /// `loopCount` is -1 is infinite loop
+        /// </summary>
+        /// <param name="loopCount"></param>
+        public NTweener setLoop(int loopCount)
+        {
+            if (Status.isFinished())
+            {
+                Debug.LogWarning("Tweener has been finished");
+                return this;
+            }
+            _remainingLoopCount = _totalLoopCount = loopCount;
+            return this;
+        }
         /// <summary>
         /// Stop tweener
         /// </summary>
@@ -192,7 +214,6 @@ namespace Nextension.Tween
             NTweenManager.addCancelControlledTweener(this);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void removeCancelControlKey()
         {
             innerRemoveCancelControlKey();
@@ -226,18 +247,17 @@ namespace Nextension.Tween
         {
             if (Status == RunState.None && !isScheduled)
             {
-                scheduledTime = Time.time;
-                scheduledUnscaleTime = Time.unscaledTime;
+                scheduledTime = UnityEngine.Time.time;
+                scheduledUnscaleTime = UnityEngine.Time.unscaledTime;
                 onRun();
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void schedule()
         {
             if (Status == RunState.None && !isScheduled)
             {
-                scheduledTime = Time.time;
-                scheduledUnscaleTime = Time.unscaledTime;
+                scheduledTime = UnityEngine.Time.time;
+                scheduledUnscaleTime = UnityEngine.Time.unscaledTime;
                 onSchedule();
             }
         }
@@ -248,6 +268,7 @@ namespace Nextension.Tween
             Status = RunState.None;
             scheduledTime = 0;
             scheduledUnscaleTime = 0;
+            Time = 0;
             onResetState();
         }
         public void removeAllEvents()
@@ -263,32 +284,49 @@ namespace Nextension.Tween
             cancel();
             resetState();
         }
+        /// <summary>
+        /// Cancel an start new tween
+        /// </summary>
         public void restart()
         {
-            stopAndResetState();
+            _remainingLoopCount = _totalLoopCount;
+            _isStarted = false;
+            resetState();
             run();
+            onRestarted();
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public NTweener startNormalizedTime(float normalizedTime)
+        {
+            if (Status != RunState.None)
+            {
+                Debug.LogWarning("Tweener has been started, update mode will not be changed");
+            }
+            this._startNormalizedTime = Mathf.Clamp01(normalizedTime);
+            return this;
+        }
         internal void invokeOnStart()
         {
             if (Status >= RunState.Running)
             {
                 return;
             }
+
             Status = RunState.Running;
 
-            try
+            if (!_isStarted)
             {
-                onInnerStarted();
-                onStartedEvent?.Invoke();
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
+                _isStarted = true;
+                try
+                {
+                    onInnerStarted();
+                    onStartedEvent?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void invokeOnUpdate()
         {
             try
@@ -303,13 +341,29 @@ namespace Nextension.Tween
                 Debug.LogException(e);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void invokeOnComplete()
         {
             if (Status.isFinished())
             {
                 return;
             }
+
+            if (_totalLoopCount == -1)
+            {
+                _remainingLoopCount = 0;
+                resetState();
+                run();
+                return;
+            }
+
+            if (_remainingLoopCount >= 1)
+            {
+                _remainingLoopCount--;
+                resetState();
+                run();
+                return;
+            }
+
             Status = RunState.Completed;
             try
             {
@@ -324,7 +378,6 @@ namespace Nextension.Tween
                 invokeOnFinalize();
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void invokeOnFinalize()
         {
             if (!isFinalized)
@@ -345,14 +398,26 @@ namespace Nextension.Tween
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onInnerStarted() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onInnerCanceled() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onResetState() { }
+        protected virtual void onRestarted()
+        {
+            
+        }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal virtual void invokeBeforeStart()
+        {
+            // update _currentNormalizedTime at first run
+            if (_isStarted)
+            {
+                _currentNormalizedTime = 0;
+            }
+            else
+            {
+                _currentNormalizedTime = _startNormalizedTime;
+            }
+        }
         internal virtual void forceComplete() { }
 
         protected abstract void onRun();
@@ -363,21 +428,64 @@ namespace Nextension.Tween
         private readonly T _tweener;
 
         internal float delayTime;
-        internal float startTime => delayTime + (updateMode == UpdateMode.ScaleTime ? scheduledTime : scheduledUnscaleTime);
+        internal float loopInterval;
+
+        internal float startTime
+        {
+            get
+            {
+                float t;
+                if (isLooping)
+                {
+                    t = loopInterval + (updateMode == UpdateMode.ScaleTime ? scheduledTime : scheduledUnscaleTime);
+                }
+                else
+                {
+                    t = delayTime + (updateMode == UpdateMode.ScaleTime ? scheduledTime : scheduledUnscaleTime);
+                }
+                t -= _currentNormalizedTime * duration;
+                return t;
+            }
+        }
 
         internal GenericNTweener()
         {
             _tweener = this as T;
         }
 
-        public T setDelay(float delayTime)
+        public new T setLoop(int loopCount)
         {
-            if (delayTime < 0)
+            base.setLoop(loopCount);
+            return _tweener;
+        }
+        public T setLoopInterval(float timeInSeconds)
+        {
+            if (timeInSeconds < 0)
             {
-                Debug.LogError($"{nameof(delayTime)} must equal or greater than 0");
+                Debug.LogError($"{nameof(timeInSeconds)} must equal or greater than 0");
                 return _tweener;
             }
-            this.delayTime = delayTime;
+            this.loopInterval = timeInSeconds;
+            return _tweener;
+        }
+        public T setDuration(float duration)
+        {
+            this.duration = duration;
+            return _tweener;
+        }
+        public new T startNormalizedTime(float normalizedTime)
+        {
+            base.startNormalizedTime(normalizedTime);
+            return _tweener;
+        }
+        public T setDelay(float timeInSeconds)
+        {
+            if (timeInSeconds < 0)
+            {
+                Debug.LogError($"{nameof(timeInSeconds)} must equal or greater than 0");
+                return _tweener;
+            }
+            this.delayTime = timeInSeconds;
             return _tweener;
         }
         public new T onStarted(Action onStarted)

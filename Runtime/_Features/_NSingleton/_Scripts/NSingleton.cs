@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -143,7 +144,14 @@ namespace Nextension
                 {
                     _isLocallyInitialized = true;
                     s_Instance = GetComponent<T>();
-                    onInitialized();
+                    try
+                    {
+                        onInitialized();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                     if (m_DontDestroyOnLoad)
                     {
                         gameObject.transform.SetParent(null);
@@ -176,7 +184,9 @@ namespace Nextension
                     {
                         if (!IsPlaying)
                         {
-                            throw new Exception("Application isn't playing");
+                            var instance = FindAnyObjectByType<T>(FindObjectsInactive.Include);
+                            if (!instance) throw new Exception($"Can't create instance of {typeof(T)} while application isn't playing");
+                            return instance;
                         }
                         if (IsDestroyedAndUnused)
                         {
@@ -199,6 +209,22 @@ namespace Nextension
                 return s_Instance;
             }
         }
+
+        public static bool isExist()
+        {
+            return isExist(out _);
+        }
+        public static bool isExist(out T instance)
+        {
+            instance = s_Instance;
+            if (instance.isNull())
+            {
+                instance = FindAnyObjectByType<T>(FindObjectsInactive.Include);
+                return !instance.isNull();
+            }
+            return false;
+        }
+
         public static bool IsPlaying => NStartRunner.IsPlaying;
         public static bool IsDestroyedAndUnused { get; protected set; }
         public static bool IsInitialized => s_Instance != null;
@@ -235,9 +261,60 @@ namespace Nextension
         }
     }
 
-    public interface ISingletonable
+    public interface ISingletonable : IOnCompiled
     {
         bool isSingleton() => true;
+        static new void onPreprocessBuild()
+        {
+            if (checkHasErrorOnBuild(out var e))
+            {
+                throw new KeepStackTraceException(e);
+            }
+        }
+        static new void onLoadOrRecompiled()
+        {
+            if (checkHasErrorOnBuild(out var e))
+            {
+                throw new KeepStackTraceException(e);
+            }
+        }
+        private static bool checkHasErrorOnBuild(out Exception exception)
+        {
+            try
+            {
+                var nSingletonType = typeof(NSingleton<>);
+                var types = NUtils.getCustomTypes();
+
+                foreach (var type in types)
+                {
+                    if (type.IsGenericTypeDefinition) continue;
+                    var baseType = type.BaseType;
+                    if (baseType == null) continue;
+                    if (baseType.FullName.StartsWith(nSingletonType.FullName))
+                    {
+                        var awakeMethod = type.GetTypeInfo().GetDeclaredMethod("Awake");
+                        if (awakeMethod != null)
+                        {
+                            throw new Exception($"Please override \"onAwake()\" instead using \"Awake()\" at [{type.FullName}]");
+                        }
+
+                        var onDestroyMethod = type.GetTypeInfo().GetMethod("OnDestroy");
+                        if (onDestroyMethod != null)
+                        {
+                            throw new Exception("Please override onDestroy() instead using OnDestroy()");
+                        }
+                    }
+                }
+
+                exception = null;
+                return false;
+            }
+            catch (Exception e)
+            {
+                exception = e;
+                return true;
+            }
+        }
     }
 
     public static class S_<T> where T : class, ISingletonable

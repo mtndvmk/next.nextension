@@ -51,7 +51,7 @@ namespace Nextension
                 return false;
             }
 
-            if (!NAssetUtils.getPathInMainResources(scriptable, out _))
+            if (!NEditorAssetUtils.getPathInMainResources(scriptable, out _))
             {
                 return false;
             }

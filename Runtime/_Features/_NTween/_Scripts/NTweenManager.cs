@@ -8,6 +8,7 @@ namespace Nextension.Tween
     {
         private static NList<NRunnableTweener> _queuedRunnableTweeners;
         private static NList<CombinedNTweener> _queuedCombinedTweeners;
+        private static NList<NTweener> _completedTweeners;
 
         private static SimpleDictionary<ushort, AbsTweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;
@@ -16,6 +17,7 @@ namespace Nextension.Tween
         {
             _queuedRunnableTweeners = new();
             _queuedCombinedTweeners = new();
+            _completedTweeners = new();
             _runners = new();
             _cancelControlManager = new();
 
@@ -69,6 +71,16 @@ namespace Nextension.Tween
                 _queuedRunnableTweeners.Clear();
             }
 
+            if (_completedTweeners.Count > 0)
+            {
+                foreach (var tweener in _completedTweeners)
+                {
+                    tweener.invokeOnStart();
+                    tweener.forceComplete();
+                }
+                _completedTweeners.Clear();
+            }
+
             if (TweenStaticManager.runningTweenerCount > 0)
             {
                 NNativeListFixedSize<JobHandle> jobHandles = new(TweenChunk.ChunkCount);
@@ -89,6 +101,9 @@ namespace Nextension.Tween
                         _runners[runnerId].getChunk(chunkId).invokeJobComplete();
                     }
                 }
+
+                jobHandles.Dispose();
+                runningChunks.Dispose();
             }
         }
         private static AbsTweenRunner getOrCreateRunner(NRunnableTweener tweener)
@@ -120,12 +135,11 @@ namespace Nextension.Tween
                 Debug.LogException(e);
                 return;
             }
+            tweener.invokeBeforeStart();
             bool isCompletedTweener = tweener.duration <= 0;
             if (isCompletedTweener)
             {
-                tweener.invokeOnStart();
-                tweener.forceComplete();
-                tweener.invokeOnComplete();
+                _completedTweeners.Add(tweener);
             }
             else
             {

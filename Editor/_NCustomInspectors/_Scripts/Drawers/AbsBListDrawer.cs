@@ -12,11 +12,13 @@ namespace Nextension.NEditor
         }
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginChangeCheck();
             EditorGUI.PropertyField(position, property, label, true);
             if (!EditorGUIUtility.editingTextField)
             {
                 (NEditorHelper.getValue(property) as IBList).Sort();
             }
+            EditorGUI.EndChangeCheck();
         }
     }
 }

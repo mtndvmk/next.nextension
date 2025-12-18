@@ -22,9 +22,9 @@ namespace Nextension
             _actions.addIfNotPresent(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void remove(Action callback)
+        public bool remove(Action callback)
         {
-            _actions.removeSwapBack(callback);
+            return _actions.removeSwapBack(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void clear()
@@ -98,6 +98,10 @@ namespace Nextension
     }
     public class NAction<T>
     {
+        public List<Action<T>>.Enumerator GetEnumerator()
+        {
+            return _actions.GetEnumerator();
+        }
         private readonly List<Action<T>> _actions = new();
         public int Count => _actions.Count;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,9 +116,9 @@ namespace Nextension
             _actions.addIfNotPresent(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void remove(Action<T> callback)
+        public bool remove(Action<T> callback)
         {
-            _actions.removeSwapBack(callback);
+            return _actions.removeSwapBack(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void clear()
@@ -197,9 +201,9 @@ namespace Nextension
             _nAction.add(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void remove(Action callback)
+        public bool remove(Action callback)
         {
-            _nAction.remove(callback);
+            return _nAction.remove(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void clear()
@@ -245,9 +249,9 @@ namespace Nextension
             _nAction.add(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void remove(Action<T> callback)
+        public bool remove(Action<T> callback)
         {
-            _nAction.remove(callback);
+            return _nAction.remove(callback);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void clear()

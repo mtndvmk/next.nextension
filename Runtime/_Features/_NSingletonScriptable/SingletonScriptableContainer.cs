@@ -171,7 +171,7 @@ namespace Nextension
         private bool addNonPreloadScriptable(ScriptableObject scriptable)
         {
             var existItem = _nonPreloadScriptables.Find(item => item.getScriptableType() == scriptable.GetType());
-            NAssetUtils.getPathInMainResources(scriptable, out var path);
+            NEditorAssetUtils.getPathInMainResources(scriptable, out var path);
             path = path.removeExtension();
             if (existItem == null)
             {

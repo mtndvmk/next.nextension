@@ -5,6 +5,6 @@ namespace Nextension.UI.NEditor
     [CustomEditor(typeof(GridSnapScrollRect))]
     public class GridSnapScrollRect_Editor : Editor
     {
-
+        // To render inspector of GridSnapScrollRect with custom field
     }
 }

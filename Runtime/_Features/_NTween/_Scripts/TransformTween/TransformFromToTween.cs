@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using UnityEngine;
@@ -20,32 +19,44 @@ namespace Nextension.Tween
                 this._target = target;
                 _transformTweenType = transformTweenType;
             }
-            internal override void forceComplete()
+
+            private void applyValue(TValue value)
             {
                 switch (_transformTweenType)
                 {
                     case TransformTweenType.Local_Position:
-                        _target.localPosition = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
+                        _target.localPosition = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
                         break;
                     case TransformTweenType.World_Position:
-                        _target.position = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
+                        _target.position = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
                         break;
                     case TransformTweenType.Local_Scale:
-                        _target.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(destination);
+                        _target.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
                         break;
                     case TransformTweenType.Uniform_Local_Scale:
-                        var x = NConverter.bitConvertWithoutChecks<TValue, float>(destination);
+                        var x = NConverter.bitConvertWithoutChecks<TValue, float>(value);
                         _target.localScale = new(x, x, x);
                         break;
                     case TransformTweenType.Local_Rotation:
-                        _target.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(destination);
+                        _target.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
                         break;
                     case TransformTweenType.World_Rotation:
-                        _target.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(destination);
+                        _target.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
                         break;
                     default:
                         throw new NotImplementedException(_transformTweenType.ToString());
                 }
+            }
+            protected override void onResetState()
+            {
+                base.onResetState();
+                applyValue(from);
+            }
+            internal override void forceComplete()
+            {
+                applyValue(destination);
+                invokeOnUpdate();
+                invokeOnComplete();
             }
             public override TransformFromToData<TValue> getJobData()
             {
@@ -70,12 +81,10 @@ namespace Nextension.Tween
                 };
                 return jobData;
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override AbsTweenRunner createRunner()
             {
                 return new TweenRunner<Chunk>();
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override ushort getRunnerId()
             {
                 return TweenRunnerIdCache<TweenRunner<Chunk>>.id;
@@ -93,7 +102,7 @@ namespace Nextension.Tween
             [ReadOnly] private NativeArray<byte> _mask;
             [ReadOnly] private NativeArray<TransformFromToData<TValue>> _jobDataNativeArr;
 
-            internal Job(NativeArray<TransformFromToData<TValue>> jobDataNativeArr, NativeArray<byte> mask)
+            internal Job(in NativeArray<TransformFromToData<TValue>> jobDataNativeArr, in NativeArray<byte> mask)
             {
                 _jobDataNativeArr = jobDataNativeArr;
                 _mask = mask;

@@ -167,11 +167,11 @@ namespace Nextension
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static NInteger fromBytes(byte[] src, int startIndex = 0)
+        public static NInteger fromBytes(ReadOnlySpan<byte> src, int startIndex = 0)
         {
             return fromBytes(src, ref startIndex);
         }
-        public unsafe static NInteger fromBytes(byte[] src, ref int startIndex)
+        public unsafe static NInteger fromBytes(ReadOnlySpan<byte> src, ref int startIndex)
         {
             var firstNum = src[startIndex++];
             if (firstNum == 0)

@@ -31,13 +31,27 @@ namespace Nextension
         /// </summary>
         public static long LatestUpdatedTimeMs { get; private set; }
         /// <summary>
+        /// time in seconds from initialization to latest frame
+        /// </summary>
+        public static float LatestUpdatedTime => LatestUpdatedTimeMs * 0.001f;
+        /// <summary>
         /// time in milliseconds from initialization to now 
         /// </summary>
         public static long CurrentTimeMs => _stopwatch.ElapsedMilliseconds;
         /// <summary>
+        /// time in seconds from initialization to now 
+        /// </summary>
+        public static float CurrentTime => _stopwatch.ElapsedMilliseconds * 0.001f;
+
+        /// <summary>
         /// time in milliseconds between the last two frames
         /// </summary>
         public static int DeltaTimeMs { get; private set; }
+        /// <summary>
+        /// time in seconds between the last two frames
+        /// </summary>
+        public static float DeltaTime => DeltaTimeMs * 0.001f;
+
 
         public static uint UpdateCount => _isUpdatedInNewFrame ? _updateCount : (_updateCount + 1);
 
@@ -75,10 +89,9 @@ namespace Nextension
                 _updateCount++;
                 _isUpdatedInNewFrame = true;
 
-                var currentTime = _stopwatch.ElapsedMilliseconds;
-
-                DeltaTimeMs = (int)(currentTime - LatestUpdatedTimeMs);
-                LatestUpdatedTimeMs = currentTime;
+                var currentTimeMs = _stopwatch.ElapsedMilliseconds;
+                DeltaTimeMs = (int)(currentTimeMs - LatestUpdatedTimeMs);
+                LatestUpdatedTimeMs = currentTimeMs;
 
                 invokeEvent(onUpdateEvent);
                 invokeAndClear(onUpdateOnceTimeEvent);

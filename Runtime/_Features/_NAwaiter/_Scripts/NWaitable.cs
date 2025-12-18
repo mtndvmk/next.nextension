@@ -216,6 +216,19 @@ namespace Nextension
             waitable.addCompletedEvent(action);
             return waitable;
         }
+        public static void runDelay(float second, Action delayCallback)
+        {
+            _ = runDelayAsync(second, delayCallback);
+        }
+        public static async NWaitable runDelayAsync(float second, Action delayCallback)
+        {
+            if (delayCallback == null)
+            {
+                throw new NullReferenceException("NAwaiter.runDelay.delayCallback");
+            }
+            await new NWaitSecond(second);
+            delayCallback.Invoke();
+        }
     }
     [AsyncMethodBuilder(typeof(AsyncWaitableBuilder<>))]
     public class NWaitable<T> : AbsNWaitable

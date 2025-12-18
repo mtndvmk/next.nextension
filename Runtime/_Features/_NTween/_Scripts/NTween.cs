@@ -68,13 +68,13 @@ namespace Nextension.Tween
         }
         public static NRunnableTweener scaleTo(Transform target, float3 destination, float duration)
         {
-            NRunnableTweener tweener = NTweenerCreator.createTransformFromToTweener(target, destination, duration, TransformTweenType.Local_Scale);
+            var tweener = NTweenerCreator.createTransformFromToTweener(target, destination, duration, TransformTweenType.Local_Scale);
             tweener.schedule();
             return tweener;
         }
         public static NRunnableTweener scaleTo(Transform target, float destination, float duration)
         {
-            NRunnableTweener tweener = NTweenerCreator.createTransformFromToTweener(target, destination, duration, TransformTweenType.Uniform_Local_Scale);
+            var tweener = NTweenerCreator.createTransformFromToTweener(target, destination, duration, TransformTweenType.Uniform_Local_Scale);
             tweener.schedule();
             return tweener;
         }
@@ -180,41 +180,77 @@ namespace Nextension.Tween
         #endregion
 
         #region ValueTween
-        public static NRunnableTweener fromTo<T>(T from, T destination, float duration, Action<T> onChanged) where T : unmanaged
+        public static NRunnableTweener fromTo(float from, float destination, float duration, Action<float> onChanged)
         {
-#if UNITY_EDITOR
-            if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
-            {
-                throw new NotSupportedException();
-            }
-#endif
+            NRunnableTweener tweener = NTweenerCreator.createFromToValueTweener(from, destination, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener fromTo(float2 from, float2 destination, float duration, Action<float2> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createFromToValueTweener(from, destination, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener fromTo(float3 from, float3 destination, float duration, Action<float3> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createFromToValueTweener(from, destination, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener fromTo(float4 from, float4 destination, float duration, Action<float4> onChanged)
+        {
             NRunnableTweener tweener = NTweenerCreator.createFromToValueTweener(from, destination, onChanged, duration);
             tweener.schedule();
             return tweener;
         }
 
-        public static NRunnableTweener punchValue<T>(T from, T destination, float duration, Action<T> onChanged) where T : unmanaged
+        public static NRunnableTweener punchValue(float origin, float punchDestination, float duration, Action<float> onChanged)
         {
-#if UNITY_EDITOR
-            if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
-            {
-                throw new NotSupportedException();
-            }
-#endif
-            NRunnableTweener tweener = NTweenerCreator.createPunchValueTweener(from, destination, onChanged, duration);
+            NRunnableTweener tweener = NTweenerCreator.createPunchValueTweener(origin, punchDestination, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener punchValue(float2 origin, float2 punchDestination, float duration, Action<float2> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createPunchValueTweener(origin, punchDestination, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener punchValue(float3 origin, float3 punchDestination, float duration, Action<float3> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createPunchValueTweener(origin, punchDestination, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener punchValue(float4 origin, float4 punchDestination, float duration, Action<float4> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createPunchValueTweener(origin, punchDestination, onChanged, duration);
             tweener.schedule();
             return tweener;
         }
 
-        public static NRunnableTweener shakeValue<T>(T from, float range, float duration, Action<T> onChanged) where T : unmanaged
+        public static NRunnableTweener shakeValue(float origin, float range, float duration, Action<float> onChanged)
         {
-#if UNITY_EDITOR
-            if (NTweenUtils.getSupportedDataType<T>() == SupportedDataType.NotSupported)
-            {
-                throw new NotSupportedException();
-            }
-#endif
-            NRunnableTweener tweener = NTweenerCreator.createShakeValueTweener(from, range, onChanged, duration);
+            NRunnableTweener tweener = NTweenerCreator.createShakeValueTweener(origin, range, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener shakeValue(float2 origin, float range, float duration, Action<float2> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createShakeValueTweener(origin, range, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener shakeValue(float3 origin, float range, float duration, Action<float3> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createShakeValueTweener(origin, range, onChanged, duration);
+            tweener.schedule();
+            return tweener;
+        }
+        public static NRunnableTweener shakeValue(float4 origin, float range, float duration, Action<float4> onChanged)
+        {
+            NRunnableTweener tweener = NTweenerCreator.createShakeValueTweener(origin, range, onChanged, duration);
             tweener.schedule();
             return tweener;
         }

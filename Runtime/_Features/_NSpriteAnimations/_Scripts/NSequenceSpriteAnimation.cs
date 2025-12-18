@@ -24,8 +24,9 @@ namespace Nextension
         [NIndent, NShowIf(nameof(_isLoop)), SerializeField] private bool _isBackAndForthLoop;
 
         [SerializeField, NSlider(-1, nameof(MaxIndex))] private int _requestFrameIndex = -1;
-        [Header("Event")] public UnityEvent onEndOfAnimation;
+        [NGroup("Event")] public UnityEvent onEndOfAnimation;
 
+        private bool _isPlaying;
         private int _currentFrameIndex = 0;
         private float _nextFrameTime;
         private bool _loopbackIsBacking;
@@ -33,8 +34,11 @@ namespace Nextension
         public float Duration => _fps == 0 ? 0 : (float)FrameCount / _fps;
         public int CurrentFrameIndex => _currentFrameIndex;
         public int FrameCount => _spriteFrames == null ? 0 : _spriteFrames.Count;
-        public bool IsPlaying => _requestFrameIndex >= 0;
+        public bool IsPlaying => _isPlaying;
         public int MaxIndex => FrameCount - 1;
+
+        public SpriteRenderer SpriteRenderer => _spriteRenderer;
+        public Image Image => _image;
 
         private void Reset()
         {
@@ -63,7 +67,7 @@ namespace Nextension
         }
         private void Update()
         {
-            if (_requestFrameIndex < 0 || _fps == 0 || FrameCount == 0)
+            if (!_isPlaying || _requestFrameIndex < 0 || _fps == 0 || FrameCount == 0)
             {
                 return;
             }
@@ -89,6 +93,7 @@ namespace Nextension
                     if (_requestFrameIndex < lastestFrameIndex)
                     {
                         _requestFrameIndex++;
+                        _nextFrameTime = Time.time + 1f / _fps;
                     }
                 }
             }
@@ -152,7 +157,7 @@ namespace Nextension
             }
         }
 
-        private void setSprite(int frameIndex)
+        public void setSprite(int frameIndex)
         {
             if (_spriteFrames == null || _spriteFrames.Count == 0)
             {
@@ -168,18 +173,18 @@ namespace Nextension
             }
             setSprite(_spriteFrames[_currentFrameIndex]);
         }
-        private void setSprite(Sprite sprite)
+        public void setSprite(Sprite sprite)
         {
             switch (_targetType)
             {
                 case TargetType.SpriteRenderer:
                     {
-                        _spriteRenderer.sprite = sprite;
+                        if (_spriteRenderer) _spriteRenderer.sprite = sprite;
                         break;
                     }
                 case TargetType.Image:
                     {
-                        _image.sprite = sprite;
+                        if (_image) _image.sprite = sprite;
                         break;
                     }
                 default:
@@ -196,6 +201,8 @@ namespace Nextension
             }
             _requestFrameIndex = startFrameIndex;
             _nextFrameTime = Time.time + 1 / _fps;
+            _isPlaying = true;
+            setSprite(startFrameIndex);
         }
 
         public void play(ICollection<Sprite> sprites, uint fps, int startFrameIndex = 0)
@@ -220,6 +227,7 @@ namespace Nextension
         {
             if (IsPlaying)
             {
+                _isPlaying = false;
                 _requestFrameIndex = -1;
             }
         }

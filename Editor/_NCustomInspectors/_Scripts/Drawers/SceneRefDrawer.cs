@@ -13,9 +13,10 @@ namespace Nextension.NEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginChangeCheck();
             var sceneRef = NEditorHelper.getValue<SceneRef>(property);
             bool isDirty = false;
-            string guid = sceneRef.GUID;
+            var guid = sceneRef.GUID;
             SceneAsset sceneAsset;
 
             if (string.IsNullOrEmpty(guid))
@@ -45,9 +46,10 @@ namespace Nextension.NEditor
 
             var guiContent = new GUIContent(label.text);
             var newAsset = EditorGUI.ObjectField(position, guiContent, sceneAsset, typeof(SceneAsset), false);
+
             if (newAsset != sceneAsset)
             {
-                guid = NAssetUtils.getGUID(newAsset);
+                guid = NEditorAssetUtils.getGUID(newAsset);
                 isDirty = true;
             }
 
@@ -55,8 +57,8 @@ namespace Nextension.NEditor
             {
                 sceneRef.setGUID(guid);
                 NAssetUtils.setDirty(property.serializedObject.targetObject);
-                SceneRefPathManager.Instance.addOrUpdate(guid);
             }
+            EditorGUI.EndChangeCheck();
         }
     }
 }

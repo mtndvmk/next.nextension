@@ -45,7 +45,7 @@ namespace Nextension
             for (int i = _actions.Count - 1; i >= 0; i--)
             {
                 var v = span[i];
-                if (v.inScene.HasValue && v.inScene.Value == scene)
+                if (v.HasActiveScene && v.activeScene == scene)
                 {
                     _actions.removeAtSwapBack(i);
                     clearCount++;
@@ -65,16 +65,16 @@ namespace Nextension
             }
             else
             {
-                run(action, null);
+                run(action, activeScene: default);
             }
         }
-        public static void run(Action action, Scene? inScene)
+        public static void run(Action action, Scene activeScene)
         {
             initialize();
             _actions.Add(new ActionData()
             {
                 action = action,
-                inScene = inScene,
+                activeScene = activeScene,
             });
         }
         public static void clear()
@@ -95,10 +95,12 @@ namespace Nextension
                 }
             }
         }
-        private class ActionData
+        private struct ActionData
         {
             public Action action;
-            internal Scene? inScene;
+            internal Scene activeScene;
+
+            public bool HasActiveScene => activeScene.IsValid();
         }
     }
 }

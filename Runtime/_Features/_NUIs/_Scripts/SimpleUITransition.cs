@@ -12,11 +12,11 @@ namespace Nextension.UI
         public Action onBeforeShowEvent;
         public Action onBeforeHideEvent;
 
-        protected override void onBeforeShow()
+        protected override void onDerivedBeforeShow()
         {
             onBeforeShowEvent?.Invoke();
         }
-        protected override void onBeforeHide()
+        protected override void onDerivedBeforeHide()
         {
             onBeforeHideEvent?.Invoke();
         }

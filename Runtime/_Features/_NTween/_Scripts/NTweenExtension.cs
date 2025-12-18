@@ -55,6 +55,16 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
+        public static NRunnableTweener scaleFromTo(this Transform target, Vector3 from, Vector3 destination, float duration)
+        {
+            target.localScale = from;
+            return scaleTo(target, destination, duration);
+        }
+        public static NRunnableTweener scaleFromTo(this Transform target, float from, float destination, float duration)
+        {
+            target.setScale(from);
+            return scaleTo(target, destination, duration);
+        }
 
         public static NRunnableTweener punchPosition(this Transform target, Vector3 punchDestination, float duration, bool isLocalSpace = true)
         {
@@ -165,6 +175,32 @@ namespace Nextension.Tween
         {
             var fromColor = target.GetColor();
             var tweener = NTween.fromTo(fromColor.toFloat4(), destination.toFloat4(), duration, c => target.SetColor(c.toColor()));
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+
+        public static NRunnableTweener hsvTo(this Graphic target, Color destination, float duration)
+        {
+            var tweener = NTween.fromTo(target.color.toHsvFloat4(), destination.toHsvFloat4(), duration, c => target.color = c.toHsvColor());
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+        public static NRunnableTweener hsvTo(this Material target, Color destination, float duration)
+        {
+            var tweener = NTween.fromTo(target.color.toHsvFloat4(), destination.toHsvFloat4(), duration, c => target.color = c.toHsvColor());
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+        public static NRunnableTweener hsvTo(this SpriteRenderer target, Color destination, float duration)
+        {
+            var tweener = NTween.fromTo(target.color.toHsvFloat4(), destination.toHsvFloat4(), duration, c => target.color = c.toHsvColor());
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
+        public static NRunnableTweener hsvTo(this CanvasRenderer target, Color destination, float duration)
+        {
+            var fromColor = target.GetColor();
+            var tweener = NTween.fromTo(fromColor.toHsvFloat4(), destination.toHsvFloat4(), duration, c => target.SetColor(c.toHsvColor()));
             tweener.setCancelControlKey(target);
             return tweener;
         }

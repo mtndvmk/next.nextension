@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Burst;
@@ -22,7 +21,6 @@ namespace Nextension
     {
         #region Number & Bit mask
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isPOT(float n)
         {
             int int_n = (int)n;
@@ -33,7 +31,6 @@ namespace Nextension
             return isPOT(int_n);
         }
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isPOT(int n)
         {
             return (n & (n - 1)) == 0 && n > 0;
@@ -42,7 +39,6 @@ namespace Nextension
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe bool checkBitMask<T>(T mask, int bitIndex) where T : unmanaged, Enum
         {
             var intOfEnum = *(int*)&mask;
@@ -52,7 +48,6 @@ namespace Nextension
         /// return true if (mask & filter) is not equal 0, otherwise return false
         /// </summary>
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe bool checkMask<T>(T mask, T filter) where T : unmanaged, Enum
         {
             return ((*(int*)&mask) & (*(int*)&filter)) != 0;
@@ -61,7 +56,6 @@ namespace Nextension
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(int mask, int bitIndex)
         {
             return (mask & (1 << bitIndex)) != 0;
@@ -70,13 +64,11 @@ namespace Nextension
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(long longMask, int bitIndex)
         {
             return (longMask & (1L << bitIndex)) != 0;
         }
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(byte[] byteMask, int bitIndex)
         {
             int byteIndex = bitIndex >> 3;
@@ -85,7 +77,6 @@ namespace Nextension
             return (mask & 1 << maskIndex) != 0;
         }
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool checkBitMask(NativeArray<byte> byteMask, int bitIndex)
         {
             int byteIndex = bitIndex >> 3;
@@ -422,17 +413,17 @@ namespace Nextension
             return -1;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static int setBit0(int mask, int bitIndex)
         {
             return mask &= ~(1 << bitIndex);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static long setBit0(long mask, int bitIndex)
         {
             return mask &= ~(1L << bitIndex);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setBit0(this byte[] bytes, int bitIndex)
         {
             var byteIndex = bitIndex >> 3;
@@ -440,7 +431,7 @@ namespace Nextension
             bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setBit0(this NativeArray<byte> bytes, int bitIndex)
         {
             var byteIndex = bitIndex >> 3;
@@ -448,17 +439,17 @@ namespace Nextension
             bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static int setBit1(int mask, int bitIndex)
         {
             return mask |= 1 << bitIndex;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static long setBit1(long mask, int bitIndex)
         {
             return mask |= 1L << bitIndex;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setBit1(this byte[] bytes, int bitIndex)
         {
             var byteIndex = bitIndex >> 3;
@@ -466,7 +457,7 @@ namespace Nextension
             bytes[byteIndex] |= (byte)(1 << bitIndex);
         }
         [BurstCompile]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setBit1(this NativeArray<byte> bytes, int bitIndex)
         {
             var byteIndex = bitIndex >> 3;
@@ -568,7 +559,7 @@ namespace Nextension
         #region Unity Transform and Point
 
         #region Vector2
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static bool hasZeroAxis(this Vector2 vector2)
         {
             return vector2.x == 0 || vector2.y == 0;
@@ -641,7 +632,7 @@ namespace Nextension
         public static Vector2 findNearest(ReadOnlySpan<Vector2> fromSpan, Vector2 dst)
         {
             int fromCount = fromSpan.Length;
-            if (fromCount == 0) throw new Exception("fromSpan is empty"); 
+            if (fromCount == 0) throw new Exception("fromSpan is empty");
             Vector2 result = fromSpan[0];
             float min = (result - dst).sqrMagnitude;
             for (int i = 1; i < fromCount; i++)
@@ -671,7 +662,7 @@ namespace Nextension
             }
             return result;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static float maxAxis(this Vector2 vector2)
         {
@@ -680,24 +671,24 @@ namespace Nextension
         #endregion
 
         #region Vector3
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static bool hasZeroAxis(this Vector3 vector3)
         {
             return vector3.x == 0 || vector3.y == 0 || vector3.z == 0;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 setX(this Vector3 vector3, float x)
         {
             vector3.x = x;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 setY(this Vector3 vector3, float y)
         {
             vector3.y = y;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 setZ(this Vector3 vector3, float z)
         {
             vector3.z = z;
@@ -719,19 +710,19 @@ namespace Nextension
             }
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 plusX(this Vector3 vector3, float x)
         {
             vector3.x += x;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 plusY(this Vector3 vector3, float y)
         {
             vector3.y += y;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 plusZ(this Vector3 vector3, float z)
         {
             vector3.z += z;
@@ -751,19 +742,19 @@ namespace Nextension
             vector3.z += z;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 mulX(this Vector3 vector3, float x)
         {
             vector3.x *= x;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 mulY(this Vector3 vector3, float y)
         {
             vector3.y *= y;
             return vector3;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector3 mulZ(this Vector3 vector3, float z)
         {
             vector3.z *= z;
@@ -854,7 +845,7 @@ namespace Nextension
             }
             return result;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static float maxAxis(this Vector3 vector3)
         {
@@ -862,36 +853,54 @@ namespace Nextension
         }
         #endregion
 
-        #region Vector4
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        #region Vector4 & Quaternion
+
         [BurstCompile]
         public static Vector4 toVector4(this Quaternion quaternion)
         {
             return NConverter.bitConvertWithoutChecks<Quaternion, Vector4>(quaternion);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static Quaternion toQuaternion(this Vector4 vector4)
         {
             return NConverter.bitConvertWithoutChecks<Vector4, Quaternion>(vector4);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static float4 toFloat4(this Quaternion quaternion)
         {
             return NConverter.bitConvertWithoutChecks<Quaternion, float4>(quaternion);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static Quaternion toQuaternion(this float4 f4)
         {
             return NConverter.bitConvertWithoutChecks<float4, Quaternion>(f4);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static float maxAxis(this Vector4 vector4)
         {
             return Mathf.Max(vector4.x, vector4.y, vector4.z, vector4.w);
+        }
+
+        [BurstCompile]
+        public static Vector3 up(this Quaternion quaternion)
+        {
+            return quaternion * Vector3.up;
+        }
+
+        [BurstCompile]
+        public static Vector3 right(this Quaternion quaternion)
+        {
+            return quaternion * Vector3.right;
+        }
+
+        [BurstCompile]
+        public static Vector3 forward(this Quaternion quaternion)
+        {
+            return quaternion * Vector3.forward;
         }
         #endregion
 
@@ -928,6 +937,32 @@ namespace Nextension
             {
                 self.position = self.position.setZ(z);
             }
+        }
+        public static void setAnchorMinX(this RectTransform self, float x)
+        {
+            self.anchorMin = self.anchorMin.setX(x);
+        }
+        public static void setAnchorMinY(this RectTransform self, float y)
+        {
+            self.anchorMin = self.anchorMin.setY(y);
+        }
+        public static void setAnchorMaxX(this RectTransform self, float x)
+        {
+            self.anchorMax = self.anchorMax.setX(x);
+        }
+        public static void setAnchorMaxY(this RectTransform self, float y)
+        {
+            self.anchorMax = self.anchorMax.setY(y);
+        }
+        public static void setAnchorX(this RectTransform self, float x)
+        {
+            self.anchorMin = self.anchorMin.setX(x);
+            self.anchorMax = self.anchorMax.setX(x);
+        }
+        public static void setAnchorY(this RectTransform self, float y)
+        {
+            self.anchorMin = self.anchorMin.setY(y);
+            self.anchorMax = self.anchorMax.setY(y);
         }
         public static void setAnchorPositionX(this RectTransform self, float x)
         {
@@ -1102,6 +1137,19 @@ namespace Nextension
         {
             self.localScale = Vector3.one;
         }
+        public static void resetPosAndRot(this Transform self, bool isLocal = true)
+        {
+            if (isLocal)
+            {
+                self.localPosition = Vector3.zero;
+                self.localRotation = Quaternion.identity;
+            }
+            else
+            {
+                self.position = Vector3.zero;
+                self.rotation = Quaternion.identity;
+            }
+        }
         public static void resetPosAndScale(this Transform self, bool isLocal = true)
         {
             if (isLocal)
@@ -1137,7 +1185,7 @@ namespace Nextension
             self.localScale = Vector3.one;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static Vector2 getBottomLeft(this Rect rect)
         {
@@ -1145,7 +1193,7 @@ namespace Nextension
             float y = rect.y;
             return new Vector2(x, y);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static Vector2 getTopLeft(this Rect rect)
         {
@@ -1153,7 +1201,7 @@ namespace Nextension
             float yMax = rect.yMax;
             return new Vector2(x, yMax);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static Vector2 getTopRight(this Rect rect)
         {
@@ -1161,7 +1209,7 @@ namespace Nextension
             float yMax = rect.yMax;
             return new Vector2(xMax, yMax);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         [BurstCompile]
         public static Vector2 getBottomRight(this Rect rect)
         {
@@ -1229,6 +1277,18 @@ namespace Nextension
             {
                 return point;
             }
+        }
+        public static Rect getRectInParentSpace(this RectTransform self)
+        {
+            Rect result = self.rect;
+            Vector2 vector = self.offsetMin + Vector2.Scale(self.pivot, result.size);
+            if (self.parent is RectTransform component)
+            {
+                vector += Vector2.Scale(self.anchorMin, component.rect.size);
+            }
+            result.x += vector.x;
+            result.y += vector.y;
+            return result;
         }
         public static void setPivotWithoutChangePosition(this RectTransform rectTransform, Vector2 pivot)
         {
@@ -1307,23 +1367,23 @@ namespace Nextension
         #endregion
 
         #region Camera matrix
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Matrix4x4 getWorldToViewportMatrix(Camera camera)
         {
             return camera.projectionMatrix * camera.worldToCameraMatrix;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Matrix4x4 getViewportToWorldMatrix(Camera camera)
         {
             return Matrix4x4.Inverse(getWorldToViewportMatrix(camera));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector2 viewportToScreenPoint(Vector2 viewportPoint)
         {
             return new Vector2(viewportPoint.x * Screen.width, viewportPoint.y * Screen.height);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static Vector2 screenToViewportPoint(Vector2 screenPoint)
         {
             return new Vector2(screenPoint.x / Screen.width, screenPoint.y / Screen.height);
@@ -1357,6 +1417,103 @@ namespace Nextension
         {
             var viewportPoint = screenToViewportPoint(screenPoint);
             return viewportToWorldPoint(viewport2WorldMatrix, viewportPoint);
+        }
+
+
+        public static Matrix4x4 getWorldToProjectionMatrix(Matrix4x4 projectionMatrix, Matrix4x4 worldToCameraMatrix)
+        {
+            return projectionMatrix * worldToCameraMatrix;
+        }
+
+        public static bool isPointInsideFrustum(Plane plane0, Plane plane1, Plane plane2, Plane plane3, Plane plane4, Plane plane5, Vector3 point)
+        {
+            if (!plane0.GetSide(point)) return false;
+            if (!plane1.GetSide(point)) return false;
+            if (!plane2.GetSide(point)) return false;
+            if (!plane3.GetSide(point)) return false;
+            if (!plane4.GetSide(point)) return false;
+            if (!plane5.GetSide(point)) return false;
+            return true;
+        }
+        public static bool isBehindPlaneAABB(Plane plane, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Vector3 p5, Vector3 p6, Vector3 p7)
+        {
+            if (plane.GetSide(p0) == true) return false;
+            if (plane.GetSide(p1) == true) return false;
+            if (plane.GetSide(p2) == true) return false;
+            if (plane.GetSide(p3) == true) return false;
+            if (plane.GetSide(p4) == true) return false;
+            if (plane.GetSide(p5) == true) return false;
+            if (plane.GetSide(p6) == true) return false;
+            if (plane.GetSide(p7) == true) return false;
+            return true;
+        }
+        public static void calculateFrustumPlanes(Matrix4x4 worldToProjectionMatrix, NativeArray<Plane> planes)
+        {
+            if (planes == null || planes.Length < 6) throw new ArgumentException("planes must be an array of length >= 6");
+
+            // rows of matrix
+            var r0 = new Vector4(worldToProjectionMatrix.m00, worldToProjectionMatrix.m01, worldToProjectionMatrix.m02, worldToProjectionMatrix.m03);
+            var r1 = new Vector4(worldToProjectionMatrix.m10, worldToProjectionMatrix.m11, worldToProjectionMatrix.m12, worldToProjectionMatrix.m13);
+            var r2 = new Vector4(worldToProjectionMatrix.m20, worldToProjectionMatrix.m21, worldToProjectionMatrix.m22, worldToProjectionMatrix.m23);
+            var r3 = new Vector4(worldToProjectionMatrix.m30, worldToProjectionMatrix.m31, worldToProjectionMatrix.m32, worldToProjectionMatrix.m33);
+
+            planes[0] = makePlane(r3 + r0); // Left
+            planes[1] = makePlane(r3 - r0); // Right
+            planes[2] = makePlane(r3 + r1); // Bottom
+            planes[3] = makePlane(r3 - r1); // Top
+            planes[4] = makePlane(r3 + r2); // Near
+            planes[5] = makePlane(r3 - r2); // Far
+        }
+
+        public static Plane makePlane(in Vector4 p)
+        {
+            var n = new Vector3(p.x, p.y, p.z);
+            float d = p.w / n.magnitude;
+
+            var plane = new Plane
+            {
+                normal = n.normalized,
+                distance = d
+            };
+            return plane;
+        }
+        public static CullType isInFrustum(Matrix4x4 worldToProjectionMatrix, Bounds b)
+        {
+            var planes = new NativeArray<Plane>(6, Allocator.Temp);
+            calculateFrustumPlanes(worldToProjectionMatrix, planes);
+            var cullType = isInFrustum(planes[0], planes[1], planes[2], planes[3], planes[4], planes[5], b);
+            planes.Dispose();
+            return cullType;
+        }
+
+        public static CullType isInFrustum(Plane plane0, Plane plane1, Plane plane2, Plane plane3, Plane plane4, Plane plane5, Bounds b)
+        {
+            Vector3 p0 = b.min;
+            Vector3 p1 = b.min + Vector3.right * b.size.x;
+            Vector3 p2 = b.min + Vector3.forward * b.size.z;
+            Vector3 p3 = b.min + Vector3.right * b.size.x + Vector3.forward * b.size.z;
+            Vector3 p4 = p0 + Vector3.up * b.size.y;
+            Vector3 p5 = p1 + Vector3.up * b.size.y;
+            Vector3 p6 = p2 + Vector3.up * b.size.y;
+            Vector3 p7 = p3 + Vector3.up * b.size.y;
+
+            if (isBehindPlaneAABB(plane0, p0, p1, p2, p3, p4, p5, p6, p7)) return CullType.CULLED;
+            if (isBehindPlaneAABB(plane1, p0, p1, p2, p3, p4, p5, p6, p7)) return CullType.CULLED;
+            if (isBehindPlaneAABB(plane2, p0, p1, p2, p3, p4, p5, p6, p7)) return CullType.CULLED;
+            if (isBehindPlaneAABB(plane3, p0, p1, p2, p3, p4, p5, p6, p7)) return CullType.CULLED;
+            if (isBehindPlaneAABB(plane4, p0, p1, p2, p3, p4, p5, p6, p7)) return CullType.CULLED;
+            if (isBehindPlaneAABB(plane5, p0, p1, p2, p3, p4, p5, p6, p7)) return CullType.CULLED;
+
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p0)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p1)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p2)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p3)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p4)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p5)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p6)) return CullType.PARTIALLY_VISIBLE;
+            if (!isPointInsideFrustum(plane0, plane1, plane2, plane3, plane4, plane5, p7)) return CullType.PARTIALLY_VISIBLE;
+
+            return CullType.VISIBLE;
         }
         #endregion
 
@@ -1464,30 +1621,51 @@ namespace Nextension
         }
         public static byte[] to4Bytes(this Color color)
         {
-            return NConverter.getBytes(color.toInt32());
+            return NConverter.getBytes(color.toNumber());
         }
         /// <summary>
         /// 4 bytes to color
         /// </summary>
         public static Color bytesToColor(byte[] inData, int startIndex = 0)
         {
-            return fromInt32(NConverter.fromBytesWithoutChecks<int>(inData, startIndex));
+            return numberToColor(NConverter.fromBytesWithoutChecks<uint>(inData, startIndex));
         }
-        public static int toInt32(this Color color)
+        public static uint toNumber(this Color color)
         {
             byte r = (byte)Math.Round(color.r * 255);
             byte g = (byte)Math.Round(color.g * 255);
             byte b = (byte)Math.Round(color.b * 255);
             byte a = (byte)Math.Round(color.a * 255);
-            return r | g << 8 | b << 16 | a << 24;
+            return NConverter.bitConvertWithoutChecks<int, uint>(r | g << 8 | b << 16 | a << 24);
         }
-        public static Color fromInt32(int from)
+        public static float4 toHsvFloat4(this Color color)
+        {
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            return new float4(h, s, v, color.a);
+        }
+        public static Color numberToColor(uint from)
         {
             float a = (from >> 24 & 0xFF) / 255f;
             float b = (from >> 16 & 0xFF) / 255f;
             float g = (from >> 8 & 0xFF) / 255f;
             float r = (from & 0xFF) / 255f;
             return new Color(r, g, b, a);
+        }
+        public static unsafe string numberColorToHex(this uint numColor)
+        {
+            var ptr = (byte*)&numColor;
+            return bytesToHex(ptr, 4);
+        }
+        public static unsafe uint hexColorToNumber(this string hex)
+        {
+            return hexColorToNumber(hex.AsSpan());
+        }
+        public static unsafe uint hexColorToNumber(this ReadOnlySpan<char> hexSpan)
+        {
+            uint result = 0xffffffff;
+            var ptr = (byte*)&result;
+            internal_hexToBytes(hexSpan, ptr);
+            return result;
         }
         public static float4 toFloat4(this Color from)
         {
@@ -1496,6 +1674,10 @@ namespace Nextension
         public static Color toColor(this float4 from)
         {
             return NConverter.bitConvertWithoutChecks<float4, Color>(from);
+        }
+        public static Color toHsvColor(this float4 from)
+        {
+            return Color.HSVToRGB(from.x, from.y, from.z).setA(from.w);
         }
         #endregion
 
@@ -1553,17 +1735,24 @@ namespace Nextension
             }
             return true;
         }
-        public static unsafe string toHex(this byte[] inData, bool include0xPrefix = false)
+        public static unsafe string bytesToHex(this byte[] inData, bool include0xPrefix = false)
         {
             fixed (byte* ptr = inData)
             {
-                return toHex(ptr, inData.Length, include0xPrefix);
+                return bytesToHex(ptr, inData.Length, include0xPrefix);
             }
         }
-        public static unsafe string toHex(byte* inData, int inDataLength, bool include0xPrefix = false)
+        public static unsafe string bytesToHex(this Span<byte> inData, bool include0xPrefix = false)
+        {
+            fixed (byte* ptr = inData)
+            {
+                return bytesToHex(ptr, inData.Length, include0xPrefix);
+            }
+        }
+        public static unsafe string bytesToHex(byte* inData, int inDataLength, bool include0xPrefix = false)
         {
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
-            StringBuilder sb = new(hexLength);
+            using var sb = NStringBuilder.get(hexLength);
             if (include0xPrefix)
             {
                 sb.Append('0');
@@ -1580,56 +1769,81 @@ namespace Nextension
             }
             return sb.ToString();
         }
-        private static Dictionary<char, byte> _hexTable;
-
+        private static ReadOnlySpan<char> internal_getHexNoPrefix(string hex, int startIndex, int hexLength)
+        {
+            var c0 = hex[startIndex];
+            var c1 = hex[startIndex + 1];
+            if (c0 == '0' && (c1 == 'x' || c1 == 'X'))
+            {
+                startIndex += 2;
+                hexLength -= 2;
+            }
+            return hex.AsSpan(startIndex, hexLength);
+        }
+        private static unsafe void internal_hexToBytes(ReadOnlySpan<char> hexSpan, byte* dst)
+        {
+            var hexLength = hexSpan.Length;
+            if ((hexLength & 1) != 0) throw new Exception($"Invalid hex length: {nameof(hexSpan)}({hexSpan.ToString()})");
+            for (int i = 0; i < hexLength;)
+            {
+                var index = i >> 1;
+                var c0 = byteOfHex(hexSpan[i++]);
+                var c1 = byteOfHex(hexSpan[i++]);
+                dst[index] = (byte)(c0 << 4 | c1);
+            }
+        }
+        public static byte byteOfHex(char hexChar)
+        {
+            return hexChar switch
+            {
+                >= '0' and <= '9' => (byte)(hexChar - '0'),
+                >= 'A' and <= 'F' => (byte)(hexChar - 'A' + 10),
+                >= 'a' and <= 'f' => (byte)(hexChar - 'a' + 10),
+                _ => throw new ArgumentException($"Invalid hex character: {hexChar}")
+            };
+        }
         /// <summary>
         /// Require hex length mod 2 == 0
         /// </summary>
-        /// <param name="hex"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public static byte[] hexToBytes(this string hex, int startIndex = 0)
+        public static unsafe byte[] hexToBytes(this string hex, int startIndex = 0)
         {
-            if (((hex.Length - startIndex) & 1) != 0)
-            {
-                throw new Exception("Invalid hex: " + hex);
-            }
-            ReadOnlySpan<char> hexSpan;
-            if (hex[startIndex] == '0' && (hex[startIndex + 1] == 'x' || hex[startIndex + 1] == 'X'))
-            {
-                hexSpan = hex.AsSpan(startIndex + 2);
-            }
-            else
-            {
-                hexSpan = hex.AsSpan(startIndex);
-            }
-            if (_hexTable == null)
-            {
-                _hexTable = new Dictionary<char, byte>(22);
-                byte num = 0;
-                for (char i = '0'; i <= '9'; ++i)
-                {
-                    _hexTable[i] = num++;
-                }
-                _hexTable['A'] = _hexTable['a'] = 10;
-                _hexTable['B'] = _hexTable['b'] = 11;
-                _hexTable['C'] = _hexTable['c'] = 12;
-                _hexTable['D'] = _hexTable['d'] = 13;
-                _hexTable['E'] = _hexTable['e'] = 14;
-                _hexTable['F'] = _hexTable['f'] = 15;
-            }
+            var hexLength = hex.Length;
+            var hexSpan = internal_getHexNoPrefix(hex, startIndex, hexLength);
 
-            byte[] bytes = new byte[hexSpan.Length >> 1];
-            for (int i = 0; i < bytes.Length; ++i)
+            byte[] result = new byte[hexSpan.Length >> 1];
+            fixed (byte* ptr = result)
             {
-                var i2 = i << 1;
-                var c0 = _hexTable[hexSpan[i2]];
-                var c1 = _hexTable[hexSpan[i2 + 1]];
-                bytes[i] = (byte)(c0 << 4 | c1);
+                internal_hexToBytes(hexSpan, ptr);
             }
-
-            return bytes;
+            return result;
         }
+        /// <summary>
+        /// Require hex length mod 2 == 0
+        /// </summary>
+        public static unsafe byte[] hexToBytes(this ReadOnlySpan<char> hexSpan)
+        {
+            var hexLength = hexSpan.Length;
+            byte[] result = new byte[hexSpan.Length >> 1];
+            fixed (byte* ptr = result)
+            {
+                internal_hexToBytes(hexSpan, ptr);
+            }
+            return result;
+        }
+        /// <summary>
+        /// Require hex length mod 2 == 0
+        /// </summary>
+        public static unsafe void hexToBytes(string hex, int startIndex, int hexLength, byte[] dst, int dstIndex)
+        {
+            var hexSpan = internal_getHexNoPrefix(hex, startIndex, hexLength);
+
+            fixed (byte* ptr = dst)
+            {
+                internal_hexToBytes(hexSpan, &ptr[dstIndex]);
+            }
+        }
+
+
         public static bool isEqualHex(this string hex0, string hex1)
         {
             ReadOnlySpan<char> hexSpan0;
@@ -1655,19 +1869,21 @@ namespace Nextension
         }
         public static unsafe string computeMD5(this string s)
         {
+            var strSpan = s.AsSpan();
             using var provider = System.Security.Cryptography.MD5.Create();
-            var dst = stackalloc byte[16];
-            provider.TryComputeHash(s.AsSpan().asByteSpan(), new Span<byte>(dst, 16), out _);
-            return toHex(dst, 16);
+            Span<byte> dst = stackalloc byte[16];
+            provider.TryComputeHash(strSpan.asSpan<char,byte>(), dst, out _);
+            return bytesToHex(dst);
         }
         public static unsafe decimal computeMD5AsDecimal(this string s)
         {
+            var strSpan = s.AsSpan();
             using var provider = System.Security.Cryptography.MD5.Create();
             Span<byte> dst = stackalloc byte[16];
-            provider.TryComputeHash(s.AsSpan().asByteSpan(), dst, out _);
+            provider.TryComputeHash(strSpan.asSpan<char, byte>(), dst, out _);
             return NConverter.fromBytesWithoutChecks<decimal>(dst);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static bool isNullOrEmpty(this string value)
         {
             if (value != null)
@@ -1679,7 +1895,6 @@ namespace Nextension
         #endregion
 
         #region Collection
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void CopyTo<T>(this IEnumerable<T> colletion, IList<T> list)
         {
             list.Clear();
@@ -1688,17 +1903,18 @@ namespace Nextension
                 list.Add(item);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Span<T> asSpan<T>(this List<T> self)
         {
             return self.AsSpan();
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<T> asReadOnlySpan<T>(this Span<T> self)
+        {
+            return self;
+        }
         public unsafe static Span<T> asSpan<T>(void* src, int lengthInBytes) where T : unmanaged
         {
             return new Span<T>(src, lengthInBytes / sizeOf<T>());
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe static Span<T> asSpan<T>(this byte[] src) where T : unmanaged
         {
             fixed (byte* ptr = src)
@@ -1706,7 +1922,6 @@ namespace Nextension
                 return new Span<T>(ptr, src.Length / sizeOf<T>());
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe static Span<T> asSpan<TFrom, T>(this Span<TFrom> src) where T : unmanaged where TFrom : unmanaged
         {
             fixed (TFrom* ptr = src)
@@ -1714,17 +1929,55 @@ namespace Nextension
                 return new Span<T>(ptr, src.Length * sizeOf<TFrom>() / sizeOf<T>());
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static ReadOnlySpan<T> asSpan<TFrom, T>(this ReadOnlySpan<TFrom> src) where T : unmanaged where TFrom : unmanaged
+        {
+            fixed (TFrom* ptr = src)
+            {
+                return new ReadOnlySpan<T>(ptr, src.Length * sizeOf<TFrom>() / sizeOf<T>());
+            }
+        }
+        public unsafe static byte[] toBytes<T>(this ReadOnlySpan<T> self) where T : unmanaged
+        {
+            var dst = new byte[self.Length * NUtils.sizeOf<T>()];
+            fixed (T* srcPtr = self)
+            {
+                fixed (byte* dstPtr = dst)
+                {
+                    Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+                }
+            }
+            return dst;
+        }
+        public unsafe static byte[] toBytes<T>(this T[] self) where T : unmanaged
+        {
+            var dst = new byte[self.Length * NUtils.sizeOf<T>()];
+            fixed (T* srcPtr = self)
+            {
+                fixed (byte* dstPtr = dst)
+                {
+                    Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+                }
+            }
+            return dst;
+        }
+        public unsafe static byte[] toBytes<T>(this NativeArray<T> self) where T : unmanaged
+        {
+            var dst = new byte[self.Length * NUtils.sizeOf<T>()];
+            fixed (byte* dstPtr = dst)
+            {
+                var srcPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(self);
+                Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+            }
+            return dst;
+        }
         public static NPArray<T> toNPArray<T>(this IEnumerable<T> colletion)
         {
             return NPArray<T>.get(colletion);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NPUArray<T> toNPUArray<T>(this IEnumerable<T> colletion) where T : unmanaged
         {
             return NPUArray<T>.get(colletion);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NPHSet<T> toNPHSet<T>(this IEnumerable<T> colletion)
         {
             return NPHSet<T>.get(colletion);
@@ -1762,7 +2015,7 @@ namespace Nextension
             self.Add(item);
             self.Sort(comparison);
         }
-        public static void addRange<T>(this ICollection<T> self, Span<T> values)
+        public static void addRange<T>(this ICollection<T> self, ReadOnlySpan<T> values)
         {
             foreach (T item in values)
             {
@@ -1814,7 +2067,11 @@ namespace Nextension
 
             return isSameItem(a.asSpan(), b.asSpan());
         }
-        public static bool isSameItem<T>(this Span<T> a, Span<T> b)
+        public static bool isSameItem<T>(this Span<T> a, ReadOnlySpan<T> b)
+        {
+            return isSameItem((ReadOnlySpan<T>)a, b);
+        }
+        public static bool isSameItem<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b)
         {
             if (a == default || b == default)
             {
@@ -1848,6 +2105,10 @@ namespace Nextension
         }
         public static bool Contains<T>(this Span<T> self, T value)
         {
+            return Contains((ReadOnlySpan<T>)self, value);
+        }
+        public static bool Contains<T>(this ReadOnlySpan<T> self, T value)
+        {
             for (int i = self.Length - 1; i >= 0; i--)
             {
                 if (equals(self[i], value))
@@ -1870,6 +2131,10 @@ namespace Nextension
         }
         public static int IndexOf<T>(this Span<T> self, T value)
         {
+            return IndexOf((ReadOnlySpan<T>)self, value);
+        }
+        public static int IndexOf<T>(this ReadOnlySpan<T> self, T value)
+        {
             for (int i = self.Length - 1; i >= 0; i--)
             {
                 if (equals(self[i], value))
@@ -1891,7 +2156,7 @@ namespace Nextension
             }
             return true;
         }
-        public static bool Contains<T>(this ICollection<T> self, Span<T> b)
+        public static bool Contains<T>(this ICollection<T> self, ReadOnlySpan<T> b)
         {
             for (int i = 0, length = b.Length; i < length; i++)
             {
@@ -2179,6 +2444,17 @@ namespace Nextension
                 UnsafeUtility.MemCpyReplicate(ptr, &value, UnsafeUtility.SizeOf<T>(), self.Length);
             }
         }
+        public static unsafe IntPtr getIntPtr<T>(this T[] self) where T : unmanaged
+        {
+            return getIntPtr(self.AsSpan().asReadOnlySpan());
+        }
+        public static unsafe IntPtr getIntPtr<T>(this ReadOnlySpan<T> self) where T : unmanaged
+        {
+            fixed (T* ptr = self)
+            {
+                return (IntPtr)ptr;
+            }
+        }
         #endregion
 
         #region Random
@@ -2273,7 +2549,7 @@ namespace Nextension
             return result;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this IList<T> list, out int randIndex, uint seed = 0)
         {
             return randItem(list, out randIndex, getRandom(seed));
@@ -2288,44 +2564,44 @@ namespace Nextension
             randIndex = rand.NextInt(list.Count);
             return list[randIndex];
         }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+
         public static T randItem<T>(this IList<T> list, uint seed = 0)
         {
             return list.randItem(out _, getRandom(seed));
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this IList<T> list, Random rand)
         {
             return list.randItem(out _, rand);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this IList<T> list, ref Random rand)
         {
             return list[rand.NextInt(list.Count)];
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this Span<T> self, uint seed = 0)
         {
             return randItem(self, out _, seed);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this Span<T> self, Random rand)
         {
             return randItem(self, out _, ref rand);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this Span<T> self, ref Random rand)
         {
             return randItem(self, out _, ref rand);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this Span<T> self, out int index, uint seed = 0)
         {
             return randItem(self, out index, getRandom(seed));
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T randItem<T>(this Span<T> self, out int index, Random rand)
         {
             return randItem(self, out index, ref rand);
@@ -2380,7 +2656,7 @@ namespace Nextension
         {
             return randItem(self, out _, exclusivePredicate, getRandom(seed));
         }
-        
+
         public static void shuffle<T>(this IList<T> list, int startIndex, int count, ref Random rand)
         {
             int n = startIndex + count;
@@ -2415,39 +2691,38 @@ namespace Nextension
         {
             shuffle(self, ref rand);
         }
-        
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+
         public static void shuffle<T>(this IList<T> self, uint seed = 0)
         {
             shuffle(self, 0, self.Count, getRandom(seed));
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void shuffle<T>(this IList<T> self, Random rand)
         {
             shuffle(self, 0, self.Count, rand);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void shuffle<T>(this IList<T> self, ref Random rand)
         {
             shuffle(self, 0, self.Count, ref rand);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        
+
+
         public static void shuffle<T>(this IList<T> self, int count, uint seed = 0)
         {
             shuffle(self, 0, count, getRandom(seed));
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void shuffle<T>(this IList<T> self, int count, Random rand)
         {
             shuffle(self, 0, count, rand);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void shuffle<T>(this IList<T> self, int count, ref Random rand)
         {
             shuffle(self, 0, count, ref rand);
         }
-        
         public static void shuffle<T>(this IList<T> self, int startIndex, int count, uint seed = 0)
         {
             shuffle(self, startIndex, count, getRandom(seed));
@@ -2455,7 +2730,7 @@ namespace Nextension
         #endregion
 
         #region GameObject and Component
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setActive(this Component target, bool isActive)
         {
             target.gameObject.setActive(isActive);
@@ -2471,7 +2746,7 @@ namespace Nextension
                 gameObject.setActive(isActive);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setEnable(this Behaviour target, bool isEnable)
         {
             if (target.enabled != isEnable)
@@ -2479,7 +2754,7 @@ namespace Nextension
                 target.enabled = isEnable;
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setEnable(this Renderer target, bool isEnable)
         {
             if (target.enabled != isEnable)
@@ -2487,7 +2762,7 @@ namespace Nextension
                 target.enabled = isEnable;
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void setActive(this GameObject target, bool isActive)
         {
             if (isActive != target.activeSelf)
@@ -2495,7 +2770,7 @@ namespace Nextension
                 target.SetActive(isActive);
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T getOrAddComponent<T>(this GameObject target) where T : Component
         {
             if (!target.TryGetComponent<T>(out var com))
@@ -2504,12 +2779,12 @@ namespace Nextension
             }
             return com;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T getOrAddComponent<T>(this Component target) where T : Component
         {
             return target.gameObject.getOrAddComponent<T>();
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static T getOrAddComponent<T>(this UnityEngine.Object target) where T : Component
         {
             if (target is GameObject go)
@@ -2537,7 +2812,7 @@ namespace Nextension
             target.GetComponentsInChildren(isIncludeInactive, list.Collection);
             return list;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static void removeComponent(Component c)
         {
             GameObject.DestroyImmediate(c);
@@ -2919,24 +3194,24 @@ namespace Nextension
         #endregion
 
         #region C# Type
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public unsafe static int sizeOf<T>() where T : unmanaged
         {
             return sizeof(T);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static BindingFlags getStaticBindingFlags()
         {
             return BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public static BindingFlags getAllBindingFlags()
         {
             return (BindingFlags)(-1);
         }
         public static bool isInherited(this Type type, Type parent)
         {
-            return type.IsSubclassOf(parent) || type == parent;
+            return parent.IsAssignableFrom(type);
         }
         public static object createInstance(this Type type)
         {
@@ -2960,12 +3235,23 @@ namespace Nextension
             return (T)createInstance(typeof(T));
         }
 
-        private static ExpirableValue<Type[]> _customTypeCached;
-        public static Type[] getCustomTypes()
+        public static object getDefault(this Type t)
+        {
+            var method = typeof(NUtils).getMethod(nameof(getDefaultGeneric));
+            return method.MakeGenericMethod(t).Invoke(null, null);
+        }
+
+        public static T getDefaultGeneric<T>()
+        {
+            return default;
+        }
+
+        private static ExpirableValue<NBListCompareHashCode<Type>> _customTypeCached;
+        public static NBListCompareHashCode<Type> getCustomTypes()
         {
             if (_customTypeCached == null)
             {
-                var typeList = new List<Type>();
+                var typeList = new NBListCompareHashCode<Type>();
                 var assembles = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (var assembly in assembles)
                 {
@@ -2999,12 +3285,19 @@ namespace Nextension
 
                     typeList.AddRange(assembly.GetTypes());
                 }
-                _customTypeCached = new(typeList.ToArray(), 5, () =>
+
+                typeList.Sort();
+                _customTypeCached = new(typeList, 5, () =>
                 {
                     _customTypeCached = null;
                 });
             }
             return _customTypeCached;
+        }
+
+        public static FieldInfo getField(this Type type, string name)
+        {
+            return getField(type, name, getAllBindingFlags(), true);
         }
         public static FieldInfo getField(this Type type, string name, BindingFlags bindingFlags, bool recursiveInBaseType = true)
         {
@@ -3024,20 +3317,134 @@ namespace Nextension
             }
             return fieldInfo;
         }
+        public static List<FieldInfo> getFields(this Type type, BindingFlags bindingFlags, bool recursiveInBaseType = true)
+        {
+            var results = new List<FieldInfo>();
+            getFields(type, ref results, bindingFlags, recursiveInBaseType);
+            return results;
+        }
+        public static void getFields(this Type type, ref List<FieldInfo> results, BindingFlags bindingFlags, bool recursiveInBaseType = true)
+        {
+            results ??= new List<FieldInfo>();
+            FieldInfo[] fieldInfos = type.GetFields(bindingFlags);
+            results.InsertRange(0, fieldInfos);
+            if (recursiveInBaseType)
+            {
+                var baseType = type.BaseType;
+                if (baseType != null) getFields(baseType, ref results, bindingFlags, recursiveInBaseType);
+            }
+        }
+        public static void getMembers(this Type type, ref List<MemberInfo> results, BindingFlags bindingFlags, bool recursiveInBaseType = false)
+        {
+            if (recursiveInBaseType)
+            {
+                getMembers(type, ref results, bindingFlags, null, false);
+            }
+            else
+            {
+                getMembers(type, ref results, bindingFlags, type, false);
+            }
+        }
+        public static void getMembers(this Type type, ref List<MemberInfo> results, BindingFlags bindingFlags, Type recursiveInBaseType, bool includeBaseType)
+        {
+            results ??= new List<MemberInfo>();
+            var members = type.GetMembers(bindingFlags);
+            results.InsertRange(0, members);
+
+            if (type != recursiveInBaseType)
+            {
+                var baseType = type.BaseType;
+                if (baseType != null)
+                {
+                    if (includeBaseType || baseType != recursiveInBaseType)
+                    {
+                        getMembers(baseType, ref results, bindingFlags, recursiveInBaseType, includeBaseType);
+                    }
+                }
+            }
+        }
+        public static MethodInfo getMethod(this Type type, string name)
+        {
+            return getMethod(type, name, getAllBindingFlags(), true);
+        }
+        public static MethodInfo getMethod(Type type, string name, BindingFlags bindingFlags, bool recursiveInBaseType)
+        {
+            var fieldInfo = type.GetMethod(name, bindingFlags);
+            if (fieldInfo != null) return fieldInfo;
+            if (recursiveInBaseType)
+            {
+                var baseType = type.BaseType;
+                if (baseType != null) return getMethod(baseType, name, bindingFlags, recursiveInBaseType);
+            }
+            return null;
+        }
+
+        public static PropertyInfo getProperty(this Type type, string name, BindingFlags bindingFlags, bool recursiveInBaseType = true)
+        {
+            PropertyInfo propertyInfo = type.GetProperty(name, bindingFlags);
+            if (propertyInfo == null && recursiveInBaseType)
+            {
+                type = type.BaseType;
+                while (type != null)
+                {
+                    propertyInfo = type.GetProperty(name, bindingFlags);
+                    if (propertyInfo != null)
+                    {
+                        break;
+                    }
+                    type = type.BaseType;
+                }
+            }
+            return propertyInfo;
+        }
+
+        /// <summary>
+        /// Get value of object from name of method, field or property 
+        /// </summary>
+        public static object getValue(object obj, string name, bool recursiveInBaseType = true)
+        {
+            var objType = obj.GetType();
+            var allBindingFlag = getAllBindingFlags();
+
+            var methodInfo = getMethod(objType, name, allBindingFlag, recursiveInBaseType);
+            if (methodInfo != null)
+            {
+                if (methodInfo.IsStatic)
+                {
+                    return methodInfo.Invoke(null, null);
+                }
+                else
+                {
+                    return methodInfo.Invoke(obj, null);
+                }
+            }
+            else
+            {
+                var fieldInfo = getField(objType, name, allBindingFlag, recursiveInBaseType);
+                if (fieldInfo != null)
+                {
+                    return fieldInfo.GetValue(obj);
+                }
+                var property = objType.getProperty(name, allBindingFlag);
+                if (property != null)
+                {
+                    return property.GetValue(obj);
+                }
+                return null;
+            }
+        }
         #endregion
 
         #region Others
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool equals<T>(this T self, T other)
         {
             return EqualityComparer<T>.Default.Equals(self, other);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int compareTo<TEnum>(this TEnum a, TEnum b)
+        public static int compareTo<TType>(this TType a, TType b)
         {
-            return NGenericComparer<TEnum>.compare(a, b);
+            return NGenericComparer<TType>.compare(a, b);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
         public unsafe static int unsafeCompareAsNumber<TType, TNumberType>(TType a, TType b)
             where TType : unmanaged
             where TNumberType : unmanaged, IComparable<TNumberType>
@@ -3121,41 +3528,25 @@ namespace Nextension
                 self.AddListener(new UnityAction(call));
             }
         }
-
-        /// <summary>
-        /// Get value of object from name of method, field or property 
-        /// </summary>
-        public static object getValue(object obj, string name)
+        public static void set<T>(this UnityEvent<T> self, UnityAction<T> call)
         {
-            var objType = obj.GetType();
-            var allBindingFlag = getAllBindingFlags();
-
-            var methodInfo = objType.GetMethod(name, allBindingFlag);
-            if (methodInfo != null)
+            self.RemoveAllListeners();
+            if (call != null)
             {
-                if (methodInfo.IsStatic)
-                {
-                    return methodInfo.Invoke(null, null);
-                }
-                else
-                {
-                    return methodInfo.Invoke(obj, null);
-                }
+                self.AddListener(call);
             }
-            else
+        }
+        public static void setAction<T>(this UnityEvent<T> self, Action<T> call)
+        {
+            self.RemoveAllListeners();
+            if (call != null)
             {
-                var fieldInfo = objType.getField(name, allBindingFlag);
-                if (fieldInfo != null)
-                {
-                    return fieldInfo.GetValue(obj);
-                }
-                var property = objType.GetProperty(name, allBindingFlag);
-                if (property != null)
-                {
-                    return property.GetValue(obj);
-                }
-                return null;
+                self.AddListener(new UnityAction<T>(call));
             }
+        }
+        public static void quit()
+        {
+            NStartRunner.quit();
         }
         #endregion
     }

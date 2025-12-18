@@ -45,7 +45,12 @@ namespace Nextension
             return i_Items[index];
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void setWithoutChecks(int index, T value)
+        public T GetAtWithoutChecks(uint index)
+        {
+            return i_Items[index];
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetWithoutChecks(int index, T value)
         {
             i_Items[index] = value;
         }

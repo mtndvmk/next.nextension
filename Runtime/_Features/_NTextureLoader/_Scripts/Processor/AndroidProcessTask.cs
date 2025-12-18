@@ -116,9 +116,7 @@ namespace Nextension.TextureLoader
             }
             else
             {
-                GCHandle handle = GCHandle.Alloc(rawDataBuffer, GCHandleType.Pinned);
-                tex.LoadRawTextureData(handle.AddrOfPinnedObject(), rawDataBuffer.Length);
-                handle.Free();
+                tex.LoadRawTextureData(rawDataBuffer.getIntPtr(), rawDataBuffer.Length);
             }
             _setting.apply(tex);
             return tex;

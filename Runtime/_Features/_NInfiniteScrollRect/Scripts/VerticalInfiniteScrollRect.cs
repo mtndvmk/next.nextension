@@ -19,7 +19,7 @@ namespace Nextension
                 {
                     _direction = value;
                     updateContentAnchorAndPivot();
-                    recalculateCellPositions();
+                    setDirtyPosition(0);
                 }
             }
         }
@@ -35,7 +35,7 @@ namespace Nextension
             RectTransform scrollContent = scrollRect.content;
             var contentHeight = scrollContent.sizeDelta.y;
             var cellHeight = data.CellSize.y;
-            FTAnchor ftAnchor = default;
+            FTAnchor ftAnchor;
             if (data.Index == 0)
             {
                 ftAnchor = new FTAnchor(0, cellHeight);
@@ -49,6 +49,10 @@ namespace Nextension
             }
             _cellFTAnchorList.Add(ftAnchor);
             scrollContent.sizeDelta = new Vector2(scrollContent.sizeDelta.x, contentHeight);
+            if (_isReverse)
+            {
+                setDirtyPosition(0);
+            }
         }
         protected override void onLayoutUpdated()
         {
@@ -82,15 +86,17 @@ namespace Nextension
             float anchorY = _direction == Direction.TOP_BOTTOM ? 1 : 0;
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
+                var cell = showCell(i);
+                cell.transform.SetAsLastSibling();
                 var cellFTAnchor = _cellFTAnchorList[i];
                 var posY = _direction == Direction.TOP_BOTTOM ? cellFTAnchor.from : -cellFTAnchor.to;
-                var cell = showCell(i, new Vector2(0, posY));
                 var cellRectTransform = cell.rectTransform();
                 cellRectTransform.anchorMin = cellRectTransform.anchorMin.setY(anchorY);
                 cellRectTransform.anchorMax = cellRectTransform.anchorMax.setY(anchorY);
                 cellRectTransform.pivot = cellRectTransform.pivot.setY(1);
-                cell.transform.SetAsLastSibling();
+                cellRectTransform.anchoredPosition = new Vector2(0, posY);
             }
+
             _visibleIndices = newVisibleIndices;
         }
 
@@ -175,12 +181,13 @@ namespace Nextension
 
         protected override void onCellSizeUpdated(int index, Vector2 oldSize, Vector2 newSize)
         {
+            if (oldSize == newSize) return;
             var contentHeight = scrollRect.content.sizeDelta.y;
             contentHeight -= oldSize.y;
             contentHeight += newSize.y;
             scrollRect.content.sizeDelta = new Vector2(scrollRect.content.sizeDelta.x, contentHeight);
             _cellFTAnchorList[index] = new FTAnchor(_cellFTAnchorList[index].from, newSize.y);
-            recalculateCellPositions(index);
+            setDirtyPosition(index);
         }
         protected override void updateContentAnchorAndPivot()
         {

@@ -1,0 +1,89 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace Nextension
+{
+    public interface IInsPool : IGameObjectInstantiate
+    {
+        public int Id { get; }
+        void clearPool();
+        void release(OriginInstance origin);
+        GameObjectInstantiate getGameObjectInstantiate();
+    }
+    public interface IInsPool<T> : IInsPool, IComponentInstantiate<T> where T : Object
+    {
+        T get(Transform parent = null, bool worldPositionStays = true);
+        T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true);
+        T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true);
+        IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true);
+        void release(T instance);
+        bool poolContains(T instance);
+        ComponentInstantiate<T> getComponentInstantiate();
+    }
+
+    public abstract class AbsInsPool<T> : IInsPool<T> where T : Object
+    {
+        public abstract int Id { get; }
+
+        public abstract void clearPool();
+
+        public abstract T get(Transform parent = null, bool worldPositionStays = true);
+
+        public abstract T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true);
+
+        public abstract T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true);
+
+        public abstract bool poolContains(T instance);
+
+        public abstract void release(T instance);
+
+        public GameObject getGameObject(Transform parent = null, bool worldPositionStays = true)
+        {
+            return InsPoolUtil.getGameObject(get(parent, worldPositionStays));
+        }
+        public GameObject getGameObject()
+        {
+            return getGameObject(null, true);
+        }
+
+        public T getComponent(Transform parent = null, bool worldPositionStays = true)
+        {
+            return get(parent, worldPositionStays);
+        }
+
+        public T getComponent()
+        {
+            return get();
+        }
+
+        public GameObjectInstantiate getGameObjectInstantiate()
+        {
+            return new GameObjectInstantiate(this);
+        }
+        
+        public ComponentInstantiate<T> getComponentInstantiate()
+        {
+            return new ComponentInstantiate<T>(this);
+        }
+
+        public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                yield return get(parent, worldPositionStays);
+            }
+        }
+
+        public void release(GameObject target)
+        {
+            InsPool.release(target);
+        }
+
+        public void release(OriginInstance origin)
+        {
+            release(InsPoolUtil.getInstanceFromGO<T>(origin.gameObject));
+        }
+    }
+}

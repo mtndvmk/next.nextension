@@ -27,6 +27,7 @@ namespace Nextension.UI
         {
             if (!Application.isPlaying)
             {
+                if (content == null) return;
                 var calNormalized = calculateTargetNormalizePosition(_currentCellIndex);
                 if (calNormalized == Vector2.left || calNormalized == _currentCellIndex) return;
                 forceView(_currentCellIndex, true);
@@ -46,6 +47,7 @@ namespace Nextension.UI
 
         protected override void LateUpdate()
         {
+            if (content == null) return;
             if (_endAnimationTime >= Time.realtimeSinceStartup)
             {
                 var dt = _animationTime - (_endAnimationTime - Time.realtimeSinceStartup);

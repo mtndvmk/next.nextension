@@ -1,9 +1,11 @@
+using System;
+
 namespace Nextension
 {
-    public class Ref<T> where T : unmanaged
+    [Serializable]
+    public class Ref<T>
     {
-        public Ref() { }
-        public Ref(T value) 
+        public Ref(T value)
         {
             this.value = value;
         }
@@ -12,6 +14,10 @@ namespace Nextension
         public static implicit operator T(Ref<T> r)
         {
             return r.value;
+        }
+        public static implicit operator Ref<T>(T t)
+        {
+            return new Ref<T>(t);
         }
     }
 }

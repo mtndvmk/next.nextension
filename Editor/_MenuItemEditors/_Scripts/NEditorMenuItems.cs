@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
@@ -99,7 +100,7 @@ namespace Nextension.NEditor
             Debug.Log($"Saved {count} objects");
         }
 
-        [MenuItem("Nextension/Collider/Generate BoxCollider (Renderer)")]
+        [MenuItem("Nextension/Collider/Generate BoxCollider (Renderer)", priority = 2)]
         public static void addBoxCollider()
         {
             var sltObject = Selection.gameObjects;
@@ -123,7 +124,7 @@ namespace Nextension.NEditor
             }
         }
 
-        [MenuItem("Nextension/Json/Escape json")]
+        [MenuItem("Nextension/Json/Escape json", priority = 3)]
         public static void escapeJson()
         {
             string json = EditorInputDialog.Show("Escape json", "Please enter json text:", "");
@@ -223,7 +224,7 @@ namespace Nextension.NEditor
             return sb.ToString();
         }
 
-        [MenuItem("Nextension/UI/Anchor to parent for selected items")]
+        [MenuItem("Nextension/UI/Anchor to parent for selected items", priority = 4)]
         public static void anchorToParentForSelected()
         {
             var objs = Selection.objects;
@@ -313,7 +314,8 @@ namespace Nextension.NEditor
                     if (!defines.Contains(NPoolLogFullStackTraceSymbol)) continue;
                     defines = defines.remove(NPoolLogFullStackTraceSymbol);
                     PlayerSettings.SetScriptingDefineSymbols(buildTarget, defines);
-                }catch (Exception) { }
+                }
+                catch (Exception) { }
             }
 
             AssetDatabase.SaveAssets();
@@ -322,6 +324,76 @@ namespace Nextension.NEditor
         private static bool validateDisableNPoolLogFullStackTrace()
         {
             return EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
+        }
+
+        [MenuItem("Assets/Nextension/Export to PNG")]
+        private static void exportTexture2DToPng()
+        {
+            var selections = Selection.objects;
+            if (selections == null || selections.Length == 0)
+            {
+                return;
+            }
+            for (int i = 0; i < selections.Length; i++)
+            {
+                var selection = selections[i];
+                if (selection is not Texture texture) { continue; }
+
+                var assetPath = AssetDatabase.GetAssetPath(texture);
+                if (assetPath == null)
+                {
+                    Debug.LogWarning($"{texture} must be in asset directory", selection);
+                    continue;
+                }
+
+                byte[] png;
+
+                if (!texture.isReadable || texture is not Texture2D tex2d)
+                {
+                    var readableTex2d = NTextureUtils.cloneNonReadableUseBlit(texture);
+                    png = readableTex2d.EncodeToPNG();
+                    UnityEngine.Object.DestroyImmediate(readableTex2d);
+                }
+                else
+                {
+                    png = tex2d.EncodeToPNG();
+                }
+
+                var filename = $"{Path.GetFileNameWithoutExtension(assetPath)}.png";
+                var pngPath = Path.Combine(Directory.GetParent(assetPath).FullName, filename);
+                int index = 0;
+                while (File.Exists(pngPath))
+                {
+                    filename = $"{Path.GetFileNameWithoutExtension(assetPath)}_{index++}.png";
+                    pngPath = Path.Combine(Directory.GetParent(assetPath).FullName, filename);
+                }
+
+                File.WriteAllBytes(pngPath, png);
+
+                if (NEditorAssetUtils.tryLoadAssetAt<Texture2D>(pngPath, out var newAsset))
+                {
+                    Debug.Log($"Exported texture {texture.name} to {filename}", newAsset);
+                }
+                else
+                {
+                    Debug.Log($"Exported texture {texture.name} to {filename} at {pngPath}");
+                }
+            }
+            AssetDatabase.Refresh();
+        }
+        [MenuItem("Assets/Nextension/Export to PNG", true)]
+        private static bool checkExportTexture2DToPng()
+        {
+            foreach (var obj in Selection.objects)
+            {
+                if (obj is Texture) return true;
+            }
+            return false;
+        }
+        [MenuItem("CONTEXT/Component/Open Debug Window")]
+        private static void openDebugWindow(MenuCommand menuCommand)
+        {
+            ComponentDebugWindow.show(menuCommand.context as Component);
         }
     }
 

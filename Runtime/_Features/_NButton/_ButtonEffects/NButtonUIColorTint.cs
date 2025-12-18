@@ -106,9 +106,14 @@ namespace Nextension
             }
             else
             {
-                _colorTweener = NTween.fromTo(_target.GetColor(), color, _duration, _target.SetColor).setUpdateMode(_updateMode);
+                _colorTweener = NTween.fromTo(_target.GetColor().toFloat4(), color.toFloat4(), _duration, setTargetColor).setUpdateMode(_updateMode);
                 _colorTweener.setCancelControlKey(_target);
             }
+        }
+
+        private void setTargetColor(Unity.Mathematics.float4 color)
+        {
+            _target.SetColor(color.toColor());
         }
     }
 }

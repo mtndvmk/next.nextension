@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Nextension
@@ -7,6 +8,11 @@ namespace Nextension
         public int CellIndex => CellData == null ? -1 : CellData.Index;
         public InfiniteScrollRect InfiniteScrollRect => CellData?.InfiniteScrollRect;
         public InfiniteCellData CellData { get; internal set; }
+
+        public void refreshCellData()
+        {
+            onUpdateCellData(CellIndex, CellData);
+        }
 
         internal void internalUpdateCellData(int index, InfiniteCellData cellData)
         {

@@ -49,7 +49,7 @@ namespace Nextension.Tween
             [ReadOnly] private NativeArray<byte> _mask;
             [WriteOnly] private NativeArray<TValue> _results;
 
-            internal Job(NativeArray<FromToData<TValue>> jobDataNativeArr, NativeArray<byte> mask, NativeArray<TValue> results)
+            internal Job(in NativeArray<FromToData<TValue>> jobDataNativeArr, in NativeArray<byte> mask, in NativeArray<TValue> results)
             {
                 _jobDataNativeArr = jobDataNativeArr;
                 _results = results;

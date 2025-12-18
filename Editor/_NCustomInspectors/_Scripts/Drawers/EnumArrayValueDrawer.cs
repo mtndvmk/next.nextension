@@ -9,22 +9,23 @@ namespace Nextension.NEditor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (NAssetUtils.IsCompiling || property == null || property.serializedObject == null)
+            if (NEditorAssetUtils.IsCompiling || property == null || property.serializedObject == null)
             {
                 return;
             }
-
+            EditorGUI.BeginChangeCheck();
             Rect contentPosition = position;
             var headerSize = position;
             headerSize.height = EditorGUIUtility.singleLineHeight;
             property.isExpanded = EditorGUI.Foldout(headerSize, property.isExpanded, label, true);
-
+            EditorGUI.EndChangeCheck();
             var arrValue = (NEditorHelper.getValue(property) as IEnumArrayValue);
             if (arrValue != null)
             {
                 EditorGUI.indentLevel++;
                 try
                 {
+                    EditorGUI.BeginChangeCheck();
                     if (property.isExpanded)
                     {
                         if (arrValue.getTypeOfValue().IsArray)
@@ -46,7 +47,7 @@ namespace Nextension.NEditor
 
                         if (arrValue.refreshEditorCache())
                         {
-                            NAssetUtils.setDirty(property.serializedObject.targetObject);
+                            NAssetUtils.saveAsset(property.serializedObject.targetObject);
                             return;
                         }
 
@@ -77,6 +78,7 @@ namespace Nextension.NEditor
                 finally
                 {
                     EditorGUI.indentLevel--;
+                    EditorGUI.EndChangeCheck();
                 }
             }
         }

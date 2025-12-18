@@ -4,14 +4,14 @@ using UnityEngine;
 namespace Nextension
 {
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
-    public class NShowIfAttribute : PropertyAttribute
+    public class NShowIfAttribute : ApplyToCollectionPropertyAttribute
     {
         protected readonly string predicateName;
         protected readonly object[] conditionValues;
 
-        static object DEFAULT = new object();
+        static readonly object DEFAULT = new object();
 
-        public NShowIfAttribute(string predicateName)
+        public NShowIfAttribute(string predicateName) : base()
         {
             if (predicateName.isNullOrEmpty())
             {
@@ -22,7 +22,7 @@ namespace Nextension
             this.conditionValues = new object[] { DEFAULT };
             this.order = NAttributeOrder.SHOW_IF;
         }
-        public NShowIfAttribute(string predicateName, object conditionValue)
+        public NShowIfAttribute(string predicateName, object conditionValue) : base()
         {
             if (predicateName.isNullOrEmpty())
             {
@@ -33,7 +33,7 @@ namespace Nextension
             this.conditionValues = new object[] { conditionValue };
             this.order = NAttributeOrder.SHOW_IF;
         }
-        public NShowIfAttribute(string predicateName, params object[] conditionValues)
+        public NShowIfAttribute(string predicateName, params object[] conditionValues) : base()
         {
             if (predicateName.isNullOrEmpty())
             {
@@ -65,28 +65,49 @@ namespace Nextension
                     }
                     return !targetType.isNull();
                 }
-                var conditionValue2 = getPredicateValue(containerObject, conditionValue);
+                var conditionValue2 = getPredicateValue(containerObject, conditionValue, true);
                 if (conditionValue2.isNull()) continue;
-                if (targetState.compareTo(conditionValue2) == 0)
+                try
                 {
-                    return true;
+                    if (targetState.GetType() == conditionValue2.GetType())
+                    {
+                        if (targetState.compareTo(conditionValue2) == 0)
+                        {
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        if (targetState.compareTo(conditionValue) == 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning(ex);
                 }
             }
             return false;
         }
-        protected static object getPredicateValue(object containerObject, object predicateValue)
+        protected static object getPredicateValue(object containerObject, object predicateValue, bool returnInputIfNull)
         {
             if (predicateValue.isNull())
             {
                 return default;
             }
             var val = NUtils.getValue(containerObject, predicateValue.ToString());
-            return val ?? predicateValue;
+            if (val == null && returnInputIfNull)
+            {
+                return predicateValue;
+            }
+            return val;
         }
 
         public bool check(object containerObject)
         {
-            var predicateValue = getPredicateValue(containerObject, predicateName);
+            var predicateValue = getPredicateValue(containerObject, predicateName, false);
             if (predicateValue.isNull())
             {
                 if (conditionValues == null || conditionValues.Length == 0) return true;
@@ -112,7 +133,7 @@ namespace Nextension
             }
             foreach (var conditionValue in conditionValues)
             {
-                var pedicateState = getPredicateValue(containerObject, conditionValue);
+                var pedicateState = getPredicateValue(containerObject, conditionValue, true);
                 if (targetState.compareTo(pedicateState) != 0)
                 {
                     return false;

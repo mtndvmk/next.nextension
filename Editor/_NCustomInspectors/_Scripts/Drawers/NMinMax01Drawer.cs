@@ -9,6 +9,7 @@ namespace Nextension.NEditor
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            EditorGUI.BeginChangeCheck();
             float minnn = 0;
             float maxxx = 1;
             var minPro = property.FindPropertyRelative("min");
@@ -59,6 +60,7 @@ namespace Nextension.NEditor
             maxPro.floatValue = maxValue;
             minPro.floatValue = minValue;
             EditorGUI.indentLevel--;
+            EditorGUI.EndChangeCheck();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

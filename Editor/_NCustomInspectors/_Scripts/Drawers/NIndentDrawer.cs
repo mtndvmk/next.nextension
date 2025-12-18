@@ -8,9 +8,7 @@ namespace Nextension.NEditor
     {       
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            var height = CustomPropertyDrawerCache.getPropertyHeight(property, label);
-            if (height.HasValue) return height.Value;
-            else return EditorGUI.GetPropertyHeight(property, label, true);
+            return CustomPropertyDrawerCache.forceGetPropertyHeight(property, label);
         }
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -18,10 +16,7 @@ namespace Nextension.NEditor
             var indentAttribute = attribute as NIndentAttribute;
             EditorGUI.indentLevel += indentAttribute.indentLevel;
             label.text = $"{indentAttribute.bullet} {label}";
-            if (!CustomPropertyDrawerCache.draw(position, property, label))
-            {
-                EditorGUI.PropertyField(position, property, label);
-            }
+            CustomPropertyDrawerCache.forceDraw(position, property, label);
             EditorGUI.indentLevel -= indentAttribute.indentLevel;
             EditorGUI.EndChangeCheck();
         }

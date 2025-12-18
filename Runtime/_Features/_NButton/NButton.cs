@@ -9,7 +9,7 @@ namespace Nextension
     [DisallowMultipleComponent]
     public class NButton : UIBehaviour, INButton, IPointerDownHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
-        [SerializeField] private float _betweenClickIntervalTime = 0.2f;
+        [SerializeField] private float _betweenClickIntervalTime = 0.1f;
         [SerializeField] private float _delayInvokeTime;
         [SerializeField] private bool _interactable = true;
 
@@ -46,7 +46,12 @@ namespace Nextension
 
             if (parentGroupAllowsInteraction != _groupsAllowInteraction)
             {
+                var oldState = isInteractable();
                 _groupsAllowInteraction = parentGroupAllowsInteraction;
+                if (oldState != isInteractable())
+                {
+                    invokeInteractableChangedEvent();
+                }
             }
         }
         public bool parentGroupAllowsInteraction()
@@ -131,7 +136,8 @@ namespace Nextension
         }
         private void invokeInteractableChangedEvent()
         {
-            if (_interactable)
+            var interactable = isInteractable();
+            if (interactable)
             {
                 onEnableInteractableEvent?.Invoke();
             }
@@ -146,7 +152,7 @@ namespace Nextension
                 {
                     try
                     {
-                        listener.onInteractableChanged(_interactable);
+                        listener.onInteractableChanged(interactable);
                     }
                     catch (Exception e)
                     {
@@ -160,7 +166,7 @@ namespace Nextension
                 {
                     try
                     {
-                        listener.onInteractableChanged(_interactable);
+                        listener.onInteractableChanged(interactable);
                     }
                     catch (Exception e)
                     {

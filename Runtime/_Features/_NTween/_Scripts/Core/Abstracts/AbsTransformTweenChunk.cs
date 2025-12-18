@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using Unity.Jobs;
+﻿using Unity.Jobs;
 using UnityEngine.Jobs;
 
 namespace Nextension.Tween
@@ -13,7 +12,7 @@ namespace Nextension.Tween
 
         public AbsTransformTweenChunk() : base()
         {
-            _transformAccessArray = new TransformAccessArray(ChunkSize);
+            _transformAccessArray = new TransformAccessArray(CHUNK_SIZE);
         }
         protected override void onAddNewTweener(TTweener tweener)
         {
@@ -29,7 +28,6 @@ namespace Nextension.Tween
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected sealed override JobHandle onScheduleJob()
         {
             return _job.ScheduleByRef(_transformAccessArray);

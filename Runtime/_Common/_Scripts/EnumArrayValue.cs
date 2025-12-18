@@ -1,14 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Nextension
 {
 
-    public interface IEnumArrayValue
+    public interface IEnumArrayValue : ISerializedFieldCheckable
     {
         int Length { get; }
         Type getTypeOfEnum();
@@ -19,6 +17,16 @@ namespace Nextension
 #if UNITY_EDITOR
         bool refreshEditorCache();
 #endif
+        bool ISerializedFieldCheckable.onSerializedChanged(Flag flag)
+        {
+#if UNITY_EDITOR
+            if (flag == Flag.OnLoadOrRecompiled || flag == Flag.OnPreprocessBuild)
+            {
+                return refreshEditorCache();
+            }
+#endif
+            return false;
+        }
     }
 
     [Serializable]
@@ -73,6 +81,10 @@ namespace Nextension
         {
 
         }
+        public EnumArrayValue(EnumArrayValue<TEnum, TValue> src)
+        {
+            enumValues = src.enumValues.clone();
+        }
 
         public void set(TEnum enumType, TValue val)
         {
@@ -85,7 +97,6 @@ namespace Nextension
             if (index < 0) return;
             enumValues[index] = val;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue get(TEnum enumType)
         {
 #if UNITY_EDITOR
@@ -135,11 +146,6 @@ namespace Nextension
         {
             return GetEnumerator();
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public ArrayEnumerator<TValue> enumerateValues()
-        {
-            return new ArrayEnumerator<TValue>(enumValues);
-        }
         public EnumListValue<TEnum, TValue> toEnumListValue(bool isIgnoreDefaultValue = false)
         {
             EnumListValue<TEnum, TValue> enumListValue = new();
@@ -160,71 +166,36 @@ namespace Nextension
             }
             return enumListValue;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TValue[] toArray()
         {
-            return enumValues.ToArray();
+            return enumValues.clone();
         }
-        public Span<TValue> asSpan()
-        {
-            return enumValues.AsSpan();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type getTypeOfEnum()
         {
             return typeof(TEnum);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Type getTypeOfValue()
         {
             return typeof(TValue);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public object getEnumAtIndexAsObject(int index)
         {
             return getEnum(index);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public object getValueAtIndexAsObject(int index)
         {
             return enumValues[index];
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TEnum getEnum(int index)
         {
             return EnumIndex<TEnum>.getEnum(index);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public EnumArrayValue<TEnum, TValue> clone()
         {
-            return new EnumArrayValue<TEnum, TValue>() { enumValues = this.enumValues.ToArray() };
+            return new EnumArrayValue<TEnum, TValue>(this);
         }
-        public void set(EnumListValue<TEnum, TValue> listValue)
-        {
-            foreach (var (enumType, value) in listValue.enumerateTupleValues())
-            {
-                set(enumType, value);
-            }
-        }
-        public void set(EnumArrayValue<TEnum, TValue> arrValue)
-        {
-            if (this == Empty)
-            {
-                Debug.LogWarning("Cannot set value to Empty");
-                return;
-            }
-            Array.Copy(arrValue.enumValues, enumValues, Length);
-        }
-        public static EnumArrayValue<TEnum, TValue> createFrom(EnumListValue<TEnum, TValue> listValue)
-        {
-            EnumArrayValue<TEnum, TValue> enumArray = new();
-            foreach (var (enumType, value) in listValue.enumerateTupleValues())
-            {
-                enumArray.set(enumType, value);
-            }
-            return enumArray;
-        }
-
+        public ReadOnlySpan<TEnum> Keys => EnumIndex<TEnum>.asReadOnlySpan();
+        public ReadOnlySpan<TValue> Values => enumValues;
         public void OnBeforeSerialize()
         {
 

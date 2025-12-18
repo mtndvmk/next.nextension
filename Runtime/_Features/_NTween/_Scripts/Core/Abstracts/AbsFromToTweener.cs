@@ -17,6 +17,8 @@ namespace Nextension.Tween
         internal override void forceComplete()
         {
             invokeValueChanged(destination);
+            invokeOnUpdate();
+            invokeOnComplete();
         }
         public void updateDestination(T value)
         {

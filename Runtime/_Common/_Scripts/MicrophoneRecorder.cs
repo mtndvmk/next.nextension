@@ -27,7 +27,7 @@ namespace Nextension
         private static AudioClip _tempClip;
         private static string _deviceName;
 
-        public static bool IsRecording => Microphone.devices.Length > 0 && Microphone.IsRecording(null);
+        public static bool IsRecording => _startRecordTime > 0;
 
         public static void startRecord(int frequency = 8000, string deviceName = null)
         {

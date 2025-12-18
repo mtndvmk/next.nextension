@@ -36,9 +36,9 @@ namespace Nextension
         }
         public void setValue(UnityEngine.Object @object)
         {
-            if (NAssetUtils.getPathInResources(@object, out var path))
+            if (NEditorAssetUtils.getPathInResources(@object, out var path))
             {
-                _guid = NAssetUtils.getGUID(@object);
+                _guid = NEditorAssetUtils.getGUID(@object);
                 _path = path.removeExtension();
             }
             else

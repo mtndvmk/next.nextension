@@ -46,25 +46,7 @@ namespace Nextension.NEditor
                 valueOfProperty = property.serializedObject.targetObject;
                 FieldInfo fieldInfo = null;
 
-                for (int i = 0; i < elements.Length; ++i)
-                {
-                    var element = elements[i];
-                    if (element.Contains("["))
-                    {
-                        var elementName = element.Substring(0, element.IndexOf("["));
-                        var index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
-
-                        var qType = valueOfProperty.GetType();
-                        fieldInfo = qType.getField(elementName, NUtils.getAllBindingFlags());
-                        valueOfProperty = (fieldInfo.GetValue(valueOfProperty) as IList)[index];
-                    }
-                    else
-                    {
-                        fieldInfo = valueOfProperty.GetType().getField(element, NUtils.getAllBindingFlags());
-                        valueOfProperty = fieldInfo.GetValue(valueOfProperty);
-                    }
-                }
-
+                (fieldInfo, valueOfProperty) = getFieldInfoAndValueFromPropertyPaths(valueOfProperty, elements, elements.Length);
                 return fieldInfo;
             }
             catch (Exception e)
@@ -89,28 +71,7 @@ namespace Nextension.NEditor
                 }
                 else
                 {
-
-                    for (int i = 0; i < elements.Length - 1; ++i)
-                    {
-                        var containerType = containerObject.GetType();
-                        var element = elements[i];
-                        var indexOfBracket = element.IndexOf("[");
-
-                        if (indexOfBracket >= 0)
-                        {
-                            var elementName = element[..indexOfBracket];
-                            var index = Convert.ToInt32(element[indexOfBracket..].Replace("[", "").Replace("]", ""));
-
-                            fieldInfo = containerType.getField(elementName, NUtils.getAllBindingFlags());
-                            containerObject = (fieldInfo.GetValue(containerObject) as IList)[index];
-                        }
-                        else
-                        {
-                            fieldInfo = containerType.getField(element, NUtils.getAllBindingFlags());
-                            containerObject = fieldInfo.GetValue(containerObject);
-                        }
-                    }
-
+                    (fieldInfo, containerObject) = getFieldInfoAndValueFromPropertyPaths(containerObject, elements, elements.Length - 1);
                     return containerObject;
                 }
             }
@@ -120,6 +81,33 @@ namespace Nextension.NEditor
                 return default;
             }
         }
+
+        private static (FieldInfo, object) getFieldInfoAndValueFromPropertyPaths(object obj, string[] elements, int loopCount)
+        {
+            FieldInfo fieldInfo = null;
+            var allBindingFlag = NUtils.getAllBindingFlags();
+            for (int i = 0; i < loopCount; ++i)
+            {
+                var element = elements[i];
+                var indexOfBracket = element.IndexOf("[");
+
+                if (indexOfBracket >= 0)
+                {
+                    var elementName = element[..indexOfBracket];
+                    var index = Convert.ToInt32(element[indexOfBracket..].Replace("[", "").Replace("]", ""));
+
+                    fieldInfo = obj.GetType().getField(elementName, allBindingFlag);
+                    obj = (fieldInfo.GetValue(obj) as IList)[index];
+                }
+                else
+                {
+                    fieldInfo = obj.GetType().getField(element, allBindingFlag);
+                    obj = fieldInfo.GetValue(obj);
+                }
+            }
+            return (fieldInfo, obj);
+        }
+
         public static void clearLog()
         {
             var assembly = Assembly.GetAssembly(typeof(Editor));

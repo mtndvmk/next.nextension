@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
     public interface IPoolable
     {
         public const int DEFAULT_MAX_POOL_ITEM_COUNT = 100;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onCreated() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onSpawn() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDespawn() { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] void onDestroy() { }
+        void onCreated() { }
+        void onSpawn() { }
+        void onDespawn() { }
+        void onDestroy() { }
     }
     public class NPool<T> where T : class, IPoolable
     {
@@ -43,6 +42,10 @@ namespace Nextension
             item.onSpawn();
             return item;
         }
+        public bool contains(T item)
+        {
+            return _pool.Contains(item);
+        }
         public bool release(T item)
         {
             if (_pool.Count >= maxPoolItemCount)
@@ -69,7 +72,6 @@ namespace Nextension
             });
             return item;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T getAndRelease(float time)
         {
             return getAndRelease(new NWaitSecond(time));
@@ -95,15 +97,10 @@ namespace Nextension
     public static class NStaticPool<T> where T : class, IPoolable
     {
         private static NPool<T> _pool = new();
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T get() => _pool.get();
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool release(T item) => _pool.release(item);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T getAndRelease(IWaitable releaseWaitable) => _pool.getAndRelease(releaseWaitable);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T getAndRelease(float time) => _pool.getAndRelease(time);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void clear() => _pool.clear();
     }
 }

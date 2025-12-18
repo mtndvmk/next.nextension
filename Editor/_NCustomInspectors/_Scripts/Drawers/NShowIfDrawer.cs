@@ -14,9 +14,7 @@ namespace Nextension.NEditor
             _isShow = isShow(property);
             if (_isShow)
             {
-                var height = CustomPropertyDrawerCache.getPropertyHeight(property, label);
-                if (height.HasValue) return height.Value;
-                else return EditorGUI.GetPropertyHeight(property, label, true);
+                return CustomPropertyDrawerCache.forceGetPropertyHeight(property, label);
             }
             else
             {
@@ -28,10 +26,7 @@ namespace Nextension.NEditor
             if (_isShow)
             {
                 EditorGUI.BeginChangeCheck();
-                if (!CustomPropertyDrawerCache.draw(position, property, label))
-                {
-                    EditorGUI.PropertyField(position, property, label);
-                }
+                CustomPropertyDrawerCache.forceDraw(position, property, label);
                 EditorGUI.EndChangeCheck();
             }
         }

@@ -15,7 +15,13 @@ namespace Nextension
         [EditorQuittingMethod]
         private static void reset()
         {
-            _usingPool.Clear();
+            if (_usingPool.Count > 0)
+                _usingPool.Clear();
+        }
+
+        static PoolTracker()
+        {
+            reset();
         }
 
         [LoopMethod(NLoopType.LateUpdate)]

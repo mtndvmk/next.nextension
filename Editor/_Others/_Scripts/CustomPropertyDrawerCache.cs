@@ -56,9 +56,26 @@ namespace Nextension.NEditor
             return null;
         }
 
+        public static bool isSupported(SerializedProperty property)
+        {
+            try
+            {
+                if (property == null 
+                    || property.type.StartsWith("UnityEvent") 
+                    || property.type == "vector" 
+                    || property.boxedValue == null) return false;
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(e);
+                return false;
+            }
+        }
+
         public static bool draw(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (property == null || property.boxedValue == null) return false;
+            if (!isSupported(property)) return false;
             var boxedType = property.boxedValue.GetType();
             var cache = getCache(boxedType);
             if (cache != null)
@@ -73,13 +90,13 @@ namespace Nextension.NEditor
         {
             if (!draw(position, property, label))
             {
-                EditorGUI.PropertyField(position, property, label);
+                EditorGUI.PropertyField(position, property, label, true);
             }
         }
 
         public static float? getPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (property == null || property.boxedValue == null) return default; 
+            if (!isSupported(property)) return default; 
             var boxedType = property.boxedValue.GetType();
             var cache = getCache(boxedType);
             if (cache != null)

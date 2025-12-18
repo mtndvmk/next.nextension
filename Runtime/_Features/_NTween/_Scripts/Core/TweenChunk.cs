@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -9,24 +8,27 @@ namespace Nextension.Tween
     internal abstract class TweenChunk
     {
         #region Const & Static
-        private static short[] _defaultEmptyIndices;
+        public const ushort CHUNK_SIZE = 256;
+        public const float NOT_ACCESS_TIME_LIMIT = 10; // in seconds
 
         static TweenChunk()
         {
             _chunkIdOrder = 0;
             ChunkCount = 0;
             TweenStaticManager.runningTweenerCount = 0;
-            _defaultEmptyIndices = new short[ChunkSize];
-            var chunkSizeMinusOne = ChunkSize - 1;
-            for (short i = 0; i < ChunkSize; ++i)
+            _defaultEmptyIndices = new short[CHUNK_SIZE];
+            var chunkSizeMinusOne = CHUNK_SIZE - 1;
+            for (short i = 0; i < CHUNK_SIZE; ++i)
             {
                 _defaultEmptyIndices[i] = (short)(chunkSizeMinusOne - i);
             }
         }
+
+        private static short[] _defaultEmptyIndices;
         private static ushort _chunkIdOrder;
+
         public static short ChunkCount { get; private set; }
-        public const ushort ChunkSize = 256;
-        public const float NotAccessTimeLimit = 10;
+
         #endregion
 
         protected NativeArray<byte> _mask;
@@ -40,32 +42,27 @@ namespace Nextension.Tween
         {
             chunkId = ++_chunkIdOrder;
             ChunkCount++;
-            _mask = new NativeArray<byte>(ChunkSize, Allocator.Persistent);
+            _mask = new NativeArray<byte>(CHUNK_SIZE, Allocator.Persistent);
             _emptyIndices = new(_defaultEmptyIndices, Allocator.Persistent);
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual void dispose()
         {
             _emptyIndices.Dispose();
             _mask.Dispose();
             ChunkCount--;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool isFull() => _emptyIndices.Count == 0;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool isEmpty() => _emptyIndices.Count == ChunkSize;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool isEmpty() => _emptyIndices.Count == CHUNK_SIZE;
         public bool isDisposed() => !_mask.IsCreated;
         public bool isUnused()
         {
-            if (_lastEmptyTime == -1 || TweenStaticManager.currentTime - _lastEmptyTime < NotAccessTimeLimit)
+            if (_lastEmptyTime == -1 || TweenStaticManager.currentTime - _lastEmptyTime < NOT_ACCESS_TIME_LIMIT)
             {
                 return false;
             }
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected int getNextMaskIndex()
         {
             return _emptyIndices.TakeAndRemoveLast();
@@ -89,8 +86,8 @@ namespace Nextension.Tween
 
         public GenericTweenChunk() : base()
         {
-            _tweeners = new TNTweener[ChunkSize];
-            _jobDataNativeArr = new NativeArray<TJobData>(ChunkSize, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            _tweeners = new TNTweener[CHUNK_SIZE];
+            _jobDataNativeArr = new NativeArray<TJobData>(CHUNK_SIZE, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
 
         private void removeAt(int maskIndex)
@@ -99,6 +96,7 @@ namespace Nextension.Tween
             if (_tweeners[maskIndex] == null)
             {
                 Debug.LogError("Remove empty maskIndex?");
+                return;
             }
 #endif
             var isFull = this.isFull();
@@ -138,7 +136,7 @@ namespace Nextension.Tween
         }
         public sealed override void invokeJobComplete()
         {
-            for (int i = 0; i < ChunkSize; ++i)
+            for (int i = 0; i < CHUNK_SIZE; ++i)
             {
                 var tweener = _tweeners[i];
                 if (tweener == null)
@@ -149,6 +147,7 @@ namespace Nextension.Tween
                 var currentTime = tweener.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTime : TweenStaticManager.currentUnscaledTime;
                 if (currentTime > startTime)
                 {
+                    tweener.Time = currentTime - startTime;
                     var endTime = startTime + tweener.duration;
                     if (tweener.Status == RunState.None)
                     {
@@ -156,7 +155,8 @@ namespace Nextension.Tween
                     }
                     onTweenerUpdated(i);
                     tweener.invokeOnUpdate();
-                    if (currentTime >= endTime)
+
+                    if (tweener == _tweeners[i] && currentTime >= endTime)
                     {
                         removeAt(i);
                         tweener.invokeOnComplete();
@@ -187,9 +187,7 @@ namespace Nextension.Tween
             _jobDataNativeArr.Dispose();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onTweenerUpdated(int maskIndex) { }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected virtual void onAddNewTweener(TNTweener tweener) { }
 
         protected abstract TJob createNewJob();

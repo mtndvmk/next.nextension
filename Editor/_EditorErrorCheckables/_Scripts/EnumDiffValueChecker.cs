@@ -4,9 +4,8 @@ using System.Reflection;
 
 namespace Nextension.NEditor
 {
-    public class EnumDiffValueChecker : IErrorCheckable
+    internal class EnumDiffValueChecker : IOnCompiled
     {
-        private EnumDiffValueChecker() { }
         private static bool checkHasErrorOnBuild(out Exception e)
         {
             var types = NUtils.getCustomTypes();
@@ -34,14 +33,14 @@ namespace Nextension.NEditor
             e = null;
             return false;
         }
-        public static void onPreprocessBuild()
+        static void onPreprocessBuild()
         {
             if (checkHasErrorOnBuild(out var e))
             {
                 throw e;
             }
         }
-        public static void onEditorLoop()
+        static void onLoadOrRecompiled()
         {
             if (checkHasErrorOnBuild(out var e))
             {

@@ -20,7 +20,7 @@ namespace Nextension.NEditor
             {
                 return;
             }
-
+            EditorGUI.BeginChangeCheck();
             Rect rowPosition = position;
             rowPosition.height = h;
             rowPosition.y += h + NEditorConst.ROW_SPACING;
@@ -54,6 +54,7 @@ namespace Nextension.NEditor
                     break;
             }
             EditorGUI.PropertyField(valuePropertyRect, serializedProperty, valueLabel);
+            EditorGUI.EndChangeCheck();
         }
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {

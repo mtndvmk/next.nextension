@@ -54,30 +54,33 @@ namespace Nextension
 
         protected static object getValue(object predicateValue, object containerObject)
         {
-            if (predicateValue is int intVal)
+            if (isNumber(predicateValue))
             {
-                return intVal;
-            }
-            else if (predicateValue is float floatVal)
-            {
-                return floatVal;
+                return predicateValue;
             }
             else
             {
                 var val = NUtils.getValue(containerObject, predicateValue.ToString());
-                if (val is int intValue)
+                if (isNumber(val))
                 {
-                    return intValue;
+                    return val;
                 }
-                if (val is float floatValue)
-                {
-                    return floatValue;
-                }
-                else
-                {
-                    throw new Exception($"[NSlider] {predicateValue} is not number");
-                }
+                throw new Exception($"[NSlider] {predicateValue} is not number: {predicateValue.GetType()}");
             }
+        }
+
+        private static bool isNumber(object numObject)
+        {
+            if (numObject is int
+                || numObject is uint
+                || numObject is long
+                || numObject is ulong
+                || numObject is float
+                || numObject is double)
+            {
+                return true;
+            }
+            return false;
         }
 
         public object getMinValue(object containerObject)

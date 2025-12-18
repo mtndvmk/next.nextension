@@ -23,7 +23,7 @@ namespace Nextension
                 {
                     _direction = value;
                     updateContentAnchorAndPivot();
-                    recalculateCellPositions();
+                    setDirtyPosition(0);
                 }
             }
         }
@@ -35,7 +35,7 @@ namespace Nextension
                 if (value != _spacing)
                 {
                     _spacing = value;
-                    recalculateCellPositions();
+                    setDirtyPosition(0);
                 }
             }
         }
@@ -47,7 +47,7 @@ namespace Nextension
                 if (value != _extendVisibleRange)
                 {
                     _extendVisibleRange = value;
-                    setDirty();
+                    setDirtyLayout();
                 }
             }
         }
@@ -65,7 +65,7 @@ namespace Nextension
                     }
                     calculateColumns();
                     updateContentSize();
-                    recalculateCellPositions();
+                    setDirtyPosition(0);
                 }
             }
         }
@@ -81,7 +81,6 @@ namespace Nextension
             updateContentAnchorAndPivot();
         }
 
-#if UNITY_EDITOR
         protected override void OnValidate()
         {
             foreach (var data in DataList)
@@ -90,10 +89,9 @@ namespace Nextension
             }
             calculateColumns();
             updateContentSize();
-            recalculateCellPositions(0);
+            setDirtyPosition(0);
             base.OnValidate();
         }
-#endif
 
         protected override void onAddedNewItem(InfiniteCellData data)
         {
@@ -160,12 +158,13 @@ namespace Nextension
             {
                 var ftAnchor = _cellFTAnchorList[i];
                 Vector2 position = calculateCellPosition(i, ftAnchor);
-                var cell = showCell(i, position);
+                var cell = showCell(i);
                 var cellRectTransform = cell.rectTransform();
 
                 cellRectTransform.anchorMin = cellRectAnchor;
                 cellRectTransform.anchorMax = cellRectAnchor;
                 cellRectTransform.pivot = cellRectAnchor;
+                cellRectTransform.anchoredPosition = position;
                 cell.transform.SetAsLastSibling();
             }
         }
@@ -298,7 +297,7 @@ namespace Nextension
             _cellFTAnchorList[index] = new FTAnchor(_cellFTAnchorList[index].from, newSize.y);
             int rowCount = Mathf.CeilToInt((float)DataList.Count / Columns);
             scrollRect.content.sizeDelta = calculateContentSize(rowCount);
-            recalculateCellPositions(index);
+            setDirtyPosition(index);
         }
         protected override void updateContentAnchorAndPivot()
         {
@@ -318,9 +317,8 @@ namespace Nextension
                 scrollContent.pivot = cellRectAnchor;
             }
         }
-        protected override void recalculateCellPositions(int startIndex = 1)
+        protected override void exeCalculateCellPositions(int startIndex = 1)
         {
-            setDirty();
             if (startIndex <= _visibleIndices.fromIndex)
             {
                 for (int i = _visibleIndices.fromIndex; i <= _visibleIndices.toIndex; i++)
