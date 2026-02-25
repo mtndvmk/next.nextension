@@ -18,12 +18,7 @@ namespace Nextension.Tween
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override FromToData<TValue> getJobData()
             {
-                return new FromToData<TValue>()
-                {
-                    common = getCommonJobData(),
-                    from = this.from,
-                    to = this.destination,
-                };
+                return new FromToData<TValue>(getCommonJobData(), from, destination);
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override AbsTweenRunner createRunner()

@@ -14,6 +14,7 @@ namespace Nextension
         internal struct Job : IJobParallelForTransform
         {
             [ReadOnly, NativeDisableParallelForRestriction] internal NativeList<AutoTransformData> autoTransformDatas;
+            internal float deltaTime;
             [BurstCompile]
             public void Execute(int index, TransformAccess transform)
             {
@@ -24,11 +25,11 @@ namespace Nextension
                         {
                             if (data.isLocalSpace)
                             {
-                                transform.localPosition += (Vector3)data.data * _deltaTime.Data;
+                                transform.localPosition += (Vector3)data.data * deltaTime;
                             }
                             else
                             {
-                                transform.position += (Vector3)data.data * _deltaTime.Data;
+                                transform.position += (Vector3)data.data * deltaTime;
                             }
                             break;
                         }
@@ -36,11 +37,11 @@ namespace Nextension
                         {
                             if (data.isLocalSpace)
                             {
-                                transform.localRotation *= quaternion.EulerXYZ(data.data * math.radians(_deltaTime.Data));
+                                transform.localRotation *= quaternion.EulerXYZ(data.data * math.radians(deltaTime));
                             }
                             else
                             {
-                                transform.rotation *= quaternion.EulerXYZ(data.data * math.radians(_deltaTime.Data));
+                                transform.rotation *= quaternion.EulerXYZ(data.data * math.radians(deltaTime));
                             }
                             break;
                         }
@@ -51,8 +52,6 @@ namespace Nextension
         private static TransformAccessArray _transformAccessArray;
         private static Job _job;
         private static List<AutoTransformHandle> _handlers;
-
-        private readonly static SharedStatic<float> _deltaTime = SharedStatic<float>.GetOrCreate<Job>();
 
 #if UNITY_EDITOR
         [EditorQuittingMethod]
@@ -74,15 +73,16 @@ namespace Nextension
             {
                 _transformAccessArray = new TransformAccessArray(4);
                 _job.autoTransformDatas = new NativeList<AutoTransformData>(4, AllocatorManager.Persistent);
-                _handlers = new(4);
+                _handlers = new List<AutoTransformHandle>(4);
                 NUpdater.onUpdateEvent.add(update);
             }
         }
         private static void update()
         {
-            if (_handlers.Count > 0)
+            int handlerCount = _handlers.Count;
+            if (handlerCount > 0)
             {
-                _deltaTime.Data = Time.deltaTime;
+                _job.deltaTime = Time.deltaTime;
                 _job.Schedule(_transformAccessArray).Complete();
             }
         }
@@ -102,11 +102,11 @@ namespace Nextension
                 data = data,
                 isLocalSpace = isLocalSpace
             });
-            var handler = new AutoTransformHandle(_transformAccessArray.length - 1);
+            var index = _transformAccessArray.length - 1;
+            var handler = AutoTransformHandle.create(index);
             _handlers.Add(handler);
             return handler;
         }
-
         public static void stop(AutoTransformHandle handler)
         {
             if (_transformAccessArray.isCreated)
@@ -116,6 +116,7 @@ namespace Nextension
                 _job.autoTransformDatas.RemoveAtSwapBack(index);
                 _transformAccessArray.RemoveAtSwapBack(index);
                 _handlers.removeAtSwapBack(index);
+                AutoTransformHandle.release(handler);
             }
         }
         public static void updateAutoValue(AbsAutoTransform autoTransform)
@@ -124,7 +125,7 @@ namespace Nextension
         }
         public static void updateAutoValue(AutoTransformHandle handler, AutoTransformType type, float3 data, bool isLocalSpace)
         {
-            _job.autoTransformDatas[handler.Index] = new()
+            _job.autoTransformDatas[handler.Index] = new AutoTransformData()
             {
                 type = type,
                 data = data,

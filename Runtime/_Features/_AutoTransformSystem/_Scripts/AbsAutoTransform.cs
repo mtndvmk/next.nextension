@@ -5,11 +5,13 @@ namespace Nextension
 {
     public abstract class AbsAutoTransform : MonoBehaviour
     {
+
+        [SerializeField] protected bool _isLocalSpace = true;
+        [SerializeField] protected bool _isStartOnEnable = true;
+
+        protected float _startTime;
+
         internal AutoTransformHandle handler;
-
-        [SerializeField] private bool _isLocalSpace = true;
-        [SerializeField] private bool _isStartOnEnable = true;
-
         internal abstract float3 AutoValue { get; }
         internal abstract AutoTransformType AutoTransformType { get; }
 
@@ -30,7 +32,18 @@ namespace Nextension
                 }
             }
         }
-        public bool IsStarted => handler != null;
+        public bool IsStarted => handler.isValid();
+        public float PlayedTime
+        {
+            get
+            {
+                if (IsStarted)
+                {
+                    return getCurrentTime() - _startTime;
+                }
+                return 0;
+            }
+        }
 
         protected virtual void OnEnable()
         {
@@ -39,17 +52,25 @@ namespace Nextension
                 start();
             }
         }
+
         protected virtual void OnDisable()
         {
             stop();
         }
+
         protected virtual void OnValidate()
         {
             invokeAutoValueChanged();
         }
+
+        protected static float getCurrentTime()
+        {
+            return Time.time + 1;
+        }
+
         protected void invokeAutoValueChanged()
         {
-            if (handler != null)
+            if (handler.isValid())
             {
                 AutoTransformSystem.updateAutoValue(this);
             }
@@ -57,11 +78,16 @@ namespace Nextension
 
         public void start()
         {
-            handler ??= AutoTransformSystem.start(this);
+            if (handler.isValid())
+            {
+                return;
+            }
+            handler = AutoTransformSystem.start(this);
+            _startTime = getCurrentTime();
         }
         public void stop()
         {
-            if (handler != null)
+            if (handler.isValid())
             {
                 AutoTransformSystem.stop(handler);
                 handler = default;

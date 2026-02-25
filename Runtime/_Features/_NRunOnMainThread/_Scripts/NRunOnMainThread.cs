@@ -41,11 +41,11 @@ namespace Nextension
             }
 #endif
             int clearCount = 0;
-            var span = _actions.asSpan();
+            var actionSpan = _actions.asSpan();
             for (int i = _actions.Count - 1; i >= 0; i--)
             {
-                var v = span[i];
-                if (v.HasActiveScene && v.activeScene == scene)
+                var actionData = actionSpan[i];
+                if (actionData.HasActiveScene && actionData.activeScene == scene)
                 {
                     _actions.removeAtSwapBack(i);
                     clearCount++;
@@ -56,8 +56,11 @@ namespace Nextension
                 Debug.Log($"[{nameof(NRunOnMainThread)}] Clear data on load scene: {clearCount} actions");
             }
         }
-
-        public static void run(Action action, bool isClearOnLoadScene = false)
+        public static void run(Action action)
+        {
+            run(action, activeScene: default);
+        }
+        public static void run(Action action, bool isClearOnLoadScene)
         {
             if (isClearOnLoadScene)
             {
@@ -70,12 +73,9 @@ namespace Nextension
         }
         public static void run(Action action, Scene activeScene)
         {
+            if (action == null) return;
             initialize();
-            _actions.Add(new ActionData()
-            {
-                action = action,
-                activeScene = activeScene,
-            });
+            _actions.Add(new ActionData(action, activeScene));
         }
         public static void clear()
         {
@@ -83,11 +83,12 @@ namespace Nextension
         }
         private static void invokeAction()
         {
-            while (_actions.Count > 0)
+            if (_actions.Count == 0) return;
+            foreach (var actionData in _actions)
             {
                 try
                 {
-                    _actions.takeAndRemoveLast().action?.Invoke();
+                    actionData.action.Invoke();
                 }
                 catch (Exception e)
                 {
@@ -95,10 +96,16 @@ namespace Nextension
                 }
             }
         }
-        private struct ActionData
+        private readonly struct ActionData
         {
-            public Action action;
-            internal Scene activeScene;
+            public readonly Action action;
+            internal readonly Scene activeScene;
+
+            public ActionData(Action action, Scene activeScene)
+            {
+                this.action = action;
+                this.activeScene = activeScene;
+            }
 
             public bool HasActiveScene => activeScene.IsValid();
         }

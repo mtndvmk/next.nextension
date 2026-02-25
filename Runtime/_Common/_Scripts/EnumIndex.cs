@@ -15,7 +15,7 @@ namespace Nextension
         internal static Dictionary<T, int> enumToIndexTable;
 
 #if UNITY_EDITOR
-        private static string _indexString;
+        static string _indexString;
         internal static string IndexString => _indexString;
 #endif
 
@@ -46,7 +46,7 @@ namespace Nextension
                 cacheIntArray[i] = NConverter.bitConvertDiffSize<T, int>(enumArr[i]);
             }
             var bytes = NConverter.convertArray<int, byte>(cacheIntArray);
-            _indexString = Convert.ToBase64String(bytes);
+            _indexString = NUtils.compressToDeflateString(bytes);
         }
 #endif
 

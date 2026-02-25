@@ -12,14 +12,77 @@ namespace Nextension
 {
     public static class NUpdater
     {
-        public static readonly NCallback onEndOfFrameEvent = new();
-        public static readonly NCallback onEndOfFrameOnceTimeEvent = new();
+        public static NCallback onEndOfFrameEvent
+        {
+            get
+            {
+                lock (_onEndOfFrameEvent)
+                {
+                    return _onEndOfFrameEvent;
+                }
+            }
+        }
+        public static NCallback onEndOfFrameOnceTimeEvent
+        {
+            get
+            {
+                lock (_onEndOfFrameOnceTimeEvent)
+                {
+                    return _onEndOfFrameOnceTimeEvent;
+                }
+            }
+        }
 
-        public static readonly NCallback onUpdateEvent = new();
-        public static readonly NCallback onUpdateOnceTimeEvent = new();
+        public static NCallback onUpdateEvent
+        {
+            get
+            {
+                lock (_onUpdateEvent)
+                {
+                    return _onUpdateEvent;
+                }
+            }
+        }
+        public static NCallback onUpdateOnceTimeEvent
+        {
+            get
+            {
+                lock (_onUpdateOnceTimeEvent)
+                {
+                    return _onUpdateOnceTimeEvent;
+                }
+            }
+        }
 
-        public static readonly NCallback onLateUpdateEvent = new();
-        public static readonly NCallback onLateUpdateOnceTimeEvent = new();
+        public static NCallback onLateUpdateEvent
+        {
+            get
+            {
+                lock (_onLateUpdateEvent)
+                {
+                    return _onLateUpdateEvent;
+                }
+            }
+        }
+        public static NCallback onLateUpdateOnceTimeEvent
+        {
+            get
+            {
+                lock (_onLateUpdateOnceTimeEvent)
+                {
+                    return _onLateUpdateOnceTimeEvent;
+                }
+            }
+        }
+
+        private static readonly NCallback _onEndOfFrameEvent = new();
+        private static readonly NCallback _onEndOfFrameOnceTimeEvent = new();
+
+        private static readonly NCallback _onUpdateEvent = new();
+        private static readonly NCallback _onUpdateOnceTimeEvent = new();
+
+        private static readonly NCallback _onLateUpdateEvent = new();
+        private static readonly NCallback _onLateUpdateOnceTimeEvent = new();
 
         private static Action[] _staticUpdateEvent;
         private static Action[] _staticLateUpdateEvent;
@@ -44,14 +107,28 @@ namespace Nextension
         public static float CurrentTime => _stopwatch.ElapsedMilliseconds * 0.001f;
 
         /// <summary>
-        /// time in milliseconds between the last two frames
+        /// scaled time in milliseconds between the last two frames
         /// </summary>
         public static int DeltaTimeMs { get; private set; }
+
         /// <summary>
-        /// time in seconds between the last two frames
+        /// scaled time in seconds between the last two frames
         /// </summary>
         public static float DeltaTime => DeltaTimeMs * 0.001f;
 
+        /// <summary>
+        /// unscaled time in milliseconds between the last two frames
+        /// </summary>
+        public static int UnscaledDeltaTimeMs { get; private set; }
+        /// <summary>
+        /// unscaled time in seconds between the last two frames
+        /// </summary>
+        public static float UnscaledDeltaTime => UnscaledDeltaTimeMs * 0.001f;
+
+        public static float UnityTime { get; private set; }
+
+        public static float TimeSinceLatestUpdatedMs => CurrentTimeMs - LatestUpdatedTimeMs;
+        public static float TimeSinceLatestUpdated => TimeSinceLatestUpdatedMs * 0.001f;
 
         public static uint UpdateCount => _isUpdatedInNewFrame ? _updateCount : (_updateCount + 1);
 
@@ -70,6 +147,7 @@ namespace Nextension
             onLateUpdateOnceTimeEvent.clear();
         }
 
+        [DefaultExecutionOrder(-100)]
         private class InternalObject : MonoBehaviour
         {
             private IEnumerator Start()
@@ -88,9 +166,12 @@ namespace Nextension
             {
                 _updateCount++;
                 _isUpdatedInNewFrame = true;
+                UnityTime = Time.time;
 
                 var currentTimeMs = _stopwatch.ElapsedMilliseconds;
-                DeltaTimeMs = (int)(currentTimeMs - LatestUpdatedTimeMs);
+                UnscaledDeltaTimeMs = (int)(currentTimeMs - LatestUpdatedTimeMs);
+                DeltaTimeMs = (int)(UnscaledDeltaTimeMs * Time.timeScale);
+                
                 LatestUpdatedTimeMs = currentTimeMs;
 
                 invokeEvent(onUpdateEvent);
@@ -106,7 +187,10 @@ namespace Nextension
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void invokeEvent(NCallback callback)
             {
-                callback.tryInvoke();
+                lock (callback)
+                {
+                    callback.tryInvoke();
+                }
             }
             private void invokeStaticEvent(Action[] actions)
             {
@@ -127,10 +211,13 @@ namespace Nextension
             }
             private void invokeAndClear(NCallback callback)
             {
-                if (callback.Count > 0)
+                lock (callback)
                 {
-                    invokeEvent(callback);
-                    callback.clear();
+                    if (callback.Count > 0)
+                    {
+                        invokeEvent(callback);
+                        callback.clear();
+                    }
                 }
             }
         }
@@ -209,6 +296,7 @@ namespace Nextension
         private static void reset()
         {
             LatestUpdatedTimeMs = 0;
+            UnscaledDeltaTimeMs = 0;
             DeltaTimeMs = 0;
             _isUpdatedInNewFrame = false;
             _updateCount = 0;

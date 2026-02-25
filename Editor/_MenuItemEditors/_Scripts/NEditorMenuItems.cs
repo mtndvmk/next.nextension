@@ -242,7 +242,7 @@ namespace Nextension.NEditor
                 }
             }
         }
-        [MenuItem("Nextension/UI/Stretch to parent for selected items %q")]
+        [MenuItem("Nextension/UI/Stretch to parent for selected items")]
         public static void stretchToParentForSelected()
         {
             var objs = Selection.objects;
@@ -337,7 +337,19 @@ namespace Nextension.NEditor
             for (int i = 0; i < selections.Length; i++)
             {
                 var selection = selections[i];
-                if (selection is not Texture texture) { continue; }
+                Rect? rect = null;
+                if (selection is not Texture texture) 
+                { 
+                    if (selection is Sprite sprite)
+                    {
+                        texture = sprite.texture;
+                        rect = sprite.rect;
+                    }
+                    else
+                    {
+                        continue; 
+                    }
+                }
 
                 var assetPath = AssetDatabase.GetAssetPath(texture);
                 if (assetPath == null)
@@ -350,7 +362,7 @@ namespace Nextension.NEditor
 
                 if (!texture.isReadable || texture is not Texture2D tex2d)
                 {
-                    var readableTex2d = NTextureUtils.cloneNonReadableUseBlit(texture);
+                    var readableTex2d = NTextureUtils.cloneNonReadableUseBlit(texture, rect ?? new Rect(0, 0, texture.width, texture.height));
                     png = readableTex2d.EncodeToPNG();
                     UnityEngine.Object.DestroyImmediate(readableTex2d);
                 }
@@ -387,6 +399,7 @@ namespace Nextension.NEditor
             foreach (var obj in Selection.objects)
             {
                 if (obj is Texture) return true;
+                if (obj is Sprite) return true;
             }
             return false;
         }
@@ -394,6 +407,57 @@ namespace Nextension.NEditor
         private static void openDebugWindow(MenuCommand menuCommand)
         {
             ComponentDebugWindow.show(menuCommand.context as Component);
+        }
+
+        [InitializeOnLoadMethod]
+        private static void registerFinishedDefaultHeaderGUI()
+        {
+            Editor.finishedDefaultHeaderGUI += __drawHeaderGUI;
+        }
+
+        private static void __drawHeaderGUI(Editor editor)
+        {
+            var selectedObjects = editor.targets;
+            if (selectedObjects.Length == 0)
+            {
+                return;
+            }
+
+            bool hasRectTransform = false;
+            foreach (var obj in selectedObjects)
+            {
+                if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
+                {
+                    hasRectTransform = true;
+                    break;
+                }
+            }
+
+            if (hasRectTransform)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Anchor to parent"))
+                {
+                    foreach (var obj in selectedObjects)
+                    {
+                        if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
+                        {
+                            go.transform.asRectTransform().anchorToParent();
+                        }
+                    }
+                }
+                if (GUILayout.Button("Stretch to parent"))
+                {
+                    foreach (var obj in selectedObjects)
+                    {
+                        if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
+                        {
+                            go.transform.asRectTransform().stretchToParent();
+                        }
+                    }
+                }
+                GUILayout.EndHorizontal();
+            }
         }
     }
 

@@ -62,7 +62,7 @@ namespace Nextension
             }
             listener.add(action);
         }
-        
+
         public static void unregister(string cmdName, Action<CommandData> action)
         {
             if (_cmdListeners.TryGetValue(cmdName, out var actions))
@@ -70,7 +70,7 @@ namespace Nextension
                 actions.remove(action);
             }
         }
-        
+
         public static List<Exception> runCmd(string cmdInput)
         {
             var cmdData = new CommandData(cmdInput);
@@ -86,7 +86,7 @@ namespace Nextension
             CommandInfos.Add(arg0, info);
             return true;
         }
-        
+
         public static bool addCmdInfo(string arg0, string arg1, string info)
         {
             var cmdPrefix = $"{arg0} {arg1}";
@@ -97,7 +97,7 @@ namespace Nextension
             CommandInfos.Add(cmdPrefix, info);
             return true;
         }
-        
+
         public static bool addCmdInfo(string arg0, string arg1, string arg2, string info)
         {
             var cmdPrefix = $"{arg0} {arg1} {arg2}";
@@ -130,7 +130,7 @@ namespace Nextension
             }
             return "No description";
         }
-    
+
         public static Span<string> readSavedCommandFromFile()
         {
             if (!Instance._usePersistentSaveFile) return Span<string>.Empty;

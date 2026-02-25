@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Nextension
@@ -8,7 +7,7 @@ namespace Nextension
     public abstract class NSingletonInResources<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T s_instance;
-        private static NWaitable s_initializeTask;
+        private static NTask s_initializeTask;
         public static T Instance
         {
             get
@@ -33,22 +32,26 @@ namespace Nextension
                 return;
             }
 
-            if (s_initializeTask != null)
+            if (s_initializeTask.IsCreated)
             {
-                s_initializeTask.cancel();
-                s_initializeTask = null;
+                s_initializeTask.tryCancel();
+                 s_initializeTask = default;
             }
 
             instantiate(Resources.Load<T>(getPath()));
         }
-        public static async Task initializeAsync()
+        public static async NTask initializeAsync()
         {
             if (s_instance.isNull())
             {
-                await (s_initializeTask ??= innerInitializeAsync());
+                if (!s_initializeTask.IsCreated)
+                {
+                    s_initializeTask = innerInitializeAsync();
+                }
+                await s_initializeTask;
             }
         }
-        private static async NWaitable innerInitializeAsync()
+        private static async NTask innerInitializeAsync()
         {
             var prefabPath = getPath();
             var requestOperation = Resources.LoadAsync<T>(prefabPath);
@@ -57,9 +60,8 @@ namespace Nextension
             if (s_instance.isNull())
             {
                 instantiate(requestOperation.asset as T);
-                
             }
-            s_initializeTask = null;
+            s_initializeTask = default;
         }
         private static string getPath()
         {

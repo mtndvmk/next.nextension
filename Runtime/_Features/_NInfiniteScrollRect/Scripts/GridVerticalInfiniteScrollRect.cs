@@ -333,7 +333,7 @@ namespace Nextension
                 {
                     hideCell(i);
                 }
-                _visibleIndices.toIndex = startIndex - 1;
+                _visibleIndices = new FTIndex(_visibleIndices.fromIndex, startIndex - 1);
             }
             for (int i = startIndex; i < DataList.Count; i++)
             {

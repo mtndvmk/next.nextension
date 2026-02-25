@@ -48,7 +48,16 @@ namespace Nextension
                 Dictionary<TEnum, TValue> dict = null;
                 if (!string.IsNullOrEmpty(indexString))
                 {
-                    var bytes = Convert.FromBase64String(indexString);
+                    byte[] bytes;
+                    if (indexString.StartsWith(':'))
+                    {
+                        bytes = NUtils.decompressFromDeflateString(indexString);
+                    }
+                    else
+                    {
+                        bytes = Convert.FromBase64String(indexString);
+                    }
+
                     var cacheIntArray = NConverter.convertArray<byte, int>(bytes);
                     var cacheCount = cacheIntArray.Length;
                     dict = new(cacheCount);

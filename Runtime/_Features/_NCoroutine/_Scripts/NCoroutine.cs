@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,11 +16,10 @@ namespace Nextension
             internal readonly string name;
             public readonly Coroutine coroutine;
             private Action onCanceled;
-            internal Scene? inScene;
+            internal Scene inScene;
 
             public RunState Status { get; private set; }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool isFinished() => Status.isFinished();
 
             public Data(IEnumerator func, int groupId)
@@ -30,7 +28,7 @@ namespace Nextension
                 this.name = func.ToString();
                 if (!_runningCoroutines.TryGetValue(groupId, out var hashSet))
                 {
-                    hashSet = new(1) { this };
+                    hashSet = new() { this };
                     _runningCoroutines.Add(groupId, hashSet);
                 }
                 else
@@ -85,13 +83,14 @@ namespace Nextension
             /// if InScene is unloaded, this coroutine will be stopped
             /// </summary>
             /// <param name="scene"></param>
-            public void setInScene(Scene? scene = null)
+            public void setInScene(Scene scene = default)
             {
                 inScene = scene;
             }
         }
-        public enum StopType
+        public enum StopType : byte
         {
+            None = 0,
             SameGroup,
             AllGroup,
         }
@@ -100,17 +99,17 @@ namespace Nextension
         private static Dictionary<int, HashSet<Data>> _runningCoroutines = new Dictionary<int, HashSet<Data>>();
         private const int DEFAULT_GROUP_ID = 0;
 
-        public static Data startCoroutine(IEnumerator func, StopType? stopType = null)
+        public static Data startCoroutine(IEnumerator func, StopType stopType = StopType.None)
         {
             EditorCheck.checkEditorMode();
             return startCoroutine(func, DEFAULT_GROUP_ID, stopType);
         }
-        public static Data startCoroutine(IEnumerator func, int groupId, StopType? stopType = null)
+        public static Data startCoroutine(IEnumerator func, int groupId, StopType stopType = StopType.None)
         {
             EditorCheck.checkEditorMode();
-            if (stopType.HasValue)
+            if (stopType != StopType.None)
             {
-                stopCoroutine(func, groupId, stopType.Value);
+                stopCoroutine(func, groupId, stopType);
             }
             var data = new Data(func, groupId);
             return data;
@@ -247,7 +246,7 @@ namespace Nextension
                 var arr = v.ToArray();
                 foreach (var d in arr)
                 {
-                    if (d.inScene.HasValue && d.inScene.Value == scene)
+                    if (d.inScene.IsValid() && d.inScene == scene)
                     {
                         d.cancel();
                         clearCount++;

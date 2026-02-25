@@ -40,7 +40,7 @@
 //            //     position of the enumerator.   
 //            public T Current
 //            {
-               
+
 //                get
 //                {
 //                    return current;
@@ -59,10 +59,10 @@
 //            //   T:System.InvalidOperationException:
 //            //     The enumerator is positioned before the first element of the collection or after
 //            //     the last element.
-           
+
 //            object IEnumerator.Current
 //            {
-               
+
 //                get
 //                {
 //                    if (index == 0 || index == set.m_lastIndex + 1)
@@ -85,7 +85,7 @@
 //            // Summary:
 //            //     Releases all resources used by a System.Collections.Generic.HashSet`1.Enumerator
 //            //     object.
-           
+
 //            public void Dispose()
 //            {
 //            }
@@ -102,7 +102,7 @@
 //            // Exceptions:
 //            //   T:System.InvalidOperationException:
 //            //     The collection was modified after the enumerator was created.
-           
+
 //            public bool MoveNext()
 //            {
 //                while (index < set.m_lastIndex)
@@ -130,7 +130,7 @@
 //            // Exceptions:
 //            //   T:System.InvalidOperationException:
 //            //     The collection was modified after the enumerator was created.
-           
+
 //            void IEnumerator.Reset()
 //            {
 //                index = 0;
@@ -159,7 +159,7 @@
 
 //        public int Count
 //        {
-           
+
 //            get
 //            {
 //                return m_count;
@@ -172,10 +172,10 @@
 //        //
 //        // Returns:
 //        //     true if the collection is read-only; otherwise, false.
-       
+
 //        bool ICollection<T>.IsReadOnly
 //        {
-           
+
 //            get
 //            {
 //                return false;
@@ -190,10 +190,10 @@
 //        // Returns:
 //        //     The System.Collections.Generic.IEqualityComparer`1 object that is used to determine
 //        //     equality for the values in the set.
-       
+
 //        public IEqualityComparer<T> Comparer
 //        {
-           
+
 //            get
 //            {
 //                return EqualityComparer<T>.Default;
@@ -210,7 +210,7 @@
 //        //     The System.Collections.Generic.IEqualityComparer`1 implementation to use when
 //        //     comparing values in the set, or null to use the default System.Collections.Generic.EqualityComparer`1
 //        //     implementation for the set type.
-       
+
 //        public static NPUHSet<T> get()
 //        {
 //            var set = new NPUHSet<T>()
@@ -262,7 +262,7 @@
 //        // Exceptions:
 //        //   T:System.NotSupportedException:
 //        //     The System.Collections.Generic.ICollection`1 is read-only.
-       
+
 //        void ICollection<T>.Add(T item)
 //        {
 //            AddIfNotPresent(item);
@@ -271,7 +271,7 @@
 //        //
 //        // Summary:
 //        //     Removes all elements from a System.Collections.Generic.HashSet`1 object.
-       
+
 //        public void Clear()
 //        {
 //            if (m_lastIndex > 0)
@@ -297,7 +297,7 @@
 //        // Returns:
 //        //     true if the System.Collections.Generic.HashSet`1 object contains the specified
 //        //     element; otherwise, false.
-       
+
 //        public bool Contains(T item)
 //        {
 //            int num = InternalGetHashCode(item);
@@ -336,7 +336,7 @@
 //        //
 //        //   T:System.ArgumentException:
 //        //     arrayIndex is greater than the length of the destination array.
-       
+
 //        public void CopyTo(T[] array, int arrayIndex)
 //        {
 //            CopyTo(array, arrayIndex, m_count);
@@ -355,7 +355,7 @@
 //        //     true if the element is successfully found and removed; otherwise, false. This
 //        //     method returns false if item is not found in the System.Collections.Generic.HashSet`1
 //        //     object.
-       
+
 //        public bool Remove(T item)
 //        {
 //            int num = InternalGetHashCode(item);
@@ -411,7 +411,7 @@
 //        // Returns:
 //        //     A System.Collections.Generic.HashSet`1.Enumerator object for the System.Collections.Generic.HashSet`1
 //        //     object.
-       
+
 //        public Enumerator GetEnumerator()
 //        {
 //            return new Enumerator(this);
@@ -424,7 +424,7 @@
 //        // Returns:
 //        //     An System.Collections.Generic.IEnumerator`1 object that can be used to iterate
 //        //     through the collection.
-       
+
 //        IEnumerator<T> IEnumerable<T>.GetEnumerator()
 //        {
 //            return new Enumerator(this);
@@ -437,7 +437,7 @@
 //        // Returns:
 //        //     An System.Collections.IEnumerator object that can be used to iterate through
 //        //     the collection.
-       
+
 //        IEnumerator IEnumerable.GetEnumerator()
 //        {
 //            return new Enumerator(this);
@@ -454,7 +454,7 @@
 //        // Returns:
 //        //     true if the element is added to the System.Collections.Generic.HashSet`1 object;
 //        //     false if the element is already present.
-       
+
 //        public bool Add(T item)
 //        {
 //            return AddIfNotPresent(item);
@@ -501,7 +501,7 @@
 //        // Exceptions:
 //        //   T:System.ArgumentNullException:
 //        //     other is null.
-       
+
 //        public void UnionWith(IEnumerable<T> other)
 //        {
 //            if (other == null)
@@ -528,7 +528,7 @@
 //        // Exceptions:
 //        //   T:System.ArgumentNullException:
 //        //     other is null.
-       
+
 //        public void IntersectWith(IEnumerable<T> other)
 //        {
 //            if (other == null)
@@ -572,7 +572,7 @@
 //        // Exceptions:
 //        //   T:System.ArgumentNullException:
 //        //     other is null.
-       
+
 //        public void ExceptWith(IEnumerable<T> other)
 //        {
 //            if (other == null)
@@ -596,7 +596,7 @@
 //                Remove(item);
 //            }
 //        }
-   
+
 //        public void SymmetricExceptWith(IEnumerable<T> other)
 //        {
 //            if (other == null)
@@ -621,7 +621,7 @@
 //                SymmetricExceptWithEnumerable(other);
 //            }
 //        }
-       
+
 //        public bool IsSubsetOf(IEnumerable<T> other)
 //        {
 //            if (other == null)
@@ -709,7 +709,7 @@
 
 //            return ContainsAllElements(other);
 //        }
-       
+
 //        public bool IsProperSupersetOf(IEnumerable<T> other)
 //        {
 //            if (other == null)
@@ -808,7 +808,7 @@
 //            CopyTo(array, 0, m_count);
 //        }
 
-       
+
 //        public void CopyTo(T[] array, int arrayIndex, int count)
 //        {
 //            if (array == null)
@@ -846,7 +846,7 @@
 //                }
 //            }
 //        }
-       
+
 //        public int RemoveWhere(Predicate<T> match)
 //        {
 //            if (match == null)
@@ -869,7 +869,7 @@
 
 //            return num;
 //        }
-       
+
 //        public void TrimExcess()
 //        {
 //            if (m_count == 0)

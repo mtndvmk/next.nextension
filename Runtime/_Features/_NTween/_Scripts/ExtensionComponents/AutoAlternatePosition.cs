@@ -9,12 +9,6 @@ namespace Nextension.Tween
 
         public override bool EnableOffset => true;
 
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            if (!IsRunning && _useOffset) _offset = _isLocalSpace ? transform.localPosition : transform.position;
-        }
-
         protected override void setValue(Vector3 value)
         {
             if (_isLocalSpace)
@@ -28,9 +22,22 @@ namespace Nextension.Tween
             onValueChanged?.Invoke(value);
         }
 
+        protected override void onStart()
+        {
+            if (_updateOffsetBeforeStart)
+            {
+                _offset = _isLocalSpace ? transform.localPosition : transform.position;
+            }
+            base.onStart();
+        }
+
         private Vector3 _computeWithOffset(Vector3 baseValue)
         {
-            return baseValue + (_useOffset ? _offset : Vector3.zero);
+            if (_useOffset)
+            {
+                return baseValue + _offset;
+            }
+            return baseValue;
         }
 
         protected override NRunnableTweener onFromTo()

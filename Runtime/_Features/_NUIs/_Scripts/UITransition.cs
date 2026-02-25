@@ -13,14 +13,14 @@ namespace Nextension.UI
             MoveDown,
         }
 
-        [SerializeField] private RectTransform _scaler;
-        [SerializeField] private float _effectDuration = 0.15f;
-        [SerializeField] private float _fromScaleValue = 0.4f;
-        [SerializeField] private float _punchScaleValue = 0.04f;
-        [SerializeField] private bool _addBlockingUIForScaler = true;
-        [SerializeField] private bool _hideOnSetup = true;
-        [SerializeField] private bool _hideWhenClickOnOutSide = true;
-        [SerializeField] private EffectOption _effectOption = EffectOption.MoveDown;
+        [SerializeField] protected RectTransform _scaler;
+        [SerializeField] protected float _effectDuration = 0.15f;
+        [SerializeField] protected float _fromScaleValue = 0.4f;
+        [SerializeField] protected float _punchScaleValue = 0.04f;
+        [SerializeField] protected bool _addBlockingUIForScaler = true;
+        [SerializeField] protected bool _hideOnSetup = true;
+        [SerializeField] protected bool _hideWhenClickOnOutSide = true;
+        [SerializeField] protected EffectOption _effectOption = EffectOption.MoveDown;
 
         private NButton _closeBgButton;
         private CanvasGroup _canvasGroup;

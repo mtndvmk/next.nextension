@@ -18,7 +18,7 @@ namespace Nextension
             set => _value = value;
         }
 
-        public override bool Equals(object other)
+        public readonly override bool Equals(object other)
         {
             if (other == null || other is not NInteger otherInteger)
             {
@@ -27,12 +27,12 @@ namespace Nextension
             return _value.Equals(otherInteger._value);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(NInteger other)
+        public readonly bool Equals(NInteger other)
         {
             return CompareTo(other) == 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return _value.GetHashCode();
         }
@@ -57,7 +57,7 @@ namespace Nextension
             return left.CompareTo(right) != 0;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int CompareTo(NInteger other)
+        public readonly int CompareTo(NInteger other)
         {
             return _value.CompareTo(other._value);
         }
@@ -82,7 +82,7 @@ namespace Nextension
             return left.CompareTo(right) >= 0;
         }
 
-        public byte estNumBytesLength()
+        public readonly byte estNumBytesLength()
         {
             if (_value == 0 || _value == long.MinValue) return 0;
             var num = Math.Abs(_value);
@@ -101,7 +101,7 @@ namespace Nextension
                 return 4;
             }
         }
-        public unsafe byte[] getBytes()
+        public readonly unsafe byte[] getBytes()
         {
             if (_value == 0)
             {
@@ -133,7 +133,7 @@ namespace Nextension
         /// </summary>
         /// <param name="numBytesLength">numBytesLength = estNumBytesLength()</param>
         /// <param name="startIndex"></param>
-        public unsafe void writeTo(byte[] dst, byte numBytesLength, ref int startIndex)
+        public readonly unsafe void writeTo(byte[] dst, byte numBytesLength, ref int startIndex)
         {
             if (_value == 0)
             {
@@ -155,7 +155,7 @@ namespace Nextension
                 }
                 else
                 {
-                   firstNum = numBytesLength;
+                    firstNum = numBytesLength;
                 }
                 dst[startIndex++] = firstNum;
                 fixed (byte* dstPtr = &dst[startIndex])

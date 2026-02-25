@@ -104,7 +104,7 @@ namespace Nextension
             }
         }
 
-        public async Task<byte[]> getDownloadedDataAsync()
+        public async NTask<byte[]> getDownloadedDataAsync()
         {
             if (!IsFinalized)
             {

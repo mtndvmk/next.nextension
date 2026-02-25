@@ -1,21 +1,20 @@
 using System;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Nextension.TextureLoader
 {
     internal class FallbackProcessTask : AbsProcessTask
     {
-        protected override async Task exeProcess(byte[] imageData)
+        protected override async NTask exeProcess(byte[] imageData)
         {
             await loadTexture(imageData);
         }
-        protected override async Task exeProcess(Uri uri)
+        protected override async NTask exeProcess(Uri uri)
         {
             await loadTexture(await NUtils.getBinaryFrom(uri));
         }
 
-        private async Task loadTexture(byte[] inData)
+        private async NTask loadTexture(byte[] inData)
         {
             try
             {

@@ -21,7 +21,7 @@ namespace Nextension
         public struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>, IDisposable
         {
             private readonly Entry[] entries;
-            private readonly uint count; 
+            private readonly uint count;
             private uint index;
 
             private KeyValuePair<TKey, TValue> current;
@@ -62,7 +62,7 @@ namespace Nextension
             // Exceptions:
             //   T:System.InvalidOperationException:
             //     The collection was modified after the enumerator was created.
-             
+
             public bool MoveNext()
             {
                 while (index < count)
@@ -85,7 +85,7 @@ namespace Nextension
             //
             // Summary:
             //     Releases all resources used by the System.Collections.Generic.Dictionary`2.Enumerator.
-             
+
             public void Dispose()
             {
             }
@@ -98,7 +98,7 @@ namespace Nextension
             // Exceptions:
             //   T:System.InvalidOperationException:
             //     The collection was modified after the enumerator was created.
-             
+
             void IEnumerator.Reset()
             {
                 index = 0;
@@ -124,15 +124,15 @@ namespace Nextension
         //
         // Returns:
         //     The number of key/value pairs contained in the System.Collections.Generic.Dictionary`2.
-         
+
         public int Count
         {
-             
+
             get
             {
                 return count - freeCount;
             }
-        }        
+        }
 
         //
         // Summary:
@@ -153,10 +153,10 @@ namespace Nextension
         //
         //   T:System.Collections.Generic.KeyNotFoundException:
         //     The property is retrieved and key does not exist in the collection.
-         
+
         public TValue this[TKey key]
         {
-             
+
             get
             {
                 int num = FindEntry(key);
@@ -167,17 +167,17 @@ namespace Nextension
 
                 throw new KeyNotFoundException(nameof(key));
             }
-             
+
             set
             {
                 Insert(key, value, add: false);
             }
         }
 
-         
+
         bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly
         {
-             
+
             get
             {
                 return false;
@@ -200,7 +200,7 @@ namespace Nextension
         //     Initializes a new instance of the System.Collections.Generic.Dictionary`2 class
         //     that is empty, has the default initial capacity, and uses the default equality
         //     comparer for the key type.
-         
+
         public SimpleDictionary()
             : this(0, default)
         {
@@ -220,7 +220,7 @@ namespace Nextension
         // Exceptions:
         //   T:System.ArgumentOutOfRangeException:
         //     capacity is less than 0.
-         
+
         public SimpleDictionary(uint capacity)
             : this(capacity, default)
         {
@@ -244,7 +244,7 @@ namespace Nextension
         // Exceptions:
         //   T:System.ArgumentOutOfRangeException:
         //     capacity is less than 0.
-         
+
         public SimpleDictionary(uint capacity, IEqualityComparer<TKey> comparer)
         {
             if (capacity > 0)
@@ -272,7 +272,7 @@ namespace Nextension
         //
         //   T:System.ArgumentException:
         //     dictionary contains one or more duplicate keys.
-         
+
         public SimpleDictionary(IDictionary<TKey, TValue> dictionary)
             : this(dictionary, default)
         {
@@ -300,7 +300,7 @@ namespace Nextension
         //
         //   T:System.ArgumentException:
         //     dictionary contains one or more duplicate keys.
-         
+
         public SimpleDictionary(IDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey> comparer)
             : this((uint)(dictionary?.Count ?? 0), comparer)
         {
@@ -332,7 +332,7 @@ namespace Nextension
         //
         //   T:System.ArgumentException:
         //     An element with the same key already exists in the System.Collections.Generic.Dictionary`2.
-         
+
         public void Add(TKey key, TValue value)
         {
             Insert(key, value, add: true);
@@ -390,7 +390,7 @@ namespace Nextension
             }
             return true;
         }
-         
+
         void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> keyValuePair)
         {
             Add(keyValuePair.Key, keyValuePair.Value);
@@ -420,7 +420,7 @@ namespace Nextension
         //
         // Summary:
         //     Removes all keys and values from the System.Collections.Generic.Dictionary`2.
-         
+
         public void Clear()
         {
             if (count > 0)
@@ -453,7 +453,7 @@ namespace Nextension
         // Exceptions:
         //   T:System.ArgumentNullException:
         //     key is null.
-         
+
         public bool ContainsKey(TKey key)
         {
             return FindEntry(key) >= 0;
@@ -472,7 +472,7 @@ namespace Nextension
         // Returns:
         //     true if the System.Collections.Generic.Dictionary`2 contains an element with
         //     the specified value; otherwise, false.
-         
+
         public bool ContainsValue(TValue value)
         {
             if (value == null)
@@ -534,13 +534,13 @@ namespace Nextension
         //
         // Returns:
         //     A System.Collections.Generic.Dictionary`2.Enumerator structure for the System.Collections.Generic.Dictionary`2.
-         
+
         public Enumerator GetEnumerator()
         {
             return new Enumerator(this);
         }
 
-         
+
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
         {
             return new Enumerator(this);
@@ -598,7 +598,7 @@ namespace Nextension
             int num = comparer.GetHashCode(key) & 0x7FFFFFFF;
             int num2 = num % buckets.Length;
             int num3 = 0;
-            for (int num4 = buckets[num2]; num4 >= 0; )
+            for (int num4 = buckets[num2]; num4 >= 0;)
             {
                 var entry = entries[num4];
                 if (entry.hashCode == num && comparer.Equals(entry.key, key))
@@ -705,7 +705,7 @@ namespace Nextension
         // Exceptions:
         //   T:System.ArgumentNullException:
         //     key is null.
-         
+
         public bool Remove(TKey key)
         {
             checkNullKey(key);
@@ -856,7 +856,7 @@ namespace Nextension
             value = default;
             return false;
         }
-         
+
         void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
         {
             CopyTo(array, index);
@@ -868,7 +868,7 @@ namespace Nextension
         //
         // Returns:
         //     An System.Collections.IEnumerator that can be used to iterate through the collection.
-         
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new Enumerator(this);

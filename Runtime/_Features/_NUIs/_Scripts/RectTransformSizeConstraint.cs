@@ -7,14 +7,21 @@ namespace Nextension
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public class RectTransformSizeConstraint : MonoBehaviour, ILayoutIgnorer, ILayoutSelfController
     {
+        [System.Flags]
+        public enum ConstraintMode
+        {
+            Width = 1,
+            Height = 2,
+            Rotate = 4,
+            Scale = 8,
+            SwapDimensions = 16,
+        }
         [SerializeField] private RectTransform _source;
-        [SerializeField] private bool _isConstraintWidth;
-        [SerializeField] private bool _isConstraintHeight;
+        [SerializeField] private ConstraintMode _mode;
+        [SerializeField] private bool _useRestWhenSourceInactive;
         [SerializeField] private Vector2 _sizeAtRest;
         [SerializeField] private Vector2 _sizeOffset;
         [SerializeField] private Vector2 _minSize;
-        [SerializeField] private bool _isRotated;
-        [SerializeField] private bool _forceSetInactiveSource;
         [SerializeField] private bool _isIgnoreLayout;
 
         private Vector2 _srcRectSize;
@@ -28,22 +35,16 @@ namespace Nextension
                 _source = value;
             }
         }
-        public bool IsConstraintWidth
+        public ConstraintMode Mode
         {
-            get => _isConstraintWidth;
+            get => _mode;
             set
             {
-                _isConstraintWidth = value;
-                updateDimensions();
-            }
-        }
-        public bool IsConstraintHeight
-        {
-            get => _isConstraintHeight;
-            set
-            {
-                _isConstraintHeight = value;
-                updateDimensions();
+                if (_mode != value)
+                {
+                    _mode = value;
+                    updateDimensions();
+                }
             }
         }
         public Vector2 SizeOffset
@@ -59,6 +60,10 @@ namespace Nextension
         bool ILayoutIgnorer.ignoreLayout => _isIgnoreLayout;
 
         private void OnValidate()
+        {
+            _srcRectSize = Vector2.negativeInfinity;
+        }
+        private void OnEnable()
         {
             _srcRectSize = Vector2.negativeInfinity;
         }
@@ -84,8 +89,10 @@ namespace Nextension
             _tracker.Clear();
             DrivenTransformPropertiesHolder.clear(this);
             var trackValue = DrivenTransformProperties.None;
-            if (_isConstraintWidth) trackValue |= DrivenTransformProperties.SizeDeltaX;
-            if (_isConstraintHeight) trackValue |= DrivenTransformProperties.SizeDeltaY;
+            if (NUtils.checkMask(_mode, ConstraintMode.Width)) trackValue |= DrivenTransformProperties.SizeDeltaX;
+            if (NUtils.checkMask(_mode, ConstraintMode.Height)) trackValue |= DrivenTransformProperties.SizeDeltaY;
+            if (NUtils.checkMask(_mode, ConstraintMode.Rotate)) trackValue |= DrivenTransformProperties.Rotation;
+            if (NUtils.checkMask(_mode, ConstraintMode.Scale)) trackValue |= DrivenTransformProperties.Scale;
             trackValue = DrivenTransformPropertiesHolder.add(this, trackValue);
             _tracker.Add(this, transform.asRectTransform(), trackValue);
 #endif
@@ -100,7 +107,7 @@ namespace Nextension
             var rectTf = transform.asRectTransform();
             bool atRest = false;
             Vector2 srcRectSize;
-            if (!_forceSetInactiveSource && !_source.gameObject.activeInHierarchy)
+            if (_useRestWhenSourceInactive && !_source.gameObject.activeInHierarchy)
             {
                 atRest = true;
                 srcRectSize = Vector2.zero;
@@ -118,7 +125,7 @@ namespace Nextension
 
             if (_source.IsChildOf(rectTf))
             {
-                if (_isConstraintWidth)
+                if (NUtils.checkMask(_mode, ConstraintMode.Width))
                 {
                     if (_source.anchorMin.x != _source.anchorMax.x)
                     {
@@ -128,7 +135,7 @@ namespace Nextension
                     }
                 }
 
-                if (_isConstraintHeight)
+                if (NUtils.checkMask(_mode, ConstraintMode.Height))
                 {
                     if (_source.anchorMin.y != _source.anchorMax.y)
                     {
@@ -143,7 +150,7 @@ namespace Nextension
             var minSize = _minSize;
             var sizeAtRest = _sizeAtRest;
 
-            if (_isRotated)
+            if (NUtils.checkMask(_mode, ConstraintMode.SwapDimensions))
             {
                 (srcRectSize.x, srcRectSize.y) = (srcRectSize.y, srcRectSize.x);
                 (sizeOffset.x, sizeOffset.y) = (sizeOffset.y, sizeOffset.x);
@@ -151,7 +158,8 @@ namespace Nextension
                 (sizeAtRest.x, sizeAtRest.y) = (sizeAtRest.y, sizeAtRest.x);
             }
 
-            if (_isConstraintWidth)
+            bool isChanged = false;
+            if (NUtils.checkMask(_mode, ConstraintMode.Width))
             {
                 float newSize;
                 if (atRest)
@@ -169,9 +177,10 @@ namespace Nextension
                 if (newSize != rectTf.rect.width)
                 {
                     rectTf.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, newSize);
+                    isChanged = true;
                 }
             }
-            if (_isConstraintHeight)
+            if (NUtils.checkMask(_mode, ConstraintMode.Height))
             {
                 float newSize;
                 if (atRest)
@@ -189,13 +198,37 @@ namespace Nextension
                 if (newSize != rectTf.rect.height)
                 {
                     rectTf.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, newSize);
+                    isChanged = true;
                 }
+            }
+
+            if (NUtils.checkMask(_mode, ConstraintMode.Rotate))
+            {
+                if (transform.rotation != _source.rotation)
+                {
+                    transform.rotation = _source.rotation;
+                    isChanged = true;
+                }
+            }
+
+            if (NUtils.checkMask(_mode, ConstraintMode.Scale))
+            {
+                if (transform.lossyScale != _source.lossyScale)
+                {
+                    transform.setLossyScale(_source.lossyScale);
+                    isChanged = true;
+                }
+            }
+
+            if (isChanged)
+            {
+                rectTf.parent.markLayoutForRebuild();
             }
         }
 
         public void SetLayoutHorizontal()
         {
-            
+
         }
 
         public void SetLayoutVertical()

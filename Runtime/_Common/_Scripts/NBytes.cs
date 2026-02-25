@@ -36,36 +36,6 @@ namespace Nextension
         }
     }
 
-    public readonly ref struct NBytesRef
-    {
-        public NBytesRef(ReadOnlySpan<byte> content)
-        {
-            this.content = content;
-        }
-
-        public readonly ReadOnlySpan<byte> content;
-        
-        public int ContentLength => content.Length;
-        public int SizeInBytes => content.Length + NInteger.fromBytes(content).estNumBytesLength() + 1;
-
-        public NBytes toNBytes()
-        {
-            return new NBytes(content.ToArray());
-        }
-        public string toUTF8String()
-        {
-            return NConverter.getUTF8String(content);
-        }
-        public static NBytesRef parse(ReadOnlySpan<byte> src, int contentOffset = 0)
-        {
-            return NBytesUtils.readNextNBytes(src, ref contentOffset);
-        }
-        public static NBytesRef parse(ReadOnlySpan<byte> src, ref int contentOffset)
-        {
-           return NBytesUtils.readNextNBytes(src, ref contentOffset);
-        }
-    }
-
     public static class NBytesUtils
     {
         public static NBytesRef readChild(this NBytesRef nBytesRef, int contentOffset = 0)

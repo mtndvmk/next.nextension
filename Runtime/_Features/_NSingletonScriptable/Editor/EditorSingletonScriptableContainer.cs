@@ -22,7 +22,7 @@ namespace Nextension.NEditor
         [ContextMenu("Clear and reload")]
         private async void hardReload()
         {
-            await new NWaitSecond_Editor(1);
+            await TaskEditor.waitFrame();
             EditorSingletonScriptableLoader.scanAndReload(true);
         }
         private long _lastReloadTime;

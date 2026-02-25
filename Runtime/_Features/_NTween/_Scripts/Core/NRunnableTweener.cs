@@ -34,13 +34,7 @@ namespace Nextension.Tween
         }
         internal CommonJobData getCommonJobData()
         {
-            return new()
-            {
-                updateMode = updateMode,
-                easeType = easeType,
-                startTime = startTime,
-                duration = duration,
-            };
+            return new CommonJobData(updateMode, easeType, startTime, duration);
         }
 
         internal abstract AbsTweenRunner createRunner();

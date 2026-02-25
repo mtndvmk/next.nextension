@@ -123,7 +123,15 @@ namespace Nextension
             }
         }
 
+        private void OnValidate()
+        {
+            IsDirty = true;
+        }
         private void OnRectTransformDimensionsChange()
+        {
+            IsDirty = true;
+        }
+        private void OnEnable()
         {
             IsDirty = true;
         }
@@ -138,7 +146,6 @@ namespace Nextension
         {
 #if UNITY_EDITOR
             if (UnityEditor.Selection.activeGameObject != gameObject) return;
-            IsDirty = true;
             _tracker.Clear();
             DrivenTransformPropertiesHolder.clear(this);
             var trackValue = DrivenTransformProperties.AnchoredPosition
@@ -156,12 +163,41 @@ namespace Nextension
         {
             bool isChanged = IsDirty;
 
-            if (!isChanged) isChanged = _edgeCheckers.left.isChanged(_edges.left);
-            if (!isChanged) isChanged = _edgeCheckers.right.isChanged(_edges.right);
-            if (!isChanged) isChanged = _edgeCheckers.top.isChanged(_edges.top);
-            if (!isChanged) isChanged = _edgeCheckers.bottom.isChanged(_edges.bottom);
+            if (!isChanged) isChanged = _edgeCheckers.left.isChanged(__getEdge(Edge.Left));
+            if (!isChanged) isChanged = _edgeCheckers.right.isChanged(__getEdge(Edge.Right));
+            if (!isChanged) isChanged = _edgeCheckers.top.isChanged(__getEdge(Edge.Top));
+            if (!isChanged) isChanged = _edgeCheckers.bottom.isChanged(__getEdge(Edge.Bottom));
 
             return isChanged;
+        }
+
+        private RectTransform __getEdge(Edge edge)
+        {
+            RectTransform rect;
+            switch (edge)
+            {
+                case Edge.Left:
+                    rect = _edges.left;
+                    if (rect == null) return null;
+                    if (rect.gameObject.activeInHierarchy || _includeInactive.left) return rect;
+                    break;
+                case Edge.Right:
+                    rect = _edges.right;
+                    if (rect == null) return null;
+                    if (rect.gameObject.activeInHierarchy || _includeInactive.right) return rect;
+                    break;
+                case Edge.Top:
+                    rect = _edges.top;
+                    if (rect == null) return null;
+                    if (rect.gameObject.activeInHierarchy || _includeInactive.top) return rect;
+                    break;
+                case Edge.Bottom:
+                    rect = _edges.bottom;
+                    if (rect == null) return null;
+                    if (rect.gameObject.activeInHierarchy || _includeInactive.bottom) return rect;
+                    break;
+            }
+            return null;
         }
 
         private void LateUpdate()
@@ -193,21 +229,28 @@ namespace Nextension
             Vector2 anchorMax = Vector2.one;
             var parentSize = parent.rect.size;
 
-            if (_edges.top)
+            var top = __getEdge(Edge.Top);
+            if (top)
             {
-                anchorMax.y = _edges.top.getRectInParentSpace().yMin / parentSize.y;
+                anchorMax.y = top.getRectInParentSpace().yMin / parentSize.y;
             }
-            if (_edges.bottom)
+
+            var bottom = __getEdge(Edge.Bottom);
+            if (bottom)
             {
-                anchorMin.y = _edges.bottom.getRectInParentSpace().yMax / parentSize.y;
+                anchorMin.y = bottom.getRectInParentSpace().yMax / parentSize.y;
             }
-            if (_edges.left)
+
+            var left = __getEdge(Edge.Left);
+            if (left)
             {
-                anchorMin.x = _edges.left.getRectInParentSpace().xMax / parentSize.x;
+                anchorMin.x = left.getRectInParentSpace().xMax / parentSize.x;
             }
-            if (_edges.right)
+
+            var right = __getEdge(Edge.Right);
+            if (right)
             {
-                anchorMax.x = _edges.right.getRectInParentSpace().xMin / parentSize.x;
+                anchorMax.x = right.getRectInParentSpace().xMin / parentSize.x;
             }
 
             self.anchorMin = anchorMin;

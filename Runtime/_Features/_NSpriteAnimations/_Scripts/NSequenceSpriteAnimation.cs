@@ -16,7 +16,9 @@ namespace Nextension
         [SerializeField] private TargetType _targetType;
         [NIndent, SerializeField, NShowIf(nameof(_targetType), TargetType.SpriteRenderer)] private SpriteRenderer _spriteRenderer;
         [NIndent, SerializeField, NShowIf(nameof(_targetType), TargetType.Image)] private Image _image;
-        [SerializeField] private List<Sprite> _spriteFrames;
+        [SerializeField] private bool _playFromAnimationData = false;
+        [SerializeField, NShowIf(nameof(_playFromAnimationData))] private NSequenceSpriteData _animationData;
+        [SerializeField, NShowIf(nameof(_playFromAnimationData), false)] private List<Sprite> _spriteFrames;
         [SerializeField] private bool _playOnEnable;
         [SerializeField] private uint _fps = 12;
         [SerializeField] private bool _isLoop;
@@ -57,10 +59,15 @@ namespace Nextension
         {
             if (_playOnEnable)
             {
+                if (_playFromAnimationData && _animationData)
+                {
+                    play(_animationData.sprites, _animationData.fps);
+                    return;
+                }
                 play();
             }
         }
-        
+
         private void OnDisable()
         {
             stop();
@@ -73,7 +80,7 @@ namespace Nextension
             }
 
             var lastestFrameIndex = _spriteFrames.Count - 1;
-            
+
             if (Time.time >= _nextFrameTime)
             {
                 if (_isLoop)
@@ -102,7 +109,7 @@ namespace Nextension
             {
                 _currentFrameIndex = _requestFrameIndex;
                 setSprite(_spriteFrames[_currentFrameIndex]);
-                
+
                 if (_requestFrameIndex >= lastestFrameIndex && !_isLoop)
                 {
                     onEndOfAnimation?.Invoke();

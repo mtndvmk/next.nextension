@@ -17,12 +17,7 @@ namespace Nextension.Tween
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override PunchData<TValue> getJobData()
             {
-                return new()
-                {
-                    common = getCommonJobData(),
-                    origin = this.origin,
-                    punchDestination = this.punchDestination,
-                };
+                return new PunchData<TValue>(getCommonJobData(), origin, punchDestination);
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override AbsTweenRunner createRunner()

@@ -16,7 +16,12 @@ namespace Nextension
             _loadingObject.setActive(false);
         }
 
-        public override async void onButtonClick()
+        public override void onButtonClick()
+        {
+            __onButtonClick().forget();
+        }
+
+        private async NTaskVoid __onButtonClick()
         {
             if (onClick != null)
             {

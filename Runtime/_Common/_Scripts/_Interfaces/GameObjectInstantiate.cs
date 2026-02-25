@@ -36,17 +36,17 @@ namespace Nextension
             this.instantiateFunc = gameObjectInstantiate.getGameObject;
             this.destroyFunc = gameObjectInstantiate.release;
         }
-        
+
         private void __throwNotCreatedException()
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!IsCreated)
             {
                 throw new InvalidOperationException("ComponentInstantiate is not created properly");
             }
-            #endif
+#endif
         }
-        
+
         public GameObject getGameObject(Transform parent = null, bool worldPositionStays = true)
         {
             __throwNotCreatedException();
@@ -67,7 +67,7 @@ namespace Nextension
     {
         internal readonly Func<Transform, bool, GameObject> instantiateFunc;
         internal readonly Action<GameObject> destroyFunc;
-        
+
         public bool IsCreated => instantiateFunc != null && destroyFunc != null;
 
         public ComponentInstantiate(Func<Transform, bool, GameObject> instantiateFunc, Action<GameObject> destroyFunc)
@@ -139,7 +139,7 @@ namespace Nextension
             }
             this.destroyFunc = destroyFunc;
         }
-        
+
         public ComponentInstantiate(GameObjectInstantiate gameObjectInstantiate)
         {
             this.instantiateFunc = gameObjectInstantiate.instantiateFunc;
@@ -155,17 +155,17 @@ namespace Nextension
             this.instantiateFunc = componentInstantiate.getGameObject;
             this.destroyFunc = componentInstantiate.release;
         }
-        
+
         private void __throwNotCreatedException()
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (!IsCreated)
             {
                 throw new InvalidOperationException("ComponentInstantiate is not created properly");
             }
-            #endif
+#endif
         }
-        
+
         public GameObject getGameObject(Transform parent, bool worldPositionStays)
         {
             __throwNotCreatedException();
@@ -175,7 +175,7 @@ namespace Nextension
         {
             return getGameObject(null, true);
         }
-        
+
         public T getComponent(Transform parent = null, bool worldPositionStays = true)
         {
             var gameObject = getGameObject(parent, worldPositionStays);
@@ -194,7 +194,7 @@ namespace Nextension
         {
             return getComponent(null, true);
         }
-        
+
         public void release(GameObject target)
         {
             __throwNotCreatedException();

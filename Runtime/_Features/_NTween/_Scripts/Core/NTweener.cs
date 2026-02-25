@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Nextension.Tween
 {
-    public abstract class NTweener : ICancelable
+    public abstract class NTweener : ICancelable, ICustomWaitable
     {
         public enum UpdateMode : byte
         {
@@ -43,7 +43,7 @@ namespace Nextension.Tween
 
         internal bool isScheduled => scheduledTime > 0;
         internal bool isLooping => _totalLoopCount != _remainingLoopCount;
-        
+
         public RunState Status { get; private set; }
         public float Time { get; internal set; }
         public float NormalizedTime => duration == 0 ? 0 : Mathf.Clamp01(Time / duration);
@@ -56,14 +56,9 @@ namespace Nextension.Tween
 
         private List<Func<bool>> cancelWhenFuncList;
 
-        public async NWaitable waitTweener()
-        {
-            await new NWaitTweener(this);
-        }
         /// <summary>
         /// `loopCount` is -1 is infinite loop
         /// </summary>
-        /// <param name="loopCount"></param>
         public NTweener setLoop(int loopCount)
         {
             if (Status.isFinished())
@@ -403,7 +398,7 @@ namespace Nextension.Tween
         protected virtual void onResetState() { }
         protected virtual void onRestarted()
         {
-            
+
         }
 
         internal virtual void invokeBeforeStart()
@@ -422,6 +417,21 @@ namespace Nextension.Tween
 
         protected abstract void onRun();
         protected abstract void onSchedule();
+
+        NWaitableState ICustomWaitable.getCurrentState()
+        {
+            return getWaitableResult();
+        }
+
+        internal NWaitableState getWaitableResult()
+        {
+            return Status switch
+            {
+                RunState.Completed => NWaitableState.Completed,
+                RunState.Canceled => NWaitableState.Canceled,
+                _ => NWaitableState.None,
+            };
+        }
     }
     public abstract class GenericNTweener<T> : NTweener where T : NTweener
     {
@@ -453,6 +463,9 @@ namespace Nextension.Tween
             _tweener = this as T;
         }
 
+        /// <summary>
+        /// `loopCount` is -1 is infinite loop
+        /// </summary>
         public new T setLoop(int loopCount)
         {
             base.setLoop(loopCount);

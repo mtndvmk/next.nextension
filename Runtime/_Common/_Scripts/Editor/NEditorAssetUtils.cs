@@ -60,7 +60,7 @@ namespace Nextension
         }
         internal static async Task awaitImportWorkerProcess()
         {
-            await new NWaitUntil_Editor(() => !IsCompiling);
+            await TaskEditor.waitUntil(() => !IsCompiling);
         }
         public static bool IsCompiling => AssetDatabase.IsAssetImportWorkerProcess() || EditorApplication.isUpdating || EditorApplication.isCompiling;
 

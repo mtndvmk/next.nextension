@@ -17,7 +17,7 @@ namespace Nextension.Tween
             SpriteRenderer = 4,
             MeshRenderer = 5
         }
-        [SerializeField] private bool _hsvMode = true; 
+        [SerializeField] private bool _hsvMode = true;
         [SerializeField, NDisplayName("Target Type")] private AutoAlternateColorType _autoAlternateColorType;
         [SerializeField, NShowIf(nameof(_autoAlternateColorType), AutoAlternateColorType.Graphic)] private Graphic _graphic;
         [SerializeField, NShowIf(nameof(_autoAlternateColorType), AutoAlternateColorType.CanvasRenderer)] private CanvasRenderer _canvasRenderer;
@@ -222,7 +222,7 @@ namespace Nextension.Tween
                     throw new NotSupportedException();
             }
         }
-        
+
         protected override NRunnableTweener onFromTo()
         {
             return NTween.fromTo(convertColorToF4(getCurrentValue()), convertColorToF4(_toValue), FromToDuration, setValue);

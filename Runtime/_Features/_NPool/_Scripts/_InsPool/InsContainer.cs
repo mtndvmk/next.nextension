@@ -12,7 +12,7 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="T"></typeparam>
     [Serializable]
-    public class InsContainer<T> : ISerializationCallbackReceiver
+    public class InsContainer<T>
         where T : Object
     {
         private static Exception NOT_SUPPORT_EXCEPTION(Type type) => new Exception($"Not support InstancesContainer for {type}");
@@ -112,6 +112,7 @@ namespace Nextension
         }
         public void beginGetInstanceFrom(int fromIndex)
         {
+            requireCall();
             _activatedCount = fromIndex;
             if (_useSharedInsPool && _instanceList != null)
             {
@@ -255,18 +256,6 @@ namespace Nextension
         public void clearInstancesPrefer(int count)
         {
             clearInstances(count < _activatedCount ? _activatedCount : count);
-        }
-
-        public void OnBeforeSerialize()
-        {
-
-        }
-
-        public void OnAfterDeserialize()
-        {
-#if !UNITY_EDITOR
-            (new NWaitUntil(() => NStartRunner.IsPlaying)).startWaitable().addCompletedEvent(requireCall);
-#endif
         }
     }
 }

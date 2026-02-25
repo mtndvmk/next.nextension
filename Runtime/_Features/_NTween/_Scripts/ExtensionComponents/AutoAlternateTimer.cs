@@ -66,14 +66,15 @@ namespace Nextension.Tween
             _isFromTo = true;
             if (_delayFromTo > 0)
             {
-                _waitable = runFromToWithDelay(_delayFromTo, normalizedTimeOffset);
+                _task.forget();
+                _task = runFromToWithDelay(_delayFromTo, normalizedTimeOffset);
             }
             else
             {
                 runFromToWithoutDelay(normalizedTimeOffset);
             }
         }
-        private async NWaitable runFromToWithDelay(float delayTime, float normalizedTimeOffset)
+        private async NTask runFromToWithDelay(float delayTime, float normalizedTimeOffset)
         {
             await new NWaitSecond(delayTime);
             runFromToWithoutDelay(normalizedTimeOffset);
@@ -82,14 +83,15 @@ namespace Nextension.Tween
         {
             if (_timePerHalfCycle == 0)
             {
-                _waitable = new NWaitFrame(1).startWaitable();
                 if (_onlyFromTo)
                 {
-                    _waitable.addCompletedEvent(runFromTo);
+                    _task.forget();
+                    _task = NTask.waitAndRunAsync(new NWaitFrame(1), runFromTo);
                 }
                 else
                 {
-                    _waitable.addCompletedEvent(runToFrom);
+                    _task.forget();
+                    _task = NTask.waitAndRunAsync(new NWaitFrame(1), runToFrom);
                 }
             }
             else if (_onlyFromTo)
@@ -113,14 +115,15 @@ namespace Nextension.Tween
             _isFromTo = false;
             if (_delayToFrom > 0)
             {
-                _waitable = delayRunToFrom(_delayToFrom, normalizedTimeOffset);
+                _task.forget();
+                _task = delayRunToFrom(_delayToFrom, normalizedTimeOffset);
             }
             else
             {
                 runToFromWithoutDelay(normalizedTimeOffset);
             }
         }
-        private async NWaitable delayRunToFrom(float deplayTime, float normalizedTimeOffset)
+        private async NTask delayRunToFrom(float deplayTime, float normalizedTimeOffset)
         {
             await new NWaitSecond(deplayTime);
             runToFromWithoutDelay(normalizedTimeOffset);
@@ -129,8 +132,8 @@ namespace Nextension.Tween
         {
             if (_timePerHalfCycle == 0)
             {
-                _waitable = new NWaitFrame(1).startWaitable();
-                _waitable.addCompletedEvent(runFromTo);
+                _task.forget();
+                _task = NTask.waitAndRunAsync(new NWaitFrame(1), runFromTo);
                 return;
             }
             _ntweener = applyDuration(onToFrom().onCompleted(runFromTo).setEase(_easeType));

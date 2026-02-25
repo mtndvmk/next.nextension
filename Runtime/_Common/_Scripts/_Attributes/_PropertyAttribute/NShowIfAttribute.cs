@@ -47,7 +47,7 @@ namespace Nextension
 
         protected virtual bool checkCondition(object targetState, object containerObject)
         {
-            if (conditionValues == null)
+            if (conditionValues.isNull())
             {
                 return targetState.compareTo(default) == 0;
             }
@@ -98,7 +98,9 @@ namespace Nextension
                 return default;
             }
             var val = NUtils.getValue(containerObject, predicateValue.ToString());
-            if (val == null && returnInputIfNull)
+
+
+            if (val.isNull() && returnInputIfNull)
             {
                 return predicateValue;
             }
@@ -110,36 +112,14 @@ namespace Nextension
             var predicateValue = getPredicateValue(containerObject, predicateName, false);
             if (predicateValue.isNull())
             {
-                if (conditionValues == null || conditionValues.Length == 0) return true;
+                if (conditionValues.isNull() || conditionValues.Length == 0) return true;
                 foreach (var conditionValue in conditionValues)
                 {
-                    if (conditionValue == null) return true;
+                    if (conditionValue.isNull()) return true;
                 }
                 return false;
             }
             return checkCondition(predicateValue, containerObject);
-        }
-    }
-    public class NShowIfAllAttribute : NShowIfAttribute
-    {
-        public NShowIfAllAttribute(string predicateName, params object[] conditionValues) : base(predicateName, conditionValues)
-        {
-        }
-        protected override bool checkCondition(object targetState, object containerObject)
-        {
-            if (conditionValues.Length == 0)
-            {
-                return false;
-            }
-            foreach (var conditionValue in conditionValues)
-            {
-                var pedicateState = getPredicateValue(containerObject, conditionValue, true);
-                if (targetState.compareTo(pedicateState) != 0)
-                {
-                    return false;
-                }
-            }
-            return true;
         }
     }
 }

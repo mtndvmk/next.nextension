@@ -182,6 +182,7 @@ namespace Nextension
         }
         public unsafe void AddRange(ReadOnlySpan<T> items)
         {
+            if (items.Length == 0) return;
             var addSizeInBytes = NUtils.sizeOf<T>() * items.Length;
             var byteArray = i_array.Collection;
             ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
@@ -324,9 +325,9 @@ namespace Nextension
             i_array.Collection.InsertRangeWithoutChecks(index * sizeOfT, span);
         }
 
-        public unsafe void InsertRangeWithoutChecks(int index, ReadOnlySpan<T> span)
+        public unsafe void InsertRange(int index, ReadOnlySpan<T> span)
         {
-            fixed(void* ptr = span)
+            fixed (void* ptr = span)
             {
                 var sizeOfT = NUtils.sizeOf<T>();
                 ReadOnlySpan<byte> bSpan = new ReadOnlySpan<byte>(ptr, span.Length * sizeOfT);
@@ -334,7 +335,7 @@ namespace Nextension
             }
         }
 
-        public unsafe void InsertRangeWithoutChecks(int index, T* ptr, int length)
+        public unsafe void InsertRange(int index, T* ptr, int length)
         {
             var sizeOfT = NUtils.sizeOf<T>();
 
@@ -415,7 +416,7 @@ namespace Nextension
             private T _current;
 
             public readonly T Current => _current;
-            object IEnumerator.Current => _current;
+            readonly object IEnumerator.Current => _current;
 
             public void Dispose()
             {

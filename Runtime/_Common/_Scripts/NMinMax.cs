@@ -11,7 +11,7 @@ namespace Nextension
 
         public float Min
         {
-            get
+            readonly get
             {
                 return min;
             }
@@ -22,7 +22,7 @@ namespace Nextension
         }
         public float Max
         {
-            get
+            readonly get
             {
                 return max;
             }
@@ -31,11 +31,29 @@ namespace Nextension
                 max = Mathf.Clamp01(value);
             }
         }
+
+        public readonly float rand()
+        {
+            return rand(0);
+        }
+        public readonly float rand(uint seed)
+        {
+            return NUtils.getRandom(seed).NextFloat(min, max);
+        }
     }
     [Serializable]
     public struct NMinMax
     {
         public float min;
         public float max;
+
+        public readonly float rand()
+        {
+            return rand(0);
+        }
+        public readonly float rand(uint seed)
+        {
+            return NUtils.getRandom(seed).NextFloat(min, max);
+        }
     }
 }

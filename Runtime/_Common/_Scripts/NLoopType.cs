@@ -5,5 +5,6 @@
         Update,
         LateUpdate,
         EndOfFrameUpdate,
+        EditorUpdate,
     }
 }

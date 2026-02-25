@@ -1,3 +1,4 @@
+using Nextension.TextureLoader;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -5,7 +6,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
-using Nextension.TextureLoader;
 
 namespace Nextension
 {
@@ -89,7 +89,7 @@ namespace Nextension
         /// <summary>
         /// A `T` item is a color
         /// </summary>
-        public static async Task<(NativeArray<Color32>, int, int)> asyncResizeColor32(NativeArray<Color32> src, int srcWidth, int srcHeight, int maxDimension)
+        public static async NTask<(NativeArray<Color32>, int, int)> asyncResizeColor32(NativeArray<Color32> src, int srcWidth, int srcHeight, int maxDimension)
         {
             float higher = Mathf.Max(srcWidth, srcHeight);
 
@@ -127,7 +127,7 @@ namespace Nextension
         /// <summary>
         /// sizePerPixel bytes is binary of a color
         /// </summary>
-        public static async Task<(NativeArray<byte>, int, int)> asyncResizeBinaryColor(NativeArray<byte> src, int srcWidth, int srcHeight, int maxDimension)
+        public static async NTask<(NativeArray<byte>, int, int)> asyncResizeBinaryColor(NativeArray<byte> src, int srcWidth, int srcHeight, int maxDimension)
         {
             float higher = Mathf.Max(srcWidth, srcHeight);
 
@@ -166,7 +166,7 @@ namespace Nextension
 
             return (nativeDst, outWidth, outHeight);
         }
-        public static async Task<Texture2D> asyncResizeReadableTexture(Texture2D src, int maxDimension)
+        public static async NTask<Texture2D> asyncResizeReadableTexture(Texture2D src, int maxDimension)
         {
             if (src == null) return null;
             var srcWidth = src.width;
@@ -225,7 +225,7 @@ namespace Nextension
             var rt = RenderTexture.GetTemporary(
                 w, h, 0,
                 RenderTextureFormat.Default,
-                RenderTextureReadWrite.Linear
+                RenderTextureReadWrite.sRGB
             );
 
             Graphics.Blit(src, rt);
@@ -235,6 +235,32 @@ namespace Nextension
 
             Texture2D newTex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             newTex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+            newTex.Apply();
+
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(rt);
+
+            return newTex;
+        }
+
+        public static Texture2D cloneNonReadableUseBlit(Texture src, Rect rect)
+        {
+            int w = (int)rect.width;
+            int h = (int)rect.height;
+
+            var rt = RenderTexture.GetTemporary(
+                src.width, src.height, 0,
+                RenderTextureFormat.Default,
+                RenderTextureReadWrite.sRGB
+            );
+
+            Graphics.Blit(src, rt);
+
+            var prev = RenderTexture.active;
+            RenderTexture.active = rt;
+
+            Texture2D newTex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            newTex.ReadPixels(rect, 0, 0);
             newTex.Apply();
 
             RenderTexture.active = prev;
@@ -277,7 +303,7 @@ namespace Nextension
         /// <summary>
         /// Convert binary of RGBA color array (32bit) to Color array
         /// </summary>
-        public static async Task<NativeArray<Color>> asyncConvertBinary32ToColor(NativeArray<byte> src)
+        public static async NTask<NativeArray<Color>> asyncConvertBinary32ToColor(NativeArray<byte> src)
         {
             var nativeDst = new NativeArray<Color>(src.Length / 4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var job = new Job_ConvertBinary32ToColor()
@@ -292,7 +318,7 @@ namespace Nextension
         /// <summary>
         /// Convert binary of RGB color array (24bit) to Color array
         /// </summary>
-        public static async Task<NativeArray<Color>> asyncConvertBinary24ToColor(NativeArray<byte> src)
+        public static async NTask<NativeArray<Color>> asyncConvertBinary24ToColor(NativeArray<byte> src)
         {
             var nativeDst = new NativeArray<Color>(src.Length / 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var job = new Job_ConvertBinary24ToColor()
@@ -307,7 +333,7 @@ namespace Nextension
         /// <summary>
         /// Convert binary of RGBA color array (32bit) to binary of RGB color array (24bit)
         /// </summary>
-        public static async Task<NativeArray<byte>> asyncConvertByte32ToByte24(NativeArray<byte> src)
+        public static async NTask<NativeArray<byte>> asyncConvertByte32ToByte24(NativeArray<byte> src)
         {
             int colorCount = src.Length / 4;
             var nativeDst = new NativeArray<byte>(colorCount * 3, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);

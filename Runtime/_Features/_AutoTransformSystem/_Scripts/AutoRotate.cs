@@ -10,7 +10,7 @@ namespace Nextension
         [SerializeField, FormerlySerializedAs("_degreePerSecond")] private float3 _degreesPerSecond;
         internal override float3 AutoValue => _degreesPerSecond;
         internal override AutoTransformType AutoTransformType => AutoTransformType.AutoRotate;
-        
+
         public void setSpeed(float3 degreesPerSecond)
         {
             if (!_degreesPerSecond.Equals(degreesPerSecond))

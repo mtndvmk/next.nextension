@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -88,7 +87,7 @@ namespace Nextension.NEditor
                 if (isConstrained)
                 {
                     _constrainedSet.Add(_id);
-                    
+
                     var vector3Value = __getVector3Value(property);
                     var orginVector3 = vector3Value;
 
@@ -159,7 +158,7 @@ namespace Nextension.NEditor
             }
             EditorGUI.EndChangeCheck();
         }
-        
+
         private Vector3 __getVector3Value(SerializedProperty property)
         {
             if (property.type == nameof(float3))

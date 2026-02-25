@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Nextension.Tween
 {
-    internal struct CancelControlKey
+    internal readonly struct CancelControlKey
     {
         public readonly long longKey;
         public override int GetHashCode()

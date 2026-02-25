@@ -53,25 +53,17 @@ namespace Nextension.Tween
             }
             public override TransformShakeData<TValue> getJobData()
             {
-                var jobData = new TransformShakeData<TValue>()
-                {
-                    transformTweenType = _transformTweenType,
-                    shakeData = new ShakeData<TValue>()
-                    {
-                        common = getCommonJobData(),
-                        range = range,
-                    }
-                };
                 origin = _transformTweenType switch
                 {
-                    TransformTweenType.Local_Position => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
-                    TransformTweenType.World_Position => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
-                    TransformTweenType.Local_Scale => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
-                    TransformTweenType.Uniform_Local_Scale => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<float, TValue>(_target.localScale.x),
-                    TransformTweenType.Local_Rotation => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
-                    TransformTweenType.World_Rotation => jobData.shakeData.origin = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
+                    TransformTweenType.Local_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
+                    TransformTweenType.World_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
+                    TransformTweenType.Local_Scale => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
+                    TransformTweenType.Uniform_Local_Scale => NConverter.bitConvertWithoutChecks<float, TValue>(_target.localScale.x),
+                    TransformTweenType.Local_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
+                    TransformTweenType.World_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
                     _ => throw new NotImplementedException(_transformTweenType.ToString()),
                 };
+                var jobData = new TransformShakeData<TValue>(_transformTweenType, new ShakeData<TValue>(getCommonJobData(), range, origin));
                 return jobData;
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

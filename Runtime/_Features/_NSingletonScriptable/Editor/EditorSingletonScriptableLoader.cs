@@ -1,8 +1,8 @@
 #if UNITY_EDITOR
-using System.Collections.Generic;
-using UnityEngine;
 using System;
+using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine;
 
 namespace Nextension.NEditor
 {
@@ -100,7 +100,7 @@ namespace Nextension.NEditor
                     {
                         Debug.LogWarning($"[{scriptableObject}] is added or is not SingletonScriptable", scriptableObject);
                     }
-                   
+
                 }
 
                 Debug.Log($"Added {addCount} SingletonScriptables", container);
@@ -137,7 +137,7 @@ namespace Nextension.NEditor
                     }
                     catch (Exception e)
                     {
-                        if (--count <= 0) 
+                        if (--count <= 0)
                         {
                             Debug.LogException(e);
                             break;
@@ -145,7 +145,7 @@ namespace Nextension.NEditor
                         else
                         {
                             Debug.LogWarning(e);
-                            await new NWaitSecond_Editor(0.2f);
+                            await TaskEditor.waitFrame();
                         }
                     }
                 }
@@ -166,7 +166,7 @@ namespace Nextension.NEditor
                         Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameInResource} on Resource directory");
                         return;
                     }
-                    await new NWaitFrame_Editor(1);
+                    await TaskEditor.waitFrame();
                     if (container.add(scriptableObject))
                     {
                         container.reload();
@@ -188,7 +188,7 @@ namespace Nextension.NEditor
                         Debug.LogError($"Missing {EditorSingletonScriptableContainer.FileNameInResource} on Resource directory");
                         return;
                     }
-                    await new NWaitFrame_Editor(1);
+                    await TaskEditor.waitFrame();
                     container.add(scriptableObject);
                     container.reload();
                 }
@@ -223,7 +223,7 @@ namespace Nextension.NEditor
 
                 if (path.EndsWith(NEditorAssetUtils.SCRIPTABLE_OBJECT_EXTENSION))
                 {
-                    await new NWaitFrame_Editor(1);
+                    await TaskEditor.waitFrame();
                     _editorContainer.reload();
                 }
             }

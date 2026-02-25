@@ -9,7 +9,7 @@ namespace Nextension
         {
             if (_eventSystem.isNull())
                 _eventSystem = EventSystem.current;
-            if (_eventSystem.isNull()) 
+            if (_eventSystem.isNull())
                 return false;
             return _eventSystem.IsPointerOverGameObject();
         }

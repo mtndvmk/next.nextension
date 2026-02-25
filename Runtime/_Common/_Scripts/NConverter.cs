@@ -35,7 +35,7 @@ namespace Nextension
                 }
             }
         }
-        
+
         public static unsafe void writeBytesWithoutChecks<T>(byte[] inData, T t1, int startIndex = 0) where T : unmanaged
         {
             fixed (byte* ptr = &inData[startIndex])
@@ -62,7 +62,7 @@ namespace Nextension
         public static unsafe T fromBytes<T>(ReadOnlySpan<byte> inData, ref int startIndex) where T : unmanaged
         {
             InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());
-            return fromBytesWithoutChecks<T>(inData, startIndex);
+            return fromBytesWithoutChecks<T>(inData, ref startIndex);
         }
 
         public static T fromBytesWithoutChecks<T>(byte[] inData, ref int startIndex) where T : unmanaged
@@ -149,9 +149,9 @@ namespace Nextension
 
             if (sizeOfTOut > sizeOfTin)
             {
-                var resultPtr = stackalloc byte[sizeOfTOut];
-                *(TIn*)resultPtr = inValue;
-                return *(TOut*)resultPtr;
+                TOut result = default;
+                *(TIn*)&result = inValue;
+                return result;
             }
             else
             {

@@ -67,7 +67,7 @@ namespace Nextension.NEditor
                 NEditorGUILayout.drawReadOnlyField(name, value);
             }
 
-            if (_methodNames.Length > 0) 
+            if (_methodNames.Length > 0)
             {
                 var tempSearchMethodString = EditorGUILayout.TextField("Search method", _searchMethodString);
                 if (_version == 0 || tempSearchMethodString != _searchMethodString)

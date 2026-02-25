@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -31,10 +30,6 @@ namespace Nextension
 
         public abstract T get(Transform parent = null, bool worldPositionStays = true);
 
-        public abstract T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true);
-
-        public abstract T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true);
-
         public abstract bool poolContains(T instance);
 
         public abstract void release(T instance);
@@ -62,7 +57,7 @@ namespace Nextension
         {
             return new GameObjectInstantiate(this);
         }
-        
+
         public ComponentInstantiate<T> getComponentInstantiate()
         {
             return new ComponentInstantiate<T>(this);
@@ -80,10 +75,41 @@ namespace Nextension
         {
             InsPool.release(target);
         }
-
         public void release(OriginInstance origin)
         {
             release(InsPoolUtil.getInstanceFromGO<T>(origin.gameObject));
+        }
+        public void waitAndRelease<TWaitable>(TWaitable waitable, T instance) where TWaitable : IWaitable
+        {
+            __waitAndRelease(waitable, instance).forget();
+        }
+        public void waitAndRelease<TWaitable>(TWaitable waitable, GameObject gameObject) where TWaitable : IWaitable
+        {
+            __waitAndRelease(waitable, gameObject).forget();
+        }
+
+        private async NTaskVoid __waitAndRelease<TWaitable>(TWaitable waitable, T instance) where TWaitable : IWaitable
+        {
+            await waitable;
+            release(instance);
+        }
+        private async NTaskVoid __waitAndRelease<TWaitable>(TWaitable waitable, GameObject gameObject) where TWaitable : IWaitable
+        {
+            await waitable;
+            release(gameObject);
+        }
+
+        public T getAndRelease(IWaitable waitable, Transform parent = null, bool worldPositionStays = true)
+        {
+            T item = get(parent, worldPositionStays);
+            waitAndRelease(waitable, item);
+            return item;
+        }
+        public T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
+        {
+            T item = get(parent, worldPositionStays);
+            waitAndRelease(new NWaitSecond(delaySeconds), item);
+            return item;
         }
     }
 }

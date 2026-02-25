@@ -6,56 +6,36 @@ namespace Nextension
 {
     public static class NGetAwaiter
     {
-        public static NWaitableAwaiter GetAwaiter(this NWaitable waitable)
+        public static NTaskAwaiter GetAwaiter(this NTask task)
         {
-            return NWaitableAwaiter.create(waitable);
+            return NTaskAwaiter.create(task);
         }
-        public static NWaitableAwaiter<T> GetAwaiter<T>(this NWaitable<T> waitable)
+        public static NTaskAwaiter<T> GetAwaiter<T>(this NTask<T> task)
         {
-            return new NWaitableAwaiter<T>(waitable);
+            return NTaskAwaiter<T>.create(task);
         }
-        public static NWaitableAwaiter GetAwaiter(this IWaitable waitable)
+        public static NLoopWaitableAwaiter GetAwaiter<T>(this T waitable) where T : IWaitable
         {
-            EditorCheck.checkEditorMode();
-            return NWaitableAwaiter.create(waitable);
+            return NLoopWaitableAwaiter.create(waitable);
         }
-        public static NWaitableAwaiter GetAwaiter(this IWaitableFromCancelable waitable)
+
+        public static NLoopWaitableAwaiter GetAwaiter(this AsyncOperation operation)
         {
-            EditorCheck.checkEditorMode();
-            return NWaitableAwaiter.create(waitable);
-        }
-        public static NWaitableAwaiter GetAwaiter(this AsyncOperation operation)
-        {
-            EditorCheck.checkEditorMode();
             var waitable = new NWaitUntil(() => operation.isDone);
-            return NWaitableAwaiter.create(waitable);
+            return NLoopWaitableAwaiter.create(waitable);
         }
-        public static NWaitableAwaiter GetAwaiter(this CustomYieldInstruction operation)
+        public static NLoopWaitableAwaiter GetAwaiter(this CustomYieldInstruction operation)
         {
-            EditorCheck.checkEditorMode();
             var waitable = new NWaitUntil(() => !operation.keepWaiting);
-            return NWaitableAwaiter.create(waitable);
+            return NLoopWaitableAwaiter.create(waitable);
         }
-        public static NWaitableAwaiter GetAwaiter(this JobHandle jobHandle)
+        public static NLoopWaitableAwaiter GetAwaiter(this JobHandle jobHandle)
         {
-            EditorCheck.checkEditorMode();
-            return NWaitableAwaiter.create(new NWaitJobHandle(jobHandle));
+            return NLoopWaitableAwaiter.create(new NWaitJobHandle(jobHandle));
         }
-        public static NWaitableAwaiter GetAwaiter(this IEnumerator routine)
+        public static NLoopWaitableAwaiter GetAwaiter(this IEnumerator routine)
         {
-            EditorCheck.checkEditorMode();
-            return NWaitableAwaiter.create(new NWaitRoutine(routine));
+            return NLoopWaitableAwaiter.create(new NWaitRoutine(routine));
         }
-        public static NWaitableAwaiter GetAwaiter(this NWaitRoutine routine)
-        {
-            EditorCheck.checkEditorMode();
-            return NWaitableAwaiter.create(routine);
-        }
-#if UNITY_EDITOR
-        public static NWaitableAwaiter GetAwaiter(this IWaitable_Editor waitable)
-        {
-            return NWaitableAwaiter.create(waitable);
-        }
-#endif
     }
 }

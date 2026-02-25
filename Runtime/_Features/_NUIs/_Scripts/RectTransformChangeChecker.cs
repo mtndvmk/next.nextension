@@ -11,7 +11,7 @@ namespace Nextension
 
         public bool isChanged(RectTransform target)
         {
-            if (_target != target) 
+            if (_target != target)
                 return true;
             if (target == null && _target == null)
             {

@@ -132,7 +132,7 @@ namespace Nextension
             {
                 return;
             }
-            var span = _actions.AsSpan();   
+            var span = _actions.AsSpan();
             for (int i = 0; i < count; i++)
             {
                 span[i].Invoke(result);

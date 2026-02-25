@@ -60,25 +60,22 @@ namespace Nextension.Tween
             }
             public override TransformFromToData<TValue> getJobData()
             {
+                from = _transformTweenType switch
+                {
+                    TransformTweenType.Local_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
+                    TransformTweenType.World_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
+                    TransformTweenType.Local_Scale => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
+                    TransformTweenType.Uniform_Local_Scale => NConverter.bitConvertWithoutChecks<float, TValue>(_target.localScale.x),
+                    TransformTweenType.Local_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
+                    TransformTweenType.World_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
+                    _ => throw new NotImplementedException(_transformTweenType.ToString()),
+                };
                 var jobData = new TransformFromToData<TValue>()
                 {
                     transformTweenType = _transformTweenType,
-                    fromToData = new FromToData<TValue>()
-                    {
-                        common = getCommonJobData(),
-                        to = destination,
-                    }
+                    fromToData = new FromToData<TValue>(getCommonJobData(), from, destination),
                 };
-                from = _transformTweenType switch
-                {
-                    TransformTweenType.Local_Position => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
-                    TransformTweenType.World_Position => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
-                    TransformTweenType.Local_Scale => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
-                    TransformTweenType.Uniform_Local_Scale => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<float, TValue>(_target.localScale.x),
-                    TransformTweenType.Local_Rotation => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
-                    TransformTweenType.World_Rotation => jobData.fromToData.from = NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
-                    _ => throw new NotImplementedException(_transformTweenType.ToString()),
-                };
+
                 return jobData;
             }
             internal override AbsTweenRunner createRunner()

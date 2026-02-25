@@ -63,15 +63,24 @@ namespace Nextension
                 return false;
             }
         }
-        public T getAndRelease(IWaitable releaseWaitable)
+        public T getAndRelease<TWaitable>(TWaitable waitable) where TWaitable : IWaitable
         {
             T item = get();
-            releaseWaitable.startWaitable().addCompletedEvent(() =>
-            {
-                release(item);
-            });
+            waitAndRelease(waitable, item);
             return item;
         }
+
+        public void waitAndRelease<TWaitable>(TWaitable waitable, T item) where TWaitable : IWaitable
+        {
+            __waitAndRelease(waitable, item).forget();
+        }
+
+        private async NTaskVoid __waitAndRelease<TWaitable>(TWaitable waitable, T item) where TWaitable : IWaitable
+        {
+            await waitable;
+            release(item);
+        }
+
         public T getAndRelease(float time)
         {
             return getAndRelease(new NWaitSecond(time));
@@ -99,7 +108,7 @@ namespace Nextension
         private static NPool<T> _pool = new();
         public static T get() => _pool.get();
         public static bool release(T item) => _pool.release(item);
-        public static T getAndRelease(IWaitable releaseWaitable) => _pool.getAndRelease(releaseWaitable);
+        public static T getAndRelease(IWaitable waitable) => _pool.getAndRelease(waitable);
         public static T getAndRelease(float time) => _pool.getAndRelease(time);
         public static void clear() => _pool.clear();
     }

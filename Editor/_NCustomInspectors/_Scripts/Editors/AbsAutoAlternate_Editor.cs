@@ -29,7 +29,7 @@ namespace Nextension.NEditor
                 var currentTime = obj.CurrentTime;
                 var totalTime = obj.FromToDuration;
                 var normalizedTime = totalTime > 0 ? currentTime / totalTime : 0;
-                EditorGUILayout.Slider($"Time ({normalizedTime:0.##})", currentTime,  0, totalTime);
+                EditorGUILayout.Slider($"Time ({normalizedTime:0.##})", currentTime, 0, totalTime);
                 EditorGUI.EndDisabledGroup();
             }
 

@@ -35,7 +35,7 @@ namespace Nextension.NEditor
         };
 
         private static Dictionary<Type, bool> _supportedTypeCache = new();
-        
+
         private static HashSet<string> _foldouts = new();
 
         private static bool __checkDrawableType(Type type)
@@ -490,7 +490,7 @@ namespace Nextension.NEditor
                 _foldouts.Remove(uniqueId);
             }
             return isFoldout;
-        }  
+        }
         private static void __drawArray(string name, Type type, object value, string uniqueId)
         {
             var array = value as Array;

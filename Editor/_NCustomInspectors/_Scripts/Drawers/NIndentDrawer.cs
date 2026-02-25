@@ -5,7 +5,7 @@ namespace Nextension.NEditor
 {
     [CustomPropertyDrawer(typeof(NIndentAttribute))]
     public class NIndentDrawer : PropertyDrawer
-    {       
+    {
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return CustomPropertyDrawerCache.forceGetPropertyHeight(property, label);

@@ -8,7 +8,7 @@ namespace Nextension.NEditor
     public class NShowIfDrawer : PropertyDrawer
     {
         private bool _isShow;
-       
+
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             _isShow = isShow(property);

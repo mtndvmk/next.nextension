@@ -1,9 +1,7 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Threading;
 using Unity.Jobs;
-using UnityEngine;
 
 namespace Nextension
 {
@@ -17,22 +15,30 @@ namespace Nextension
 
         public NWaitUntil(Func<bool> predicate, NLoopType loopType = NLoopType.Update)
         {
+            if (predicate == null)
+            {
+                throw new ArgumentNullException(nameof(predicate));
+            }
             this.predicate = predicate;
             this.loopType = loopType;
         }
 
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var predicate = this.predicate;
-            NWaitableResult func()
+            getter.setWaitable(this);
+            return null;
+        }
+
+        NWaitableState IWaitable.getCurrentState()
+        {
+            if (this.predicate())
             {
-                if (predicate())
-                {
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
-            };
-            return func;
+                return NWaitableState.Completed;
+            }
+            else
+            {
+                return NWaitableState.None;
+            }
         }
     }
     public readonly struct NWaitFrame : IWaitable
@@ -49,18 +55,15 @@ namespace Nextension
             this.loopType = loopType;
         }
 
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var targetFrame = NUpdater.UpdateCount + (waitFrame == 0 ? 1 : waitFrame);
-            NWaitableResult func()
-            {
-                if (NUpdater.UpdateCount >= targetFrame)
-                {
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
-            }
-            return func;
+            getter.setWaitable(this);
+            return null;
+        }
+
+        NWaitableState IWaitable.getCurrentState()
+        {
+            return NWaitableState.None;
         }
     }
     public readonly struct NWaitSecond : IWaitable
@@ -77,18 +80,22 @@ namespace Nextension
             this.loopType = loopType;
         }
 
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var targetSecond = Time.time + waitSecond;
-            NWaitableResult func()
+            getter.setWaitable(this);
+            return null;
+        }
+
+        NWaitableState IWaitable.getCurrentState()
+        {
+            if (waitSecond <= 0)
             {
-                if (Time.time >= targetSecond)
-                {
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
+                return NWaitableState.Completed;
             }
-            return func;
+            else
+            {
+                return NWaitableState.None;
+            }
         }
     }
     public readonly struct NWaitRealtimeSecond : IWaitable
@@ -105,18 +112,22 @@ namespace Nextension
             this.loopType = loopType;
         }
 
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var targetSecond = Time.realtimeSinceStartup + waitSecond;
-            NWaitableResult func()
+            getter.setWaitable(this);
+            return null;
+        }
+
+        NWaitableState IWaitable.getCurrentState()
+        {
+            if (waitSecond <= 0)
             {
-                if (Time.realtimeSinceStartup >= targetSecond)
-                {
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
+                return NWaitableState.Completed;
             }
-            return func;
+            else
+            {
+                return NWaitableState.None;
+            }
         }
     }
     public readonly struct NWaitJobHandle : IWaitable
@@ -132,140 +143,91 @@ namespace Nextension
             this.jobHandle = jobHandle;
             this.loopType = loopType;
         }
-
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var jobHandle = this.jobHandle;
-            NWaitableResult func()
+            getter.setWaitable(this);
+            return null;
+        }
+
+        NWaitableState IWaitable.getCurrentState()
+        {
+            if (jobHandle.IsCompleted)
             {
-                if (jobHandle.IsCompleted)
-                {
-                    jobHandle.Complete();
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
+                jobHandle.Complete();
+                return NWaitableState.Completed;
             }
-            return func;
+            else
+            {
+                return NWaitableState.None;
+            }
         }
     }
-    public readonly struct NWaitRoutine : IWaitableFromCancelable
+    public readonly struct NWaitRoutine : IWaitable
     {
         public readonly NLoopType loopType;
         internal readonly IEnumerator routine;
-        bool IWaitableFromCancelable.IsIgnoreFirstFrameCheck => true;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
 
-        NLoopType IWaitableFromCancelable.LoopType => loopType;
+        NLoopType IWaitable.LoopType => loopType;
 
         public NWaitRoutine(IEnumerator routine, NLoopType loopType = NLoopType.Update)
         {
             this.routine = routine;
             this.loopType = loopType;
         }
-
-        (Func<NWaitableResult>, ICancelable) IWaitableFromCancelable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var data = NCoroutine.startCoroutine(routine);
-            NWaitableResult func()
-            {
-                return data.Status switch
-                {
-                    RunState.Completed => NWaitableResult.Completed,
-                    RunState.Canceled => NWaitableResult.Canceled,
-                    _ => NWaitableResult.None,
-                };
-            }
-            return (func, data);
-        }
-    }
-    public readonly struct CombineNWaitable : IWaitable
-    {
-        public readonly NLoopType loopType;
-        public readonly NWaitable[] waitables;
-
-        NLoopType IWaitable.LoopType => loopType;
-        bool IWaitable.IsIgnoreFirstFrameCheck => true;
-
-        public CombineNWaitable(params NWaitable[] waitables)
-        {
-            if (waitables == null || waitables.Length == 0)
-            {
-                throw new Exception("waitables is null or empty");
-            }
-            this.waitables = waitables;
-            loopType = NLoopType.Update;
+            getter.setWaitable(this, out var routine);
+            return routine;
         }
 
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        NWaitableState IWaitable.getCurrentState()
         {
-            var waitables = new List<NWaitable>(this.waitables);
-            NWaitableResult func()
-            {
-                var span = waitables.asSpan();
-
-                for (int i = waitables.Count - 1; i >= 0; --i)
-                {
-                    var waitable = span[i];
-                    switch (waitable.Status)
-                    {
-                        case RunState.Canceled:
-                            return NWaitableResult.Canceled;
-                        case RunState.Exception:
-                            return NWaitableResult.Exception(waitable.Exception);
-                        case RunState.Completed:
-                            waitables.removeAtSwapBack(i);
-                            continue;
-                        case RunState.Running:
-                        case RunState.None:
-                        default: return NWaitableResult.None;
-                    }
-                }
-                return NWaitableResult.Completed;
-            }
-            return func;
+            return NWaitableState.None;
         }
     }
     public readonly struct NWaitMainThread : IWaitable
     {
         readonly NLoopType IWaitable.LoopType => NLoopType.Update;
         bool IWaitable.IsIgnoreFirstFrameCheck => false;
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            static NWaitableResult func()
+            getter.setWaitable(this);
+            return null;
+        }
+
+        NWaitableState IWaitable.getCurrentState()
+        {
+            if (Thread.CurrentThread.ManagedThreadId == NStartRunner.MainThreadId)
             {
-                if (Thread.CurrentThread.ManagedThreadId == NStartRunner.MainThreadId)
-                {
-                    return NWaitableResult.Completed;
-                }
-                return NWaitableResult.None;
+                return NWaitableState.Completed;
             }
-            return func;
+            return NWaitableState.None;
         }
     }
-    public readonly struct NWaitDeltaTime : IWaitable
+    public readonly struct NCustomWaitable : IWaitable
     {
-        NLoopType IWaitable.LoopType => NLoopType.Update;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
-
-        public readonly uint timeMs;
-
-        public NWaitDeltaTime(uint timeMs = 10)
+        public readonly NLoopType loopType;
+        internal readonly ICustomWaitable waitable;
+        NLoopType IWaitable.LoopType => loopType;
+        bool IWaitable.IsIgnoreFirstFrameCheck => true;
+        public NCustomWaitable(ICustomWaitable waitable, NLoopType loopType = NLoopType.Update)
         {
-            this.timeMs = timeMs;
+            this.waitable = waitable;
+            this.loopType = loopType;
         }
-
-        Func<NWaitableResult> IWaitable.buildCompleteFunc()
-        {            
-            return conditionCheck;
-        }
-
-        NWaitableResult conditionCheck()
+        ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
-            var deltaTimeMs = NUpdater.CurrentTimeMs - NUpdater.LatestUpdatedTimeMs;
-            if (deltaTimeMs <= timeMs)
+            getter.setWaitable(waitable);
+            if (waitable is ICancelable cancelable)
             {
-                return NWaitableResult.Completed;
+                return cancelable;
             }
-            return NWaitableResult.None;
+            return null;
+        }
+        NWaitableState IWaitable.getCurrentState()
+        {
+            return waitable.getCurrentState();
         }
     }
 }

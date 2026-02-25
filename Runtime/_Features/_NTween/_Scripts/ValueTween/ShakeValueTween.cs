@@ -15,12 +15,7 @@ namespace Nextension.Tween
 
             public override ShakeData<TValue> getJobData()
             {
-                return new ShakeData<TValue>
-                {
-                    common = getCommonJobData(),
-                    origin = origin,
-                    range = range,
-                };
+                return new ShakeData<TValue>(getCommonJobData(), range, origin);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

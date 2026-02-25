@@ -40,7 +40,7 @@ namespace Nextension
         public float SfxMasterVolume
         {
             get => _sfxMasterVolume;
-            set 
+            set
             {
                 value = Mathf.Clamp01(value);
                 if (_sfxMasterVolume == value) return;
@@ -134,7 +134,7 @@ namespace Nextension
             }
             return handler;
         }
-        
+
         public void stopById(int id)
         {
             if (_playingData.tryTakeAndRemove(id, out var data))
@@ -147,11 +147,17 @@ namespace Nextension
                 release(audioSrc);
             }
         }
-        public async void stopById(int id, float delay)
+        public void stopById(int id, float delay)
+        {
+            __stopById(id, delay).forget();
+        }
+
+        private async NTaskVoid __stopById(int id, float delay)
         {
             await new NWaitSecond(delay);
             stopById(id);
         }
+
         public void stopByAudioClip(AudioClip clip, bool isBgm, bool isStopAll)
         {
             using var audioSources = NPUArray<int>.get();
@@ -222,7 +228,7 @@ namespace Nextension
             stopAllByType(false);
         }
 
-        public AudioPlayHandler playBgm(AudioClip clip) 
+        public AudioPlayHandler playBgm(AudioClip clip)
         {
             return innerPlayClip(true, clip, 1, isLoop: true);
         }

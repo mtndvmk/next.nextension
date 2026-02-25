@@ -89,7 +89,11 @@ namespace Nextension
                 _isSetup = true;
             }
         }
-        private async void invokeEvent(UnityEvent unityEvent)
+        private void invokeEvent(UnityEvent unityEvent)
+        {
+            __invokeEvent(unityEvent).forget();
+        }
+        private async NTaskVoid __invokeEvent(UnityEvent unityEvent)
         {
             if (_delayInvokeTime > 0)
             {

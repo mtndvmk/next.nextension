@@ -3,61 +3,94 @@ using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    public class AbsAwaiter : INotifyCompletion
+    public abstract class AbsAwaiter : INotifyCompletion
     {
-        protected Action continuation;
-        protected Exception exception;
+        protected readonly static InterlockedId _idCounter = new InterlockedId();
+
+        protected bool _isCompletedAwaiter;
+        protected Action _continuation;
+        protected NWaitableState _currentState;
+
+        public uint Id { get; private set; }
 
         public void OnCompleted(Action continuation)
         {
-            if (IsCompleted)
-            {
-                continuation.Invoke();
-                onInnerCompleted();
-            }
-            else
-            {
-                this.continuation = continuation;
-            }
+            this._continuation = continuation;
         }
         public void GetResult()
         {
-            onInnerGetResult();
-        }
-
-        public bool IsCompleted { get; private set; }
-
-        internal void invokeComplete()
-        {
-            if (!IsCompleted)
+            try
             {
-                IsCompleted = true;
-                if (continuation != null)
+                __beforeGetResult();
+            }
+            finally
+            {
+                if (_isCompletedAwaiter)
                 {
-                    continuation.Invoke();
-                    onInnerCompleted();
+                    __onFinalized();
                 }
             }
         }
-        internal void invokeException(Exception ex)
+
+        public bool IsCompleted => _currentState.state.isFinished();
+
+        protected void updateId()
         {
+            Id = _idCounter.nextId();
+        }
+
+        internal void setCompletion(uint id, NWaitableState state)
+        {
+            if (Id != id || Id == 0)
+            {
+                return;
+            }
             if (!IsCompleted)
             {
-                exception = ex;
-                invokeComplete();
+                _currentState = state;
+                __continue();
             }
         }
 
-        protected virtual void onInnerGetResult()
+        protected void setAsCompletedAwaiter(NWaitableState state)
         {
-            if (exception != null)
+            _isCompletedAwaiter = true;
+            setCompletion(Id, state);
+        }
+
+        private void __continue()
+        {
+            if (_continuation == null) return;
+            try
             {
-                throw exception;
+                _continuation.Invoke();
+            }
+            finally
+            {
+                __onFinalized();
             }
         }
-        protected virtual void onInnerCompleted()
-        {
 
+        protected void __beforeGetResult()
+        {
+            if (_currentState.state == CompleteState.Canceled)
+            {
+                throw NExceptionHelper.CanceledException;
+            }
+            if (_currentState.exception != null)
+            {
+                throw _currentState.exception;
+            }
+        }
+        protected virtual void __onFinalized()
+        {
+            if (Id != 0)
+            {
+                _isCompletedAwaiter = false;
+                _continuation = null;
+                _currentState = default;
+                Id = 0;
+            }
         }
     }
 }

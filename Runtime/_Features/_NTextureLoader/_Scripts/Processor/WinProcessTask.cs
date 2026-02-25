@@ -3,36 +3,34 @@ using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Nextension.TextureLoader
 {
     internal class WinProcessTask : AbsProcessTask
     {
-        protected override Task exeProcess(byte[] imageData)
+        protected override NTask exeProcess(byte[] imageData)
         {
             try
             {
                 var memoryStream = new MemoryStream(imageData);
-                execute(memoryStream);
+                return execute(memoryStream);
             }
             catch (Exception ex)
             {
                 setError(ex);
             }
-            return Task.CompletedTask;
+            return NTask.CompletedTask;
         }
-        protected override async Task exeProcess(Uri uri)
+        protected override async NTask exeProcess(Uri uri)
         {
             try
             {
                 if (uri.IsFile)
                 {
                     var fileStream = new FileStream(uri.LocalPath, FileMode.Open, FileAccess.Read);
-                    execute(fileStream);
+                    await execute(fileStream);
                 }
                 else
                 {
@@ -44,7 +42,7 @@ namespace Nextension.TextureLoader
                 setError(ex);
             }
         }
-        private void execute(Stream stream)
+        private async NTask execute(Stream stream)
         {
             var extension = NTextureUtils.getImageExtension(stream);
             setImageExtension(extension);
@@ -59,7 +57,7 @@ namespace Nextension.TextureLoader
             int resizeWidth = 0;
             int resizeHeight = 0;
 
-            Task.Run(() =>
+            await System.Threading.Tasks.Task.Run(() =>
             {
                 try
                 {
@@ -128,7 +126,7 @@ namespace Nextension.TextureLoader
                     stream.Dispose();
                     if (outData != null)
                     {
-                        onLoadedRawData(outData, resizeWidth, resizeHeight);
+                        onLoadedRawData(outData, resizeWidth, resizeHeight).forget();
                     }
                     else
                     {
@@ -137,7 +135,7 @@ namespace Nextension.TextureLoader
                 }
             });
         }
-        private async void onLoadedRawData(byte[] inData, int width, int height)
+        private async NTaskVoid onLoadedRawData(byte[] inData, int width, int height)
         {
             try
             {

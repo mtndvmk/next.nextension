@@ -48,7 +48,7 @@ namespace Nextension
             return null;
         }
 
-#region Editor
+        #region Editor
 #if UNITY_EDITOR
         private void OnEnable()
         {
@@ -75,7 +75,7 @@ namespace Nextension
             }
             for (int i = _nonPreloadScriptables.Count - 1; i >= 0; i--)
             {
-                if (_nonPreloadScriptables[i] == null || 
+                if (_nonPreloadScriptables[i] == null ||
                     !_nonPreloadScriptables[i].getScriptableObject())
                 {
                     _nonPreloadScriptables.RemoveAt(i);
@@ -204,6 +204,6 @@ namespace Nextension
             return _nonPreloadScriptables.FindIndex(nonLoadScriptable => nonLoadScriptable.getScriptableType() == type) >= 0;
         }
 #endif
-#endregion
+        #endregion
     }
 }

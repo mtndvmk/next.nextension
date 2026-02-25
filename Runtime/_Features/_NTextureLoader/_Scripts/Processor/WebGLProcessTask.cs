@@ -1,9 +1,7 @@
 #if UNITY_WEBGL || UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
 
@@ -48,14 +46,14 @@ namespace Nextension.TextureLoader
         {
             return "png";
         }
-        protected override Task exeProcess(byte[] imageData)
+        protected override NTask exeProcess(byte[] imageData)
         {
             var extension = NTextureUtils.getImageExtension(imageData);
             setImageExtension(extension);
             if (!(extension == ImageExtension.JPG || extension == ImageExtension.PNG))
             {
                 setError(new Exception($"Image extension is not supported: {extension}"));
-                return Task.CompletedTask;
+                return NTask.CompletedTask;
             }
 
             var base64Str = Convert.ToBase64String(imageData);
@@ -69,10 +67,10 @@ namespace Nextension.TextureLoader
             {
                 processWithSampleSize(id, base64Str, ext, _setting.inSampleSize);
             }
-            return Task.CompletedTask;
+            return NTask.CompletedTask;
         }
 
-        protected override async Task exeProcess(Uri uri)
+        protected override async NTask exeProcess(Uri uri)
         {
             if (uri.IsFile)
             {
@@ -91,7 +89,7 @@ namespace Nextension.TextureLoader
             }
         }
 
-        internal async void exeCompleteData(WebGLProcessCompleteData completeData)
+        internal async NTaskVoid exeCompleteData(WebGLProcessCompleteData completeData)
         {
             try
             {
@@ -179,7 +177,7 @@ namespace Nextension.TextureLoader
             if (_waitingProcessing.TryGetValue(result.id, out var p))
             {
                 _waitingProcessing.Remove(result.id);
-                p.exeCompleteData(result);
+                p.exeCompleteData(result).forget();
             }
 
             result.dispose();

@@ -246,25 +246,7 @@ namespace Nextension
             }
             return InsPoolUtil.getInstanceFromGO<T>(SharedPool.get(parent, worldPositionStays));
         }
-        public override T getAndRelease(IWaitable releaseWaitable, Transform parent = null, bool worldPositionStays = true)
-        {
-            T item = get(parent, worldPositionStays);
-            releaseWaitable.startWaitable().addCompletedEvent(() =>
-            {
-                release(item);
-            });
-            return item;
-        }
-        public override T getAndDelayRelease(float delaySeconds, Transform parent = null, bool worldPositionStays = true)
-        {
-            T item = get(parent, worldPositionStays);
-            new NWaitSecond(delaySeconds).startWaitable().addCompletedEvent(() =>
-            {
-                release(item);
-            });
-            return item;
-        }
-        
+
         public override void clearPool()
         {
             clearPool(true);
@@ -322,24 +304,20 @@ namespace Nextension
         {
 
         }
-        public void OnAfterDeserialize()
+        public async void OnAfterDeserialize()
         {
 #if UNITY_EDITOR
-            new NWaitFrame_Editor(1).startWaitable().addCompletedEvent(() =>
+            await TaskEditor.waitFrame(1);
+            if (NStartRunner.IsPlaying && _prefab && getGameObjectFromT(_prefab))
             {
-                if (NStartRunner.IsPlaying && _prefab && getGameObjectFromT(_prefab))
-                {
-                    updateStartupInstances();
-                }
-            });
+                updateStartupInstances();
+            }
 #else
-            new NWaitFrame(1).startWaitable().addCompletedEvent(() =>
+            await new NWaitFrame(1);
+            if (_prefab && getGameObjectFromT(_prefab))
             {
-                if (_prefab && getGameObjectFromT(_prefab))
-                {
-                    updateStartupInstances();
-                }
-            });
+                updateStartupInstances();
+            }
 #endif
         }
 

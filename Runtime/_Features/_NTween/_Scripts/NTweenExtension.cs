@@ -90,6 +90,12 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
+        public static NRunnableTweener shakePosition(this Transform target, float magnitude, float duration, bool isLocalSpace = true)
+        {
+            var tweener = NTween.shakePosition(target, magnitude, duration, isLocalSpace);
+            tweener.setCancelControlKey(target);
+            return tweener;
+        }
         public static CombinedNTweener jumpTo(this Transform target, Vector3 destination, float jumpHeight, float duration, bool isLocalSpace = true)
         {
             var moveTweener = NTween.moveTo(target, destination, duration, isLocalSpace);
@@ -152,7 +158,7 @@ namespace Nextension.Tween
             tweener.setCancelControlKey(target);
             return tweener;
         }
-        
+
         public static NRunnableTweener colorTo(this Graphic target, Color destination, float duration)
         {
             var tweener = NTween.fromTo(target.color.toFloat4(), destination.toFloat4(), duration, c => target.color = c.toColor());

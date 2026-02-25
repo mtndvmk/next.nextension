@@ -19,19 +19,19 @@ namespace Nextension
 
         public readonly uint Number => _number;
         public readonly string Hex => NUtils.numberColorToHex(_number);
-        public readonly Color Color => NUtils.numberToColor(_number);
+        public readonly Color Color => NUtils.asColor(_number);
 
-        public byte a { get => getChannel(24); set => setChannel(24, value); }
-        public byte g { get => getChannel(16); set => setChannel(16, value); }
-        public byte b { get => getChannel(8); set => setChannel(8, value); }
-        public byte r { get => getChannel(0); set => setChannel(0, value); }
-        
+        public byte a { readonly get => getChannel(24); set => setChannel(24, value); }
+        public byte g { readonly get => getChannel(16); set => setChannel(16, value); }
+        public byte b { readonly get => getChannel(8); set => setChannel(8, value); }
+        public byte r { readonly get => getChannel(0); set => setChannel(0, value); }
+
 
         private void setChannel(int byteIndex, byte value)
         {
             _number &= (uint)value << byteIndex;
         }
-        private byte getChannel(int byteIndex)
+        private readonly byte getChannel(int byteIndex)
         {
             return (byte)(_number >> byteIndex);
         }
@@ -42,35 +42,35 @@ namespace Nextension
         }
         public NColor(Color color)
         {
-            _number = color.toNumber();
+            _number = color.asNumber();
         }
         public NColor(uint intColor)
         {
             _number = intColor;
         }
 
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object obj)
         {
             if (obj is not NColor nColor) return false;
             return Equals(nColor);
         }
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return _number.GetHashCode();
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
             return Color.ToString();
         }
 
-        public int CompareTo(NColor other)
+        public readonly int CompareTo(NColor other)
         {
             return _number.CompareTo(other._number);
         }
 
-        public bool Equals(NColor other)
+        public readonly bool Equals(NColor other)
         {
             return _number.Equals(other._number);
         }

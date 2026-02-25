@@ -123,8 +123,8 @@ namespace Nextension.TextureLoader
 
         public Texture2DLoaderOperation getOperation() => _processOperation;
 
-        protected abstract Task exeProcess(byte[] inData);
-        protected abstract Task exeProcess(Uri uri);
+        protected abstract NTask exeProcess(byte[] inData);
+        protected abstract NTask exeProcess(Uri uri);
 
         protected void setImageExtension(ImageExtension extension)
         {

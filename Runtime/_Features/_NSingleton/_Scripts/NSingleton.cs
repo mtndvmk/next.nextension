@@ -86,7 +86,7 @@ namespace Nextension
                 onAwake();
             }
         }
-        private void OnDestroy()
+        private async void OnDestroy()
         {
             if (s_Instance == this)
             {
@@ -97,18 +97,16 @@ namespace Nextension
                         if (!m_DontDestroyOnLoad)
                         {
                             int sceneHash = gameObject.scene.GetHashCode();
-                            new NWaitFrame(1).startWaitable().addCompletedEvent(() =>
+                            await new NWaitFrame(1);
+                            int sceneCount = SceneManager.sceneCount;
+                            for (int i = 0; i < sceneCount; i++)
                             {
-                                int sceneCount = SceneManager.sceneCount;
-                                for (int i = 0; i < sceneCount; i++)
+                                if (SceneManager.GetSceneAt(i).GetHashCode() == sceneHash)
                                 {
-                                    if (SceneManager.GetSceneAt(i).GetHashCode() == sceneHash)
-                                    {
-                                        Debug.LogWarning($"[NSingleton] Should call {getSingletonName()}.Instance.destroy()");
-                                        return;
-                                    }
+                                    Debug.LogWarning($"[NSingleton] Should call {getSingletonName()}.Instance.destroy()");
+                                    return;
                                 }
-                            });
+                            }
                         }
                         else
                         {

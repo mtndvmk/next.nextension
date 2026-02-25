@@ -1,6 +1,5 @@
 #if UNITY_ANDROID || UNITY_EDITOR
 using System;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
@@ -15,18 +14,18 @@ namespace Nextension.TextureLoader
         {
             _AndroidJavaObject = new AndroidJavaObject("next.nextension.androidnative.NTextureProcess");
         }
-        protected override Task exeProcess(byte[] imageData)
+        protected override async NTask exeProcess(byte[] imageData)
         {
             var extension = NTextureUtils.getImageExtension(imageData);
             setImageExtension(extension);
             if (!(extension == ImageExtension.JPG || extension == ImageExtension.PNG))
             {
                 setError(new Exception($"Image extension is not supported: {extension}"));
-                return Task.CompletedTask;
+                return;
             }
 
             var callback = new AndroidTextureProcessCallback(_setting, this);
-            Task.Run(() =>
+            await Task.Run(() =>
             {
                 try
                 {
@@ -45,9 +44,8 @@ namespace Nextension.TextureLoader
                     setError(e);
                 }
             });
-            return Task.CompletedTask;
         }
-        protected override async Task exeProcess(Uri uri)
+        protected override async NTask exeProcess(Uri uri)
         {
             await exeProcess(await NUtils.getBinaryFrom(uri));
         }
@@ -102,7 +100,7 @@ namespace Nextension.TextureLoader
                 _processor.setError(e);
             }
         }
-        private async Task<Texture2D> getTexture(sbyte[] rawDataBuffer, int w, int h)
+        private async NTask<Texture2D> getTexture(sbyte[] rawDataBuffer, int w, int h)
         {
             await new NWaitMainThread();
             var tex = _setting.createTexture(w, h);

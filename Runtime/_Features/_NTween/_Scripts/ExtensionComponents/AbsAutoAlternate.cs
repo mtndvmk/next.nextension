@@ -11,7 +11,7 @@ namespace Nextension.Tween
             From,
             To,
         }
-        protected float getTime()
+        protected static float getCurrentTime()
         {
             return Time.time + 1;
         }
@@ -26,12 +26,12 @@ namespace Nextension.Tween
         protected virtual void onPause() { }
         protected virtual void onStart() { }
         protected virtual void onStop() { }
-        
+
         private float _pauseNormalizedTime = -1;
         private float _startTime;
 
         protected bool _isFromTo;
-        protected NWaitable _waitable;
+        protected NTask _task;
         protected NTweener _ntweener;
 
         public bool IsRunning => _startTime > 0;
@@ -41,7 +41,7 @@ namespace Nextension.Tween
             get
             {
                 if (!IsRunning) return 0;
-                return getTime() - _startTime;
+                return getCurrentTime() - _startTime;
             }
         }
         public float CurrentTime
@@ -54,7 +54,7 @@ namespace Nextension.Tween
                 else return FromToDuration - _ntweener.Time;
             }
         }
-        
+
         public abstract float FromToDuration { get; set; }
         public abstract float LifeTime { get; set; }
         public abstract float DeplayOnStart { get; set; }
@@ -74,7 +74,7 @@ namespace Nextension.Tween
             {
                 return;
             }
-            _startTime = getTime();
+            _startTime = getCurrentTime();
             onStart();
             runFromTo(StartNormalizedTime);
         }
@@ -83,16 +83,18 @@ namespace Nextension.Tween
         /// </summary>
         public void startDelay(float delayTime, float lifeTime = 0)
         {
+            __startDelay(delayTime, lifeTime).forget();
+        }
+
+        private async NTaskVoid __startDelay(float delayTime, float lifeTime)
+        {
             LifeTime = lifeTime;
             if (delayTime > 0)
             {
                 DeplayOnStart = delayTime;
-                new NWaitSecond(DeplayOnStart).startWaitable().addCompletedEvent(startImmediate);
+                await new NWaitSecond(DeplayOnStart);
             }
-            else
-            {
-                startImmediate();
-            }
+            startImmediate();
         }
 
         public void resume()
@@ -123,10 +125,10 @@ namespace Nextension.Tween
                 return;
             }
             _pauseNormalizedTime = _ntweener.NormalizedTime;
-            if (_waitable != null)
+            if (_task.IsCreated)
             {
-                _waitable.cancel();
-                _waitable = null;
+                _task.tryCancel();
+                _task = default;
             }
             if (_ntweener != null)
             {
@@ -143,10 +145,10 @@ namespace Nextension.Tween
             }
             _startTime = -1;
             _pauseNormalizedTime = -1;
-            if (_waitable != null)
+            if (_task.IsCreated)
             {
-                _waitable.cancel();
-                _waitable = null;
+                _task.tryCancel();
+                _task = default;
             }
             if (_ntweener != null)
             {
@@ -170,7 +172,7 @@ namespace Nextension.Tween
         }
         protected void checkLifeTimeAndStop()
         {
-            if (getTime() - _startTime >= LifeTime)
+            if (getCurrentTime() - _startTime >= LifeTime)
             {
                 stop();
             }
@@ -180,6 +182,7 @@ namespace Nextension.Tween
     public abstract class AbsAutoAlternate<T> : AbsAutoAlternate
     {
         [SerializeField, NShowIf(nameof(EnableOffset))] protected bool _useOffset;
+        [SerializeField, NShowIf(nameof(EnableOffset))] protected bool _updateOffsetBeforeStart = false;
         [SerializeField, NConstrainable, NShowIf(nameof(EnableOffset))] protected T _offset;
         [SerializeField, NConstrainable] protected T _fromValue;
         [SerializeField, NConstrainable] protected T _toValue;
@@ -216,10 +219,10 @@ namespace Nextension.Tween
             get => _lifeTime;
             set => _lifeTime = value;
         }
-        public override float DeplayOnStart 
-        { 
-            get => _delayOnStart; 
-            set => _delayOnStart = value; 
+        public override float DeplayOnStart
+        {
+            get => _delayOnStart;
+            set => _delayOnStart = value;
         }
         public override float StartNormalizedTime
         {
@@ -312,20 +315,21 @@ namespace Nextension.Tween
         {
             setValue(getValueFromNormalizedTime(normalizedTime));
         }
-       
+
         protected override void runFromTo(float normalizedTimeOffset)
         {
             _isFromTo = true;
             if (_delayFromTo > 0)
             {
-                _waitable = runFromToWithDelay(_delayFromTo, normalizedTimeOffset);
+                _task.forget();
+                _task = runFromToWithDelay(_delayFromTo, normalizedTimeOffset);
             }
             else
             {
                 runFromToWithoutDelay(normalizedTimeOffset);
             }
         }
-        private async NWaitable runFromToWithDelay(float delayTime, float normalizedTimeOffset)
+        private async NTask runFromToWithDelay(float delayTime, float normalizedTimeOffset)
         {
             await new NWaitSecond(delayTime);
             runFromToWithoutDelay(normalizedTimeOffset);
@@ -334,14 +338,15 @@ namespace Nextension.Tween
         {
             if (_timePerHalfCycle == 0)
             {
-                _waitable = new NWaitFrame(1).startWaitable();
                 if (_onlyFromTo)
                 {
-                    _waitable.addCompletedEvent(runFromTo);
+                    _task.forget();
+                    _task = NTask.waitAndRunAsync(new NWaitFrame(1), runFromTo);
                 }
                 else
                 {
-                    _waitable.addCompletedEvent(runToFrom);
+                    _task.forget();
+                    _task = NTask.waitAndRunAsync(new NWaitFrame(1), runToFrom);
                 }
             }
             else if (_onlyFromTo)
@@ -366,14 +371,15 @@ namespace Nextension.Tween
             _isFromTo = false;
             if (_delayToFrom > 0)
             {
-                _waitable = delayRunToFrom(_delayToFrom, normalizedTimeOffset);
+                _task.forget();
+                _task = delayRunToFrom(_delayToFrom, normalizedTimeOffset);
             }
             else
             {
                 runToFromWithoutDelay(normalizedTimeOffset);
             }
         }
-        private async NWaitable delayRunToFrom(float deplayTime, float normalizedTimeOffset)
+        private async NTask delayRunToFrom(float deplayTime, float normalizedTimeOffset)
         {
             await new NWaitSecond(deplayTime);
             runToFromWithoutDelay(normalizedTimeOffset);
@@ -382,15 +388,15 @@ namespace Nextension.Tween
         {
             if (_timePerHalfCycle == 0)
             {
-                _waitable = new NWaitFrame(1).startWaitable();
-                _waitable.addCompletedEvent(runFromTo);
+                _task.forget();
+                _task = NTask.waitAndRunAsync(new NWaitFrame(1), runFromTo);
                 return;
             }
             _ntweener = applyDuration(onToFrom().onCompleted(runFromTo).setEase(_easeType));
             _ntweener.startNormalizedTime(normalizedTimeOffset);
             onRunToFrom?.Invoke();
         }
-        
+
         protected abstract void setValue(T value);
         protected abstract NRunnableTweener onFromTo();
         protected abstract NRunnableTweener onToFrom();

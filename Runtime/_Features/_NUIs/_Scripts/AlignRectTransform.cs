@@ -6,7 +6,14 @@ namespace Nextension
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public class AlignRectTransform : MonoBehaviour, ILayoutIgnorer
     {
-        private enum Alignment : byte { Left, Right, Top, Bottom };
+        private enum Alignment : byte
+        {
+            None = 0,
+            Left = 1,
+            Right = 2,
+            Top = 3,
+            Bottom = 4
+        };
 
         [SerializeField] private Alignment _alignTo;
         [SerializeField] private float _offsetAtFirst;
@@ -115,7 +122,7 @@ namespace Nextension
             }
             return null;
         }
-        
+
         private bool __isNeedToUpdate(RectTransform rectTransform, RectTransform otherRectTransform)
         {
             if (IsDirty)

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Nextension
 {
     [AttributeUsage(AttributeTargets.Field)]
-    public class NReadOnlyAttribute : ApplyToCollectionPropertyAttribute 
+    public class NReadOnlyAttribute : ApplyToCollectionPropertyAttribute
     {
         protected readonly string predicateName;
         protected readonly object[] conditionValues;

@@ -38,7 +38,7 @@ namespace Nextension.Tween
         [BurstCompile]
         public static void ease<T>(T a, T b, float t, EaseType easeType, out T result) where T : unmanaged
         {
-            switch (ISupportedDataType<T>.type)
+            switch (TweenSupportedDataType<T>.type)
             {
                 case SupportedDataType.Int32:
                     {
@@ -80,7 +80,7 @@ namespace Nextension.Tween
         public static T randShakeValue<T>(uint seed, float range) where T : unmanaged
         {
             Unity.Mathematics.Random rand = new(seed);
-            return ISupportedDataType<T>.type switch
+            return TweenSupportedDataType<T>.type switch
             {
                 SupportedDataType.Int32 => NConverter.bitConvertWithoutChecks<int, T>((int)((rand.NextFloat() - 0.5f) * range)),
                 SupportedDataType.Float => NConverter.bitConvertWithoutChecks<float, T>((rand.NextFloat() - 0.5f) * range),
@@ -93,7 +93,7 @@ namespace Nextension.Tween
         [BurstCompile]
         public static T addValue<T>(T a, T b) where T : unmanaged
         {
-            return ISupportedDataType<T>.type switch
+            return TweenSupportedDataType<T>.type switch
             {
                 SupportedDataType.Int32 => NConverter.bitConvertWithoutChecks<int, T>(NConverter.bitConvertWithoutChecks<T, int>(a) + NConverter.bitConvertWithoutChecks<T, int>(b)),
                 SupportedDataType.Float => NConverter.bitConvertWithoutChecks<float, T>(NConverter.bitConvertWithoutChecks<T, float>(a) + NConverter.bitConvertWithoutChecks<T, float>(b)),
@@ -131,8 +131,8 @@ namespace Nextension.Tween
         }
     }
 
-    internal interface ISupportedDataType<T> where T : unmanaged
+    internal static class TweenSupportedDataType<T> where T : unmanaged
     {
-        static readonly SupportedDataType type = NTweenUtils.getSupportedDataType<T>();
+        public static readonly SupportedDataType type = NTweenUtils.getSupportedDataType<T>();
     }
 }

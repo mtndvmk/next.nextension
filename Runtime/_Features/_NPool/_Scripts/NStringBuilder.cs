@@ -67,7 +67,7 @@ namespace Nextension
         {
             fixed (char* p = value)
             {
-                _charArray.InsertRangeWithoutChecks(index, p, value.Length);
+                _charArray.InsertRange(index, p, value.Length);
                 return this;
             }
         }
@@ -85,7 +85,7 @@ namespace Nextension
         {
             fixed (char* p = value)
             {
-                _charArray.InsertRangeWithoutChecks(index, p, value.Length);
+                _charArray.InsertRange(index, p, value.Length);
                 return this;
             }
         }

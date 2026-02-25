@@ -60,7 +60,7 @@ namespace Nextension
             if (!isEnableAutoCheck()) return;
             __check(ISerializedFieldCheckable.Flag.OnPreprocessBuild);
         }
-        static void onLoadOrRecompiled() 
+        static void onLoadOrRecompiled()
         {
             if (!isEnableAutoCheck()) return;
             __check(ISerializedFieldCheckable.Flag.OnLoadOrRecompiled);
@@ -109,6 +109,7 @@ namespace Nextension
         {
             var guids = AssetDatabase.FindAssets("t:ScriptableObject");
             float count = 0;
+            var tempList = new List<object>();
             foreach (var g in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(g);
@@ -117,7 +118,8 @@ namespace Nextension
                 if (so)
                 {
                     EditorUtility.DisplayProgressBar(nameof(ISerializedFieldCheckable), $"Checking ScriptableObject... {path}", count / guids.Length);
-                    if (__checkObject(so, so, flag))
+                    tempList.Clear();
+                    if (__checkObject(so, so, flag, tempList))
                     {
                         NAssetUtils.saveAsset(so);
                     }
@@ -165,9 +167,11 @@ namespace Nextension
         {
             var behaviours = go.GetComponentsInChildren<MonoBehaviour>(true);
             bool isDirty = false;
+            var tempList = new List<object>();
             foreach (var behaviour in behaviours)
             {
-                isDirty |= __checkObject(go, behaviour, flag);
+                tempList.Clear();
+                isDirty |= __checkObject(go, behaviour, flag, tempList);
             }
 
             if (isDirty)
@@ -181,10 +185,11 @@ namespace Nextension
             }
             return false;
         }
-        private static bool __checkObject(UnityEngine.Object origin, object obj, ISerializedFieldCheckable.Flag flag)
+        private static bool __checkObject(UnityEngine.Object origin, object obj, ISerializedFieldCheckable.Flag flag, List<object> checkedList)
         {
-            if (obj == null) return false;
+            if (obj.isNull()) return false;
             var objectType = obj.GetType();
+            if (!objectType.IsValueType && checkedList.Contains(obj)) return false;
             if (!__canCheckType(objectType))
             {
                 return false;
@@ -195,7 +200,11 @@ namespace Nextension
             {
                 if (fieldInfo.IsNotSerialized) continue;
                 var subObj = fieldInfo.GetValue(obj);
-                if (subObj == null) continue;
+                if (subObj.isNull()) continue;
+                if (!subObj.GetType().IsValueType && checkedList.Contains(subObj))
+                {
+                    continue;
+                }
                 if (subObj is ISerializedFieldCheckable val)
                 {
                     if (val.onSerializedChanged(flag))
@@ -212,7 +221,9 @@ namespace Nextension
                     }
                     continue;
                 }
-                isDirty |= __checkObject(origin, subObj, flag);
+                
+                checkedList.Add(subObj);
+                isDirty |= __checkObject(origin, subObj, flag, checkedList);
             }
             return isDirty;
         }

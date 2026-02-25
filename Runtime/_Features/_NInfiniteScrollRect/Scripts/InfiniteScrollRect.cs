@@ -20,10 +20,10 @@ namespace Nextension
                 to = from - size;
             }
         }
-        protected struct FTIndex
+        protected readonly struct FTIndex
         {
-            public int fromIndex;
-            public int toIndex;
+            public readonly int fromIndex;
+            public readonly int toIndex;
             public FTIndex(int fromIndex, int toIndex)
             {
                 this.fromIndex = fromIndex;

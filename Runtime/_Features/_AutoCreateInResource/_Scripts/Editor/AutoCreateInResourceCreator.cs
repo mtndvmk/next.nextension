@@ -12,7 +12,7 @@ namespace Nextension.NEditor
         static int Priority => 1;
         static async void onLoadOrRecompiled()
         {
-            await new NWaitFrame_Editor(1);
+            await TaskEditor.waitFrame();
             var types = NUtils.getCustomTypes();
             foreach (var type in types)
             {

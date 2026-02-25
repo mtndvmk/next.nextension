@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Nextension
 {
-    public struct NPUHSet64<T> : IDisposable, ICollection<T> where T : unmanaged
+    public readonly struct NPUHSet64<T> : IDisposable, ICollection<T> where T : unmanaged
     {
         public struct Enumerator : IEnumerator<T>
         {
@@ -41,26 +41,25 @@ namespace Nextension
         public static NPUHSet64<T> get()
         {
             checkSize();
-            var newSet64 = new NPUHSet64<T>
-            {
-                _hashset = NPHSet<long>.get()
-            };
+            var newSet64 = new NPUHSet64<T>(NPHSet<long>.get());
             return newSet64;
         }
         public static NPUHSet64<T> getWithoutTracking()
         {
             checkSize();
-            var newSet64 = new NPUHSet64<T>
-            {
-                _hashset = NPHSet<long>.getWithoutTracking()
-            };
+            var newSet64 = new NPUHSet64<T>(NPHSet<long>.getWithoutTracking());
             return newSet64;
         }
 
-        private NPHSet<long> _hashset;
+        private readonly NPHSet<long> _hashset;
         public int Count => _hashset.Count;
         public bool IsCreated => _hashset != null;
         public bool IsReadOnly => _hashset.IsReadOnly;
+
+        private NPUHSet64(NPHSet<long> hashset)
+        {
+            _hashset = hashset;
+        }
 
         public bool Add(T item)
         {

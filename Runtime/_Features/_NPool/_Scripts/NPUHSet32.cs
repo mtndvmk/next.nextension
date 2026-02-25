@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Nextension
 {
-    public struct NPUHSet32<T> : IDisposable, ICollection<T> where T : unmanaged
+    public readonly struct NPUHSet32<T> : IDisposable, ICollection<T> where T : unmanaged
     {
         public struct Enumerator : IEnumerator<T>
         {
@@ -41,75 +41,74 @@ namespace Nextension
         public static NPUHSet32<T> get()
         {
             checkSize();
-            var newSet32 = new NPUHSet32<T>
-            {
-                _hashset = NPHSet<int>.get()
-            };
+            var newSet32 = new NPUHSet32<T>(NPHSet<int>.get());
             return newSet32;
         }
         public static NPUHSet32<T> getWithoutTracking()
         {
             checkSize();
-            var newSet32 = new NPUHSet32<T>
-            {
-                _hashset = NPHSet<int>.getWithoutTracking()
-            };
+            var newSet32 = new NPUHSet32<T>(NPHSet<int>.getWithoutTracking());
             return newSet32;
         }
 
-        private NPHSet<int> _hashset;
-        public int Count => _hashset.Count;
+        private readonly NPHSet<int> _hashset;
+        public readonly int Count => _hashset.Count;
 
-        public bool IsCreated => _hashset != null;
-        public bool IsReadOnly => _hashset.IsReadOnly;
+        public readonly bool IsCreated => _hashset != null;
+        public readonly bool IsReadOnly => _hashset.IsReadOnly;
 
-        public void stopTracking()
+        private NPUHSet32(NPHSet<int> hashset)
+        {
+            _hashset = hashset;
+        }
+
+        public readonly void stopTracking()
         {
             _hashset.stopTracking();
         }
 
-        public bool Add(T item)
+        public readonly bool Add(T item)
         {
             return _hashset.Add(NConverter.bitConvertDiffSize<T, int>(item));
         }
-        public void Clear()
+        public readonly void Clear()
         {
             _hashset.Clear();
         }
-        public bool Contains(T item)
+        public readonly bool Contains(T item)
         {
             return _hashset.Contains(NConverter.bitConvertDiffSize<T, int>(item));
         }
-        public void CopyTo(T[] array, int arrayIndex)
+        public readonly void CopyTo(T[] array, int arrayIndex)
         {
             foreach (var item in _hashset)
             {
                 array[arrayIndex++] = NConverter.bitConvertDiffSize<int, T>(item);
             }
         }
-        public bool Remove(T item)
+        public readonly bool Remove(T item)
         {
             return _hashset.Remove(NConverter.bitConvertDiffSize<T, int>(item));
         }
-        public void Dispose()
+        public readonly void Dispose()
         {
             _hashset.Dispose();
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return GetEnumerator();
         }
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
-        public Enumerator GetEnumerator()
+        public readonly Enumerator GetEnumerator()
         {
             return new Enumerator(_hashset.GetEnumerator());
         }
 
-        void ICollection<T>.Add(T item)
+        readonly void ICollection<T>.Add(T item)
         {
             Add(item);
         }

@@ -9,7 +9,7 @@ namespace Nextension
             LEFT_RIGHT,
             RIGHT_LEFT,
         }
-        
+
         [field: SerializeField] public Direction direction { get; private set; }
 
         protected override void Awake()

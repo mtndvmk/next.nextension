@@ -60,9 +60,9 @@ namespace Nextension.NEditor
         {
             try
             {
-                if (property == null 
-                    || property.type.StartsWith("UnityEvent") 
-                    || property.type == "vector" 
+                if (property == null
+                    || property.type.StartsWith("UnityEvent")
+                    || property.type == "vector"
                     || property.boxedValue == null) return false;
                 return true;
             }
@@ -96,7 +96,7 @@ namespace Nextension.NEditor
 
         public static float? getPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            if (!isSupported(property)) return default; 
+            if (!isSupported(property)) return default;
             var boxedType = property.boxedValue.GetType();
             var cache = getCache(boxedType);
             if (cache != null)

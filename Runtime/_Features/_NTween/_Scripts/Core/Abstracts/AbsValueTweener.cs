@@ -13,7 +13,7 @@ namespace Nextension
         internal AbsValueTweener(Action<TValue> onValueChanged)
         {
 #if UNITY_EDITOR
-            if (ISupportedDataType<TValue>.type == SupportedDataType.NotSupported)
+            if (TweenSupportedDataType<TValue>.type == SupportedDataType.NotSupported)
             {
                 throw new NotSupportedException();
             }

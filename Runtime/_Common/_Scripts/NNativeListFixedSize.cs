@@ -22,7 +22,7 @@ namespace Nextension
 
         public T this[int index]
         {
-            get 
+            readonly get
             {
                 if (index >= _count) { throw new IndexOutOfRangeException(); }
                 return _array[index];
@@ -33,14 +33,14 @@ namespace Nextension
                 _array[index] = value;
             }
         }
-        public T getWithoutCheck(int index)
+        public readonly T getWithoutCheck(int index)
         {
             return _array[index];
         }
 
         public readonly int Count => _count;
-        public int Capacity => _array.Length;
-        public bool IsCreated => _array.IsCreated;
+        public readonly int Capacity => _array.Length;
+        public readonly bool IsCreated => _array.IsCreated;
 
         public unsafe void AddRangeNoReSize(T[] array)
         {
@@ -69,7 +69,7 @@ namespace Nextension
         {
             _count = 0;
         }
-        public void CopyTo(T[] array)
+        public readonly void CopyTo(T[] array)
         {
             Slice().CopyTo(array);
         }
@@ -81,11 +81,11 @@ namespace Nextension
                 _count = 0;
             }
         }
-        public NativeSlice<T> Slice()
+        public readonly NativeSlice<T> Slice()
         {
             return _array.Slice(0, _count);
         }
-        public NativeSlice<T>.Enumerator GetEnumerator()
+        public readonly NativeSlice<T>.Enumerator GetEnumerator()
         {
             var slice = Slice();
             return new NativeSlice<T>.Enumerator(ref slice);

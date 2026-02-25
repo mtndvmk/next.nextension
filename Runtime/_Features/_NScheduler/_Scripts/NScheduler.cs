@@ -32,18 +32,23 @@ namespace Nextension
             _pending.Clear();
         }
 
-        private async void executeNext()
+        private void executeNext()
         {
             if (_executing == null || _executing.Count < MaxSchedulableAtOnce)
             {
-                var schedulable = _pending.takeAndRemoveLast();
-                Executing.Add(schedulable);
-                schedulable.onStartExecute();
-                await schedulable;
-                _executing.Remove(schedulable);
-                if (_pending.Count == 0) return;
-                executeNext();
+                __executeNext().forget();
             }
+        }
+
+        private async NTaskVoid __executeNext()
+        {
+            var schedulable = _pending.takeAndRemoveLast();
+            Executing.Add(schedulable);
+            schedulable.onStartExecute();
+            await schedulable;
+            _executing.Remove(schedulable);
+            if (_pending.Count == 0) return;
+            executeNext();
         }
     }
 }

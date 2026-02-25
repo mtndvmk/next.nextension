@@ -1,21 +1,14 @@
-using System;
-
 namespace Nextension
 {
     public interface IWaitable
     {
-        internal Func<NWaitableResult> buildCompleteFunc();
         internal NLoopType LoopType { get; }
         internal bool IsIgnoreFirstFrameCheck { get; }
+        internal ICancelable onStartWaitable(NWaitableResultGetter getter);
+        internal NWaitableState getCurrentState();
     }
-    public interface IWaitableFromCancelable
+    public interface ICustomWaitable
     {
-        internal (Func<NWaitableResult>, ICancelable) buildCompleteFunc();
-        internal NLoopType LoopType { get; }
-        internal bool IsIgnoreFirstFrameCheck { get; }
-    }
-    public interface IWaitable_Editor
-    {
-        internal Func<NWaitableResult> buildCompleteFunc();
+        internal NWaitableState getCurrentState();
     }
 }

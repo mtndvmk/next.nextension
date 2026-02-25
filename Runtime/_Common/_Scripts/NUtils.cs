@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -1082,19 +1083,26 @@ namespace Nextension
         {
             if (self.transform is RectTransform rectTf)
             {
-                LayoutRebuilder.MarkLayoutForRebuild(rectTf);
+                markLayoutForRebuild(rectTf);
             }
         }
         public static void markLayoutForRebuild(this Component self)
         {
             if (self.transform is RectTransform rectTf)
             {
-                LayoutRebuilder.MarkLayoutForRebuild(rectTf);
+                markLayoutForRebuild(rectTf);
+            }
+        }
+        public static void markLayoutForRebuild(this Component self, bool isImmediate)
+        {
+            if (self.transform is RectTransform rectTf)
+            {
+                markLayoutForRebuild(rectTf, isImmediate);
             }
         }
         public static void markLayoutForRebuild(this RectTransform self)
         {
-            LayoutRebuilder.MarkLayoutForRebuild(self);
+            RectTransformRebuildList.add(self);
         }
         public static void markLayoutForRebuild(this RectTransform self, bool isImmediate)
         {
@@ -1104,7 +1112,7 @@ namespace Nextension
             }
             else
             {
-                LayoutRebuilder.MarkLayoutForRebuild(self);
+                RectTransformRebuildList.add(self);
             }
         }
         public static void resetPosition(this Transform self, bool isLocal = true)
@@ -1136,6 +1144,14 @@ namespace Nextension
         public static void resetScale(this Transform self)
         {
             self.localScale = Vector3.one;
+        }
+        public static void setLossyScale(this Transform self, Vector3 lossyScale)
+        {
+            var parentLossyScale = self.parent != null ? self.parent.lossyScale : Vector3.one;
+            var x = parentLossyScale.x == 0 ? 0 : lossyScale.x / parentLossyScale.x;
+            var y = parentLossyScale.y == 0 ? 0 : lossyScale.y / parentLossyScale.y;
+            var z = parentLossyScale.z == 0 ? 0 : lossyScale.z / parentLossyScale.z;
+            self.localScale = new Vector3(x, y, z);
         }
         public static void resetPosAndRot(this Transform self, bool isLocal = true)
         {
@@ -1621,16 +1637,16 @@ namespace Nextension
         }
         public static byte[] to4Bytes(this Color color)
         {
-            return NConverter.getBytes(color.toNumber());
+            return NConverter.getBytes(color.asNumber());
         }
         /// <summary>
         /// 4 bytes to color
         /// </summary>
         public static Color bytesToColor(byte[] inData, int startIndex = 0)
         {
-            return numberToColor(NConverter.fromBytesWithoutChecks<uint>(inData, startIndex));
+            return asColor(NConverter.fromBytesWithoutChecks<uint>(inData, startIndex));
         }
-        public static uint toNumber(this Color color)
+        public static uint asNumber(this Color color)
         {
             byte r = (byte)Math.Round(color.r * 255);
             byte g = (byte)Math.Round(color.g * 255);
@@ -1643,7 +1659,7 @@ namespace Nextension
             Color.RGBToHSV(color, out float h, out float s, out float v);
             return new float4(h, s, v, color.a);
         }
-        public static Color numberToColor(uint from)
+        public static Color asColor(this uint from)
         {
             float a = (from >> 24 & 0xFF) / 255f;
             float b = (from >> 16 & 0xFF) / 255f;
@@ -1872,7 +1888,7 @@ namespace Nextension
             var strSpan = s.AsSpan();
             using var provider = System.Security.Cryptography.MD5.Create();
             Span<byte> dst = stackalloc byte[16];
-            provider.TryComputeHash(strSpan.asSpan<char,byte>(), dst, out _);
+            provider.TryComputeHash(strSpan.asSpan<char, byte>(), dst, out _);
             return bytesToHex(dst);
         }
         public static unsafe decimal computeMD5AsDecimal(this string s)
@@ -1891,6 +1907,45 @@ namespace Nextension
                 return value.Length == 0;
             }
             return true;
+        }
+
+        public static string compressToDeflateString(this byte[] data, int version = 0)
+        {
+            using var output = new MemoryStream();
+            var deflate = new DeflateStream(output, CompressionMode.Compress);
+            deflate.Write(data, 0, data.Length);
+            deflate.Dispose();
+            var outputBytes = output.ToArray();
+            return $":{version}:{Convert.ToBase64String(outputBytes)}";
+        }
+        public static string compressToDeflateString(this ReadOnlySpan<byte> data, int version = 0)
+        {
+            using var output = new MemoryStream();
+            var deflate = new DeflateStream(output, CompressionMode.Compress);
+            deflate.Write(data);
+            deflate.Dispose();
+            var outputBytes = output.ToArray();
+            return $":{version}:{Convert.ToBase64String(outputBytes)}";
+        }
+        public static byte[] decompressFromDeflateString(this string str)
+        {
+            var segments = str.Split(':');
+            if (segments.Length < 3)
+            {
+                throw new FormatException("Invalid deflate string format");
+            }
+
+            var base64 = segments[2];
+            var compressedData = Convert.FromBase64String(base64);
+
+            using (var input = new MemoryStream(compressedData))
+            using (var deflate = new DeflateStream(input, CompressionMode.Decompress))
+            using (var output = new MemoryStream())
+            {
+                deflate.CopyTo(output);
+                var outputBytes = output.ToArray();
+                return outputBytes;
+            }
         }
         #endregion
 
@@ -1974,9 +2029,17 @@ namespace Nextension
         {
             return NPArray<T>.get(colletion);
         }
+        public static NPArray<T> toNPArrayWithoutTracking<T>(this IEnumerable<T> colletion)
+        {
+            return NPArray<T>.getWithoutTracking(colletion);
+        }
         public static NPUArray<T> toNPUArray<T>(this IEnumerable<T> colletion) where T : unmanaged
         {
             return NPUArray<T>.get(colletion);
+        }
+        public static NPUArray<T> toNPUArrayWithoutTracking<T>(this IEnumerable<T> colletion) where T : unmanaged
+        {
+            return NPUArray<T>.getWithoutTracking(colletion);
         }
         public static NPHSet<T> toNPHSet<T>(this IEnumerable<T> colletion)
         {
@@ -2304,19 +2367,19 @@ namespace Nextension
             return true;
         }
 
-        public static T takeAndRemoveSwapBack<T>(this List<T> self, int index)
+        public static T takeAndRemoveAtSwapBack<T>(this List<T> self, int index)
         {
             var item = self[index];
             self.removeAtSwapBack(index);
             return item;
         }
-        public static T takeAndRemoveSwapBack<T>(this NativeList<T> self, int index) where T : unmanaged
+        public static T takeAndRemoveAtSwapBack<T>(this NativeList<T> self, int index) where T : unmanaged
         {
             var item = self[index];
             self.RemoveAtSwapBack(index);
             return item;
         }
-        public static T takeAndRemoveSwapBack<T>(this NPUArray<T> self, int index) where T : unmanaged
+        public static T takeAndRemoveAtSwapBack<T>(this NPUArray<T> self, int index) where T : unmanaged
         {
             var item = self[index];
             self.removeAtSwapBack(index);
@@ -3043,10 +3106,15 @@ namespace Nextension
                 SceneManager.MoveGameObjectToScene(transform.gameObject, SceneManager.GetActiveScene());
             }
         }
-        public static bool isNull<T>(this T self) where T : class
+        public static bool isNull<T>(this T self)
         {
             if (self == null || self.Equals(null)) return true;
             return false;
+        }
+        public static bool isNullOrDefault<T>(this T self)
+        {
+            if (isNull(self)) return true;
+            return equals(self, getDefaultGeneric<T>());
         }
         #endregion
 
@@ -3433,6 +3501,14 @@ namespace Nextension
                 return null;
             }
         }
+        public static T2 safeAs<T1, T2>(this T1 self) where T1 : unmanaged where T2 : unmanaged
+        {
+            return NConverter.bitConvertDiffSize<T1, T2>(self);
+        }
+        public static T2 fastAs<T1, T2>(this T1 self) where T1 : unmanaged where T2 : unmanaged
+        {
+            return NConverter.bitConvertWithoutChecks<T1, T2>(self);
+        }
         #endregion
 
         #region Others
@@ -3451,11 +3527,11 @@ namespace Nextension
         {
             return (*(TNumberType*)&a).CompareTo(*(TNumberType*)&b);
         }
-        public static async Task<byte[]> getBinaryFrom(string url)
+        public static NTask<byte[]> getBinaryFrom(string url)
         {
-            return await getBinaryFrom(new Uri(url));
+            return getBinaryFrom(new Uri(url));
         }
-        public static async Task<byte[]> getBinaryFrom(Uri uri)
+        public static async NTask<byte[]> getBinaryFrom(Uri uri)
         {
 #if !UNITY_WEBGL || UNITY_EDITOR
             if (uri.IsFile)

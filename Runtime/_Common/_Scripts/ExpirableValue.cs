@@ -5,7 +5,7 @@ namespace Nextension
 {
     public class ExpirableValue<T>
     {
-        private NWaitable _expirationWaitable;
+        private NTask _expirationTask;
 
         public T Value { get; set; }
         public float ExpirationDurationInSecond { get; private set; }
@@ -39,14 +39,17 @@ namespace Nextension
 
         private void checkExpiration()
         {
-            _expirationWaitable?.cancel();
-            _expirationWaitable = new NWaitSecond(ExpirationDurationInSecond).startWaitable();
-            _expirationWaitable.addCompletedEvent(() =>
-            {
-                IsExpired = true;
-                _expirationWaitable = null;
-                onExpired.tryInvoke();
-            });
+            _expirationTask.tryCancel();
+            _expirationTask = waitExpiration();
+        }
+
+        private async NTask waitExpiration()
+        {
+            await new NWaitSecond(ExpirationDurationInSecond);
+            _expirationTask.forget();
+            _expirationTask = default;
+            IsExpired = true;
+            onExpired.tryInvoke();
         }
 
         public static implicit operator T(ExpirableValue<T> eValue) => eValue.Value;
