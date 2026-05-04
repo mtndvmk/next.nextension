@@ -34,9 +34,9 @@ namespace Nextension.NEditor
             typeof(DateTimeOffset),
         };
 
-        private static Dictionary<Type, bool> _supportedTypeCache = new();
+        private static Dictionary<Type, bool> _supportedTypeCache = new Dictionary<Type, bool>();
 
-        private static HashSet<string> _foldouts = new();
+        private static HashSet<string> _foldouts = new HashSet<string>();
 
         private static bool __checkDrawableType(Type type)
         {

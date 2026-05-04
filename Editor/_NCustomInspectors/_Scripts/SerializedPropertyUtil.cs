@@ -8,7 +8,7 @@ namespace Nextension.NEditor
 {
     public static class SerializedPropertyUtil
     {
-        private static Dictionary<int, SerializedScriptableObject> _serializedScriptableObjects = new();
+        private static Dictionary<int, SerializedScriptableObject> _serializedScriptableObjects = new Dictionary<int, SerializedScriptableObject>();
         public static SerializedProperty getSerializedProperty(ScriptableObject scriptable)
         {
             if (scriptable == null)

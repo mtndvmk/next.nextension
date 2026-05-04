@@ -1,0 +1,129 @@
+using System;
+using Nextension.Tween;
+using Unity.Mathematics;
+using UnityEngine;
+
+namespace Nextension
+{
+    [DisallowMultipleComponent, ExecuteAlways]
+    [RequireComponent(typeof(CanvasRenderer))]
+    public class NButtonUIColorTint : AbsNButtonEffect
+    {
+        [SerializeField] private CanvasRenderer _target;
+        [SerializeField] private Color _normalColor = Color.white;
+        [SerializeField] private Color _enterColor = new Color32(0xF5, 0xF5, 0xF5, 0xFF);
+        [SerializeField] private Color _downColor = new Color32(0xC8, 0xC8, 0xC8, 0xFF);
+        [SerializeField] private Color _disableColor = new Color32(0xC8, 0xC8, 0xC8, 0x80);
+        [SerializeField] private float _duration = 0.1f;
+        [SerializeField] private NTweener.UpdateMode _updateMode;
+
+        private NTweener _colorTweener;
+        private Action<float4> _setColorAction;
+
+        private void Reset()
+        {
+            _target = GetComponent<CanvasRenderer>();
+            if (enabled) OnEnable();
+        }
+        private void OnValidate()
+        {
+            if (enabled) OnEnable();
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            _setColorAction = __setTargetColor;
+        }
+
+        private void OnEnable()
+        {
+            if (Button != null && _target)
+            {
+                if (_button.isInteractable())
+                {
+                    _target.SetColor(_normalColor);
+                }
+                else
+                {
+                    _target.SetColor(_disableColor);
+                }
+            }
+        }
+        private void OnDisable()
+        {
+            if (_target)
+            {
+                _target.SetColor(Color.white);
+            }
+        }
+
+        public override void onButtonUp()
+        {
+            if (!enabled) return;
+            if (_target == null) return;
+            changeColor(_enterColor);
+        }
+        public override void onButtonEnter()
+        {
+            if (!enabled) return;
+            if (_target == null) return;
+            changeColor(_enterColor);
+        }
+        public override void onButtonExit()
+        {
+            if (!enabled) return;
+            if (_target == null) return;
+            changeColor(_normalColor);
+        }
+        public override void onButtonDown()
+        {
+            if (!enabled) return;
+            if (_target == null) return;
+            changeColor(_downColor);
+        }
+        public override void onInteractableChanged(bool isInteractable)
+        {
+            if (!enabled) return;
+            if (_target == null) return;
+            if (isInteractable)
+            {
+                changeColor(_normalColor);
+            }
+            else
+            {
+                changeColor(_disableColor);
+            }
+        }
+
+        private void changeColor(Color color)
+        {
+            if (_colorTweener != null)
+            {
+                _colorTweener.cancel();
+                _colorTweener = null;
+            }
+#if UNITY_EDITOR
+            if (!NStartRunner.IsPlaying)
+            {
+                _target.SetColor(color);
+                return;
+            }
+#endif
+            if (_duration <= 0 || !gameObject.activeInHierarchy)
+            {
+                _target.SetColor(color);
+            }
+            else
+            {
+                _colorTweener = NTween.fromTo(_target.GetColor().toFloat4(), color.toFloat4(), _duration, _setColorAction).setUpdateMode(_updateMode);
+                _colorTweener.setCancelControlKey(_target);
+            }
+        }
+
+        private void __setTargetColor(float4 color)
+        {
+            _target.SetColor(color.toColor());
+        }
+    }
+}

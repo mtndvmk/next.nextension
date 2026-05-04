@@ -10,6 +10,10 @@ namespace Nextension.NEditor
             EditorGUI.BeginDisabledGroup(true);
             var infiniteCell = (InfiniteCell)target;
             EditorGUILayout.LabelField($"Cell Index: {infiniteCell.CellIndex}");
+            if (infiniteCell.HasData)
+            {
+                EditorGUILayout.LabelField($"Cell Size: {infiniteCell.CellData.cellSize}");
+            }
             EditorGUI.EndDisabledGroup();
             base.OnInspectorGUI();
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
@@ -55,7 +55,7 @@ namespace Nextension.NEditor
                 var types = NUtils.getCustomTypes();
                 BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
-                List<(MethodInfo, int)> methods = new();
+                List<(MethodInfo, int)> methods = new List<(MethodInfo, int)>();
 
                 foreach (var t in types)
                 {

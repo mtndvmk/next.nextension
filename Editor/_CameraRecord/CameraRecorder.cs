@@ -12,7 +12,7 @@ namespace Nextension.NEditor
     {
         [SerializeField] private Camera _camera;
         [SerializeField] private uint _fps = 30;
-        [SerializeField] private Vector2Int _size = new(256, 256);
+        [SerializeField] private Vector2Int _size = new Vector2Int(256, 256);
         [SerializeField] private string _savePath;
         [SerializeField] private string _prefixName = "frame";
         [SerializeField] private bool _saveInTimestampDirectory = false;
@@ -35,7 +35,7 @@ namespace Nextension.NEditor
                 onStartRecord?.Invoke();
 
                 var tmpTextureList = new List<Texture2D>();
-                RenderTexture renderTexture = new(_size.x, _size.y, 32, RenderTextureFormat.ARGB32);
+                RenderTexture renderTexture = new RenderTexture(_size.x, _size.y, 32, RenderTextureFormat.ARGB32);
                 _camera.targetTexture = renderTexture;
 
                 float deltaTime = 1f / _fps;

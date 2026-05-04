@@ -338,8 +338,8 @@ namespace Nextension.NEditor
             {
                 var selection = selections[i];
                 Rect? rect = null;
-                if (selection is not Texture texture) 
-                { 
+                if (selection is not Texture texture)
+                {
                     if (selection is Sprite sprite)
                     {
                         texture = sprite.texture;
@@ -347,7 +347,7 @@ namespace Nextension.NEditor
                     }
                     else
                     {
-                        continue; 
+                        continue;
                     }
                 }
 
@@ -442,7 +442,9 @@ namespace Nextension.NEditor
                     {
                         if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
                         {
-                            go.transform.asRectTransform().anchorToParent();
+                            var rectTf = go.transform.asRectTransform();
+                            rectTf.anchorToParent();
+                            NAssetUtils.setDirty(rectTf);
                         }
                     }
                 }
@@ -452,7 +454,9 @@ namespace Nextension.NEditor
                     {
                         if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
                         {
-                            go.transform.asRectTransform().stretchToParent();
+                            var rectTf = go.transform.asRectTransform();
+                            rectTf.stretchToParent();
+                            NAssetUtils.setDirty(rectTf);
                         }
                     }
                 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
@@ -8,7 +8,7 @@ namespace Nextension.NEditor
 {
     public static class CustomPropertyDrawerCache
     {
-        private static Dictionary<Type, Cache> _caches = new();
+        private static Dictionary<Type, Cache> _caches = new Dictionary<Type, Cache>();
 
         private static Cache getCache(Type type)
         {
@@ -66,9 +66,8 @@ namespace Nextension.NEditor
                     || property.boxedValue == null) return false;
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Debug.LogWarning(e);
                 return false;
             }
         }

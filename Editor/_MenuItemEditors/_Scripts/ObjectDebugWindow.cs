@@ -210,6 +210,14 @@ namespace Nextension.NEditor
                 BindingFlags.Static |
                 BindingFlags.DeclaredOnly, typeof(MonoBehaviour), false);
             }
+            else if (target is Transform)
+            {
+                NUtils.getMembers(target.GetType(), ref memberInfos, BindingFlags.Public |
+                BindingFlags.NonPublic |
+                BindingFlags.Instance |
+                BindingFlags.Static |
+                BindingFlags.DeclaredOnly, typeof(Transform), true);
+            }
             else
             {
                 NUtils.getMembers(target.GetType(), ref memberInfos, BindingFlags.Public |
@@ -232,9 +240,9 @@ namespace Nextension.NEditor
                 {
                     var methodInfo = memberInfo as MethodInfo;
 
-                    var methodName = memberInfo.Name;
-                    if (methodName.StartsWith("get_")) continue;
-                    if (methodName.StartsWith("set_")) continue;
+                    //var methodName = memberInfo.Name;
+                    //if (methodName.StartsWith("get_")) continue;
+                    //if (methodName.StartsWith("set_")) continue;
 
                     bool isValid = true;
 

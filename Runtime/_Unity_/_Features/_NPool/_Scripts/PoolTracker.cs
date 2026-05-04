@@ -1,0 +1,86 @@
+#if !UNITY_EDITOR
+#define NNEXT_DISABLE_NPOOL_TRACKING
+#endif
+#if !NNEXT_DISABLE_NPOOL_TRACKING
+using System.Collections.Generic;
+
+namespace Nextension
+{
+    internal class PoolTracker
+    {
+        private static HashSet<PoolTracker> _usingPool = new HashSet<PoolTracker>();
+        private static int WARNING_TIME_MS = 60000;
+
+        [EditorQuittingMethod]
+        private static void reset()
+        {
+            if (_usingPool.Count > 0)
+                _usingPool.Clear();
+        }
+
+        static PoolTracker()
+        {
+            reset();
+        }
+
+        [LoopMethod(NLoopType.LateUpdate)]
+        private static void update()
+        {
+            var currentTimeMs = NUpdater.LatestUpdatedTimeMs;
+            int count = 0;
+            foreach (var poolTrackable in _usingPool)
+            {
+                var noAccessTimeMs = currentTimeMs - poolTrackable._lastAccessTimeMs;
+                if (noAccessTimeMs > WARNING_TIME_MS)
+                {
+                    count++;
+#if NPOOL_TRACKING_PRINT_STACK_TRACE
+                    NDebug.LogWarning($"NPoolCollection [{poolTrackable._id}] has not accessed for a long time ({noAccessTimeMs} ms)\n<color=yellow>Creation stacktrace</color>:{poolTrackable._getStackTrace}");
+#else
+                    NDebug.LogWarning($"NPoolCollection [{poolTrackable._id}] has not been accessed for a long time ({noAccessTimeMs} ms)");
+#endif
+                }
+            }
+
+            if (count > 0)
+            {
+                NDebug.LogWarning($"Exists {count} NPoolCollection that have not been accessed for a long time");
+            }
+        }
+
+        private long _lastAccessTimeMs;
+        private string _id;
+
+        public string Id => _id;
+
+#if NPOOL_TRACKING_PRINT_STACK_TRACE
+        private System.Diagnostics.StackTrace _getStackTrace;
+#endif
+
+        public PoolTracker(string id)
+        {
+            _id = id;
+        }
+
+        public void start()
+        {
+            _usingPool.Add(this);
+#if NPOOL_TRACKING_PRINT_STACK_TRACE
+            _getStackTrace = new System.Diagnostics.StackTrace();
+#endif
+            updateAccessInfo();
+        }
+        public void stop()
+        {
+            _usingPool.Remove(this);
+#if NPOOL_TRACKING_PRINT_STACK_TRACE
+            _getStackTrace = null;
+#endif
+        }
+        public void updateAccessInfo()
+        {
+            _lastAccessTimeMs = NUpdater.LatestUpdatedTimeMs;
+        }
+    }
+}
+#endif
