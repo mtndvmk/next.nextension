@@ -28,50 +28,50 @@ namespace Nextension
         /// <summary>
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
-        public static unsafe bool checkBitMask<T>(T mask, int bitIndex) where T : unmanaged, Enum
+        public static unsafe bool checkBitMask<T>(T value, int bitIndex) where T : unmanaged, Enum
         {
-            var intOfEnum = *(int*)&mask;
+            var intOfEnum = *(int*)&value;
             return checkBitMask(intOfEnum, bitIndex);
         }
         /// <summary>
-        /// return true if (mask & filter) is not equal 0, otherwise return false
+        /// return true if (value & filter) is not equal 0, otherwise return false
         /// </summary>
-        public static unsafe bool checkMask<T>(T mask, T filter) where T : unmanaged, Enum
+        public static unsafe bool hasFlag<T>(this T value, T filter) where T : unmanaged, Enum
         {
-            return ((*(int*)&mask) & (*(int*)&filter)) != 0;
+            return ((*(int*)&value) & (*(int*)&filter)) != 0;
         }
         /// <summary>
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
-        public static bool checkBitMask(int mask, int bitIndex)
+        public static bool checkBitMask(int value, int bitIndex)
         {
-            return (mask & (1 << bitIndex)) != 0;
+            return (value & (1 << bitIndex)) != 0;
         }
         /// <summary>
         /// return true if bit at bitIndex is 1, otherwise return false
         /// </summary>
-        public static bool checkBitMask(long longMask, int bitIndex)
+        public static bool checkBitMask(long value, int bitIndex)
         {
-            return (longMask & (1L << bitIndex)) != 0;
+            return (value & (1L << bitIndex)) != 0;
         }
-        public static bool checkBitMask(byte[] byteMask, int bitIndex)
+        public static bool checkBitMask(byte[] value, int bitIndex)
         {
             int byteIndex = bitIndex >> 3;
             int maskIndex = bitIndex & 0x7;
-            byte mask = byteMask[byteIndex];
+            byte mask = value[byteIndex];
             return (mask & 1 << maskIndex) != 0;
         }
 
-        public static sbyte getBit1Index(int mask)
+        public static sbyte getBit1Index(int value)
         {
-            if (mask == 0)
+            if (value == 0)
             {
                 return -1;
             }
             sbyte startIndex = -1;
-            if ((mask & 0x0000ffff) != 0)
+            if ((value & 0x0000ffff) != 0)
             {
-                if ((mask & 0x000000ff) != 0)
+                if ((value & 0x000000ff) != 0)
                 {
                     startIndex = 0;
                 }
@@ -80,9 +80,9 @@ namespace Nextension
                     startIndex = 8;
                 }
             }
-            else if ((mask & 0xffff0000) != 0)
+            else if ((value & 0xffff0000) != 0)
             {
-                if ((mask & 0x00ff0000) != 0)
+                if ((value & 0x00ff0000) != 0)
                 {
                     startIndex = 16;
                 }
@@ -97,7 +97,7 @@ namespace Nextension
                 var endIndex = startIndex + 8;
                 for (; startIndex < endIndex; startIndex++)
                 {
-                    if ((mask & 1 << startIndex) != 0)
+                    if ((value & 1 << startIndex) != 0)
                     {
                         return startIndex;
                     }
@@ -106,18 +106,18 @@ namespace Nextension
 
             return -1;
         }
-        public static sbyte getBit1Index(long longMask)
+        public static sbyte getBit1Index(long value)
         {
-            if (longMask == 0)
+            if (value == 0)
             {
                 return -1;
             }
             sbyte startIndex = -1;
-            if ((longMask & 0x00000000ffffffff) != 0)
+            if ((value & 0x00000000ffffffff) != 0)
             {
-                if ((longMask & 0x0000ffff) != 0)
+                if ((value & 0x0000ffff) != 0)
                 {
-                    if ((longMask & 0x000000ff) != 0)
+                    if ((value & 0x000000ff) != 0)
                     {
                         startIndex = 0;
                     }
@@ -128,7 +128,7 @@ namespace Nextension
                 }
                 else
                 {
-                    if ((longMask & 0x00ff0000) != 0)
+                    if ((value & 0x00ff0000) != 0)
                     {
                         startIndex = 16;
                     }
@@ -138,11 +138,11 @@ namespace Nextension
                     }
                 }
             }
-            else if ((longMask & -4294967296) != 0)
+            else if ((value & -4294967296) != 0)
             {
-                if ((longMask & 0x0000ffff00000000) != 0)
+                if ((value & 0x0000ffff00000000) != 0)
                 {
-                    if ((longMask & 0x000000ff00000000) != 0)
+                    if ((value & 0x000000ff00000000) != 0)
                     {
                         startIndex = 32;
                     }
@@ -153,7 +153,7 @@ namespace Nextension
                 }
                 else
                 {
-                    if ((longMask & 0x00ff000000000000) != 0)
+                    if ((value & 0x00ff000000000000) != 0)
                     {
                         startIndex = 48;
                     }
@@ -169,7 +169,7 @@ namespace Nextension
                 var endIndex = startIndex + 8;
                 for (; startIndex < endIndex; startIndex++)
                 {
-                    if ((longMask & 1L << startIndex) != 0)
+                    if ((value & 1L << startIndex) != 0)
                     {
                         return startIndex;
                     }
@@ -178,16 +178,16 @@ namespace Nextension
 
             return -1;
         }
-        public unsafe static int getBit1Index(byte[] byteMask)
+        public unsafe static int getBit1Index(byte[] value)
         {
-            if (byteMask == null || byteMask.Length == 0)
+            if (value == null || value.Length == 0)
             {
                 throw new Exception("bytes is null or empty");
             }
 
-            fixed (byte* ptr = &byteMask[0])
+            fixed (byte* ptr = &value[0])
             {
-                return getBit1Index(ptr, byteMask.Length);
+                return getBit1Index(ptr, value.Length);
             }
         }
 
@@ -217,16 +217,16 @@ namespace Nextension
             return -1;
         }
 
-        public static sbyte getBit0Index(int mask)
+        public static sbyte getBit0Index(int value)
         {
-            if (mask == -1)
+            if (value == -1)
             {
                 return -1;
             }
             sbyte startIndex = -1;
-            if ((mask & 0x0000ffff) != 0x0000ffff)
+            if ((value & 0x0000ffff) != 0x0000ffff)
             {
-                if ((mask & 0x000000ff) != 0x000000ff)
+                if ((value & 0x000000ff) != 0x000000ff)
                 {
                     startIndex = 0;
                 }
@@ -235,9 +235,9 @@ namespace Nextension
                     startIndex = 8;
                 }
             }
-            else if ((mask & 0xffff0000) != 0xffff0000)
+            else if ((value & 0xffff0000) != 0xffff0000)
             {
-                if ((mask & 0x00ff0000) != 0x00ff0000)
+                if ((value & 0x00ff0000) != 0x00ff0000)
                 {
                     startIndex = 16;
                 }
@@ -252,7 +252,7 @@ namespace Nextension
                 var endIndex = startIndex + 8;
                 for (; startIndex < endIndex; startIndex++)
                 {
-                    if ((mask & 1 << startIndex) == 0)
+                    if ((value & 1 << startIndex) == 0)
                     {
                         return startIndex;
                     }
@@ -261,18 +261,18 @@ namespace Nextension
 
             return -1;
         }
-        public static sbyte getBit0Index(long longMask)
+        public static sbyte getBit0Index(long value)
         {
-            if (longMask == -1)
+            if (value == -1)
             {
                 return -1;
             }
             sbyte startIndex = -1;
-            if ((longMask & 0x00000000ffffffff) != 0x00000000ffffffff)
+            if ((value & 0x00000000ffffffff) != 0x00000000ffffffff)
             {
-                if ((longMask & 0x0000ffff) != 0x0000ffff)
+                if ((value & 0x0000ffff) != 0x0000ffff)
                 {
-                    if ((longMask & 0x000000ff) != 0x000000ff)
+                    if ((value & 0x000000ff) != 0x000000ff)
                     {
                         startIndex = 0;
                     }
@@ -283,7 +283,7 @@ namespace Nextension
                 }
                 else
                 {
-                    if ((longMask & 0x00ff0000) != 0x00ff0000)
+                    if ((value & 0x00ff0000) != 0x00ff0000)
                     {
                         startIndex = 16;
                     }
@@ -293,11 +293,11 @@ namespace Nextension
                     }
                 }
             }
-            else if ((longMask & -4294967296) != -4294967296)
+            else if ((value & -4294967296) != -4294967296)
             {
-                if ((longMask & 0x0000ffff00000000) != 0x0000ffff00000000)
+                if ((value & 0x0000ffff00000000) != 0x0000ffff00000000)
                 {
-                    if ((longMask & 0x000000ff00000000) != 0x000000ff00000000)
+                    if ((value & 0x000000ff00000000) != 0x000000ff00000000)
                     {
                         startIndex = 32;
                     }
@@ -308,7 +308,7 @@ namespace Nextension
                 }
                 else
                 {
-                    if ((longMask & 0x00ff000000000000) != 0x00ff000000000000)
+                    if ((value & 0x00ff000000000000) != 0x00ff000000000000)
                     {
                         startIndex = 48;
                     }
@@ -324,7 +324,7 @@ namespace Nextension
                 var endIndex = startIndex + 8;
                 for (; startIndex < endIndex; startIndex++)
                 {
-                    if ((longMask & 1L << startIndex) == 0)
+                    if ((value & 1L << startIndex) == 0)
                     {
                         return startIndex;
                     }
@@ -333,16 +333,16 @@ namespace Nextension
 
             return -1;
         }
-        public unsafe static int getBit0Index(byte[] byteMask)
+        public unsafe static int getBit0Index(byte[] value)
         {
-            if (byteMask == null || byteMask.Length == 0)
+            if (value == null || value.Length == 0)
             {
                 throw new Exception("bytes is null or empty");
             }
 
-            fixed (byte* ptr = &byteMask[0])
+            fixed (byte* ptr = &value[0])
             {
-                return getBit0Index(ptr, byteMask.Length);
+                return getBit0Index(ptr, value.Length);
             }
         }
         public unsafe static int getBit0Index(byte* ptr, int lengthOfBytes)
@@ -373,14 +373,14 @@ namespace Nextension
         }
 
 
-        public static int setBit0(int mask, int bitIndex)
+        public static int setBit0(int value, int bitIndex)
         {
-            return mask &= ~(1 << bitIndex);
+            return value &= ~(1 << bitIndex);
         }
 
-        public static long setBit0(long mask, int bitIndex)
+        public static long setBit0(long value, int bitIndex)
         {
-            return mask &= ~(1L << bitIndex);
+            return value &= ~(1L << bitIndex);
         }
 
         public static void setBit0(this byte[] bytes, int bitIndex)
@@ -390,14 +390,14 @@ namespace Nextension
             bytes[byteIndex] &= (byte)~(1 << bitIndex);
         }
 
-        public static int setBit1(int mask, int bitIndex)
+        public static int setBit1(int value, int bitIndex)
         {
-            return mask |= 1 << bitIndex;
+            return value |= 1 << bitIndex;
         }
 
-        public static long setBit1(long mask, int bitIndex)
+        public static long setBit1(long value, int bitIndex)
         {
-            return mask |= 1L << bitIndex;
+            return value |= 1L << bitIndex;
         }
 
         public static void setBit1(this byte[] bytes, int bitIndex)
@@ -480,11 +480,13 @@ namespace Nextension
         #endregion
 
         #region String
+#if UNITY_5_3_OR_NEWER
+#else
         public static string formatToMMSS(this long totalSeconds)
         {
             var m = totalSeconds / 60;
             var s = totalSeconds % 60;
-            return NStringBuilder.get()[m.ToString("00")][':'].Append(s.ToString("00")).consume();
+            return $"{m:00}:{s:00}";
         }
         public static string formatToHHMMSS(this long totalSeconds)
         {
@@ -492,12 +494,16 @@ namespace Nextension
             var remainingM = totalSeconds % 3600;
             var m = remainingM / 60;
             var s = remainingM % 60;
-            return NStringBuilder.get()[h.ToString("00")][':'][m.ToString("00")][':'].Append(s.ToString("00")).consume();
+            return $"{h:00}:{m:00}:{s:00}";
         }
+#endif
         public static bool isHex(this string str)
         {
+            return isHex(str.AsSpan());
+        }
+        public static bool isHex(this ReadOnlySpan<char> span)
+        {
             int offset;
-            var span = str.AsSpan();
             if (span[0] == '0' && (span[1] == 'x' || span[1] == 'X'))
             {
                 offset = 2;
@@ -507,7 +513,7 @@ namespace Nextension
                 offset = 0;
             }
             bool isHex;
-            int strLength = str.Length;
+            int strLength = span.Length;
             for (; offset < strLength; ++offset)
             {
                 var c = span[offset];
@@ -533,31 +539,31 @@ namespace Nextension
                 return bytesToHex(ptr, inData.Length, include0xPrefix);
             }
         }
+#if UNITY_5_3_OR_NEWER
+#else
         public static unsafe string bytesToHex(byte* inData, int inDataLength, bool include0xPrefix = false)
         {
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
-            using var sb = NStringBuilder.get(hexLength);
-            bytesToHex(sb, inData, inDataLength, include0xPrefix);
-            return sb.ToString();
-        }
-        public static unsafe void bytesToHex(NStringBuilder sb, byte* inData, int inDataLength, bool include0xPrefix = false)
-        {
-            int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
+            if (hexLength == 0) return "";
+            char[] arr = new char[hexLength];
+            int idx = 0;
             if (include0xPrefix)
             {
-                sb.Append('0');
-                sb.Append('x');
+                arr[idx++] = '0';
+                arr[idx++] = 'x';
             }
             for (int i = 0; i < inDataLength; i++)
             {
                 var b = inData[i] >> 4;
                 var b1 = (int)((uint)(9 - b) >> 31);
-                sb.Append((char)(0x30 + b + (b1 << 3) - b1));
+                arr[idx++] = (char)(0x30 + b + (b1 << 3) - b1);
                 b = inData[i] & 0xf;
                 b1 = (int)((uint)(9 - b) >> 31);
-                sb.Append((char)(0x30 + b + (b1 << 3) - b1));
+                arr[idx++] = (char)(0x30 + b + (b1 << 3) - b1);
             }
+            return new string(arr);
         }
+#endif
         private static ReadOnlySpan<char> internal_getHexNoPrefix(string hex, int startIndex, int hexLength)
         {
             var c0 = hex[startIndex];
@@ -599,11 +605,11 @@ namespace Nextension
 
         public static byte byteOfHex(char hexChar)
         {
-            if (hexChar > 255) 
+            if (hexChar > 255)
                 throw new ArgumentException("Invalid hex character");
 
             byte result = _hexTable[hexChar];
-            
+
             if (result == 255)
                 throw new ArgumentException("Invalid hex character: " + hexChar);
 
@@ -700,6 +706,8 @@ namespace Nextension
             return true;
         }
 
+#if UNITY_5_3_OR_NEWER
+#else
         public static string compressToDeflateString(this byte[] data, int version = 0)
         {
             return compressToDeflateString(data.AsSpan(), version);
@@ -707,47 +715,33 @@ namespace Nextension
         public static string compressToDeflateString(ReadOnlySpan<byte> data, int version = 0)
         {
             using var output = new MemoryStream();
-            var deflate = new DeflateStream(output, CompressionMode.Compress);
-            deflate.Write(data);
-            deflate.Dispose();
+            using (var deflate = new DeflateStream(output, CompressionMode.Compress))
+            {
+                deflate.Write(data);
+            }
             var outputBytes = output.ToArray();
-            return NStringBuilder.get()[':'][version][':'].Append(Convert.ToBase64String(outputBytes)).consume();
+            return $":{version}:{Convert.ToBase64String(outputBytes)}";
         }
-        public static byte[] decompressFromDeflateString(this string str)
-        {
-            var segments = str.Split(':');
-            if (segments.Length < 3)
-            {
-                throw new FormatException("Invalid deflate string format");
-            }
-
-            var base64 = segments[2];
-            var compressedData = Convert.FromBase64String(base64);
-
-            using (var input = new MemoryStream(compressedData))
-            using (var deflate = new DeflateStream(input, CompressionMode.Decompress))
-            using (var output = new MemoryStream())
-            {
-                deflate.CopyTo(output);
-                var outputBytes = output.ToArray();
-                return outputBytes;
-            }
-        }
+#endif
         #endregion
 
         #region Collection
+        
         public static Span<T> asSpan<T>(this List<T> self)
         {
             return self.AsSpan();
         }
+        
         public static ReadOnlySpan<T> asReadOnlySpan<T>(this Span<T> self)
         {
             return self;
         }
+        
         public unsafe static Span<T> asSpan<T>(void* src, int lengthInBytes) where T : unmanaged
         {
             return new Span<T>(src, lengthInBytes / sizeOf<T>());
         }
+        
         public unsafe static Span<T> asSpan<T>(this byte[] src) where T : unmanaged
         {
             fixed (byte* ptr = src)
@@ -755,6 +749,7 @@ namespace Nextension
                 return new Span<T>(ptr, src.Length / sizeOf<T>());
             }
         }
+        
         public unsafe static Span<T> asSpan<TFrom, T>(this Span<TFrom> src) where T : unmanaged where TFrom : unmanaged
         {
             fixed (TFrom* ptr = src)
@@ -762,6 +757,7 @@ namespace Nextension
                 return new Span<T>(ptr, src.Length * sizeOf<TFrom>() / sizeOf<T>());
             }
         }
+        
         public unsafe static ReadOnlySpan<T> asSpan<TFrom, T>(this ReadOnlySpan<TFrom> src) where T : unmanaged where TFrom : unmanaged
         {
             fixed (TFrom* ptr = src)
@@ -769,6 +765,7 @@ namespace Nextension
                 return new ReadOnlySpan<T>(ptr, src.Length * sizeOf<TFrom>() / sizeOf<T>());
             }
         }
+        
         public unsafe static byte[] toBytes<T>(this ReadOnlySpan<T> self) where T : unmanaged
         {
             var dst = new byte[self.Length * NUtils.sizeOf<T>()];
@@ -781,6 +778,7 @@ namespace Nextension
             }
             return dst;
         }
+        
         public unsafe static byte[] toBytes<T>(this T[] self) where T : unmanaged
         {
             var dst = new byte[self.Length * NUtils.sizeOf<T>()];
@@ -793,7 +791,8 @@ namespace Nextension
             }
             return dst;
         }
-        public static bool addIfNotPresent<T>(this ICollection<T> self, T item)
+        
+        public static bool addIfNotPresent<TCollection, T>(this TCollection self, T item) where TCollection : ICollection<T>
         {
             if (self.Contains(item))
             {
@@ -802,6 +801,7 @@ namespace Nextension
             self.Add(item);
             return true;
         }
+        
         public static void addAndSort<T>(this List<T> self, T item, bool ignoreIfExist = true)
         {
             if (ignoreIfExist)
@@ -814,6 +814,7 @@ namespace Nextension
             self.Add(item);
             self.Sort();
         }
+        
         public static void addAndSort<T>(this List<T> self, T item, Comparison<T> comparison, bool ignoreIfExist = true)
         {
             if (ignoreIfExist)
@@ -826,19 +827,68 @@ namespace Nextension
             self.Add(item);
             self.Sort(comparison);
         }
+        
         public static void addRange<TCollection, T>(this ICollection<T> self, ReadOnlySpan<T> values) where TCollection : ICollection<T>
         {
+            for (int i = 0, length = values.Length; i < length; i++)
+            {
+                self.Add(values[i]);
+            }
+        }
+        
+        public static void addRange<TCollection, T>(this TCollection self, IEnumerable<T> values) where TCollection : ICollection<T> 
+        {
+            if (values is IList<T> list)
+            {
+                for (int i = 0, count = list.Count; i < count; i++)
+                {
+                    self.Add(list[i]);
+                }
+                return;
+            }
+            if (values is IReadOnlyList<T> roList)
+            {
+                for (int i = 0, count = roList.Count; i < count; i++)
+                {
+                    self.Add(roList[i]);
+                }
+                return;
+            }
             foreach (T item in values)
             {
                 self.Add(item);
             }
         }
-        public static void addRange<TCollection, T>(this TCollection self, IReadOnlyCollection<T> values) where TCollection : ICollection<T>
+
+        public static T[] add<T>(this T[] self, T item)
         {
-            foreach (T item in values)
+            int len = self?.Length ?? 0;
+            Array.Resize(ref self, len + 1);
+            self[^1] = item;
+            return self;
+        }
+       
+        public static T[] remove<T>(this T[] self, T item)
+        {
+            if (self == null || self.Length == 0)
             {
-                self.Add(item);
+                return self;
             }
+            int index = Array.IndexOf(self, item);
+            if (index < 0)
+            {
+                return self;
+            }
+            T[] newArray = new T[self.Length - 1];
+            if (index > 0)
+            {
+                Array.Copy(self, 0, newArray, 0, index);
+            }
+            if (index < self.Length - 1)
+            {
+                Array.Copy(self, index + 1, newArray, index, self.Length - index - 1);
+            }
+            return newArray;
         }
 
         public static T first<T>(this HashSet<T> self)
@@ -850,8 +900,31 @@ namespace Nextension
             }
             throw new Exception("HashSet is empty");
         }
+        
         public static bool allEquals<TCollection, T>(this TCollection self, T value) where TCollection : ICollection<T>
         {
+            if (self is IList<T> list)
+            {
+                for (int i = 0, count = list.Count; i < count; i++)
+                {
+                    if (!list[i].equals(value))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            if (self is IReadOnlyList<T> roList)
+            {
+                for (int i = 0, count = roList.Count; i < count; i++)
+                {
+                    if (!roList[i].equals(value))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
             foreach (var item in self)
             {
                 if (!item.equals(value))
@@ -861,6 +934,7 @@ namespace Nextension
             }
             return true;
         }
+        
         public static bool isSameItem<T>(this T[] a, T[] b)
         {
             if (a == null || b == null)
@@ -882,6 +956,7 @@ namespace Nextension
             }
             return true;
         }
+        
         public static bool isSameItem<T>(this List<T> a, List<T> b)
         {
             if (a == null || b == null)
@@ -894,12 +969,14 @@ namespace Nextension
                 return false;
             }
 
-            return isSameItem(a.asSpan(), b.asSpan());
+            return isSameItem((ReadOnlySpan<T>)a.asSpan(), b.asSpan());
         }
+        
         public static bool isSameItem<T>(this Span<T> a, ReadOnlySpan<T> b)
         {
             return isSameItem((ReadOnlySpan<T>)a, b);
         }
+        
         public static bool isSameItem<T>(this ReadOnlySpan<T> a, ReadOnlySpan<T> b)
         {
             if (a == default || b == default)
@@ -921,6 +998,7 @@ namespace Nextension
             }
             return true;
         }
+        
         public static bool Contains<T>(this T[] self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
@@ -932,10 +1010,12 @@ namespace Nextension
             }
             return false;
         }
+        
         public static bool Contains<T>(this Span<T> self, T value)
         {
             return Contains((ReadOnlySpan<T>)self, value);
         }
+        
         public static bool Contains<T>(this ReadOnlySpan<T> self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
@@ -947,6 +1027,7 @@ namespace Nextension
             }
             return false;
         }
+        
         public static int IndexOf<T>(this T[] self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
@@ -958,10 +1039,12 @@ namespace Nextension
             }
             return -1;
         }
+        
         public static int IndexOf<T>(this Span<T> self, T value)
         {
             return IndexOf((ReadOnlySpan<T>)self, value);
         }
+        
         public static int IndexOf<T>(this ReadOnlySpan<T> self, T value)
         {
             for (int i = self.Length - 1; i >= 0; i--)
@@ -972,29 +1055,6 @@ namespace Nextension
                 }
             }
             return -1;
-        }
-
-        public static bool Contains<T>(this ICollection<T> self, ICollection<T> b)
-        {
-            foreach (var item in b)
-            {
-                if (!self.Contains(item))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-        public static bool Contains<T>(this ICollection<T> self, ReadOnlySpan<T> b)
-        {
-            for (int i = 0, length = b.Length; i < length; i++)
-            {
-                if (!self.Contains(b[i]))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         /// <summary>
@@ -1022,20 +1082,22 @@ namespace Nextension
             self.RemoveAt(index);
             return item;
         }
-        public static V takeAndRemove<K, V>(this IDictionary<K, V> self, K key)
+        
+        public static V takeAndRemove<K, V>(this Dictionary<K, V> self, K key)
         {
             if (!self.TryGetValue(key, out var v)) return default;
             self.Remove(key);
             return v;
         }
-        public static bool tryTakeAndRemove<K, V>(this IDictionary<K, V> self, K key, out V value)
+        
+        public static bool tryTakeAndRemove<K, V>(this Dictionary<K, V> self, K key, out V value)
         {
             if (!self.TryGetValue(key, out value)) return false;
             self.Remove(key);
             return true;
         }
 
-        public static V getOrAddNew<K, V>(this IDictionary<K, V> self, K key) where V : class, new()
+        public static V getOrAddNew<K, V>(this Dictionary<K, V> self, K key) where V : class, new()
         {
             if (!self.TryGetValue(key, out var val))
             {
@@ -1083,78 +1145,7 @@ namespace Nextension
             self.Remove(item);
             return item;
         }
-        public static T[] add<T>(this T[] self, params T[] items)
-        {
-            var srcLength = self.Length;
-            var itemsLength = items.Length;
-            var result = new T[srcLength + itemsLength];
-            Array.Copy(self, 0, result, 0, srcLength);
-            Array.Copy(items, 0, result, srcLength, itemsLength);
-            return result;
-        }
-        public static T[] remove<T>(this T[] self, params T[] items)
-        {
-            var result = new List<T>(self.Length);
-            foreach (var item in self)
-            {
-                if (!items.Contains(item)) result.Add(item);
-            }
-            return result.ToArray();
-        }
-
-        public static T[] createOrAdd<T>(this T[] self, params T[] items)
-        {
-            if (self == null)
-            {
-                return items;
-            }
-            else
-            {
-                return add(self, items);
-            }
-        }
-        public static T[] merge<T>(params T[][] arrays)
-        {
-            int totalLength = 0;
-            int arrLength = arrays.Length;
-            for (int i = 0; i < arrLength; ++i)
-            {
-                totalLength += arrays[i].Length;
-            }
-            var data = new T[totalLength];
-            int pointer = 0;
-            for (int i = 0; i < arrLength; ++i)
-            {
-                var item = arrays[i];
-                Array.Copy(item, 0, data, pointer, item.Length);
-                pointer += item.Length;
-            }
-            return data;
-        }
-        public static T[] mergeNullableArrays<T>(params T[][] arrays)
-        {
-            int totalLength = 0;
-            int arrLength = arrays.Length;
-            for (int i = 0; i < arrLength; ++i)
-            {
-                if (arrays[i] != null)
-                {
-                    totalLength += arrays[i].Length;
-                }
-            }
-            var result = new T[totalLength];
-            int pointer = 0;
-            for (int i = 0; i < arrLength; ++i)
-            {
-                var item = arrays[i];
-                if (item != null)
-                {
-                    Array.Copy(item, 0, result, pointer, item.Length);
-                    pointer += item.Length;
-                }
-            }
-            return result;
-        }
+        
         public static T[] mergeWith<T>(this T[] left, T[] right)
         {
             var aLength = left.Length;
@@ -1164,12 +1155,14 @@ namespace Nextension
             Array.Copy(right, 0, result, aLength, bLength);
             return result;
         }
+        
         public static T[] getBlock<T>(T[] src, int startIndex, int count)
         {
             T[] result = new T[count];
             Array.Copy(src, startIndex, result, 0, count);
             return result;
         }
+        
         public static T[] getBlockToEnd<T>(T[] src, int startIndex)
         {
             return getBlock(src, startIndex, src.Length - startIndex);
@@ -1184,6 +1177,7 @@ namespace Nextension
         {
             return clone(self, 0, self.Length);
         }
+        
         public static T[] clone<T>(this T[] self, int startIndex, int length)
         {
             T[] result = new T[length];
@@ -1195,6 +1189,7 @@ namespace Nextension
         {
             return getIntPtr(self.AsSpan().asReadOnlySpan());
         }
+
         public static unsafe IntPtr getIntPtr<T>(this ReadOnlySpan<T> self) where T : unmanaged
         {
             fixed (T* ptr = self)
@@ -1208,6 +1203,12 @@ namespace Nextension
             if (span.Length <= 1) return;
             quickSort(span, 0, span.Length - 1);
 
+        }
+
+        public static void quickSort<T>(Span<T> span, Comparison<T> comparison)
+        {
+            if (span.Length <= 1) return;
+            quickSort(span, 0, span.Length - 1, comparison);
         }
 
         public static void quickSort<T>(Span<T> span, int left, int right)
@@ -1234,6 +1235,101 @@ namespace Nextension
 
             if (left < j) quickSort(span, left, j);
             if (i < right) quickSort(span, i, right);
+        }
+
+        public static void quickSort<T>(Span<T> span, int left, int right, Comparison<T> comparison)
+        {
+            if (left >= right) return;
+
+            T pivot = span[(left + right) / 2];
+            int i = left;
+            int j = right;
+
+            while (i <= j)
+            {
+                while (comparison(span[i], pivot) < 0) i++;
+                while (comparison(span[j], pivot) > 0) j--;
+
+                if (i <= j)
+                {
+                    // Swap elements
+                    (span[j], span[i]) = (span[i], span[j]);
+                    i++;
+                    j--;
+                }
+            }
+
+            if (left < j) quickSort(span, left, j, comparison);
+            if (i < right) quickSort(span, i, right, comparison);
+        }
+
+        public static void setSize<T>(this List<T> list, int count)
+        {
+            int current = list.Count;
+            if (current == count) return;
+            if (current < count)
+            {
+                if (list.Capacity < count) list.Capacity = count;
+                while (current < count)
+                {
+                    list.Add(default);
+                    current++;
+                }
+            }
+            else
+            {
+                list.RemoveRange(count, current - count);
+            }
+        }
+
+        public static void setSize<T>(this NList<T> list, int count)
+        {
+            int current = list.Count;
+            if (current == count) return;
+            if (current < count)
+            {
+                list.EnsureCapacity(count);
+                list.i_Count = count;
+            }
+            else
+            {
+                Array.Clear(list.i_Items, count, current - count);
+                list.i_Count = count;
+            }
+        }
+
+        public static void setSize<T, TList>(this TList list, int count) where TList : IList<T>
+        {
+            int current = list.Count;
+            if (current == count) return;
+
+            if (list is List<T> sysList)
+            {
+                setSize(sysList, count);
+                return;
+            }
+            if (list is NList<T> nList)
+            {
+                setSize(nList, count);
+                return;
+            }
+
+            if (current < count)
+            {
+                while (current < count)
+                {
+                    list.Add(default);
+                    current++;
+                }
+            }
+            else
+            {
+                while (current > count)
+                {
+                    list.RemoveAt(current - 1);
+                    current--;
+                }
+            }
         }
 
         #endregion

@@ -17,7 +17,7 @@ namespace Nextension
         [SerializeField, Range(0, 1)] private float _bgmMasterVolume = 1;
 
         private List<AudioSource> _audioSourcePool = new List<AudioSource>();
-        private SimpleDictionary<int, PlayingData> _playingData = new SimpleDictionary<int, PlayingData>();
+        private SimpleDictionary<ulong, PlayingData> _playingData = new SimpleDictionary<ulong, PlayingData>();
 
         private int _audioSourceTotalCount;
 
@@ -100,7 +100,7 @@ namespace Nextension
         }
         private void addPlayingData(AudioSource audioSource, bool isBgm, float volume)
         {
-            _playingData.Add(audioSource.GetInstanceID(), new PlayingData
+            _playingData.Add(audioSource.getEntityId(), new PlayingData
             {
                 audioSource = audioSource,
                 isBgm = isBgm,
@@ -110,7 +110,7 @@ namespace Nextension
         private AudioPlayHandler innerPlayClip(bool isBgm, AudioClip clip, float volume, float startTime = 0, float duration = 0, bool isLoop = false)
         {
             var audioSrc = getNext();
-            AudioPlayHandler handler = new AudioPlayHandler(audioSrc.GetInstanceID());
+            AudioPlayHandler handler = new AudioPlayHandler(audioSrc.getEntityId());
             addPlayingData(audioSrc, isBgm, volume);
             audioSrc.clip = clip;
             audioSrc.volume = volume * (isBgm ? _bgmMasterVolume : _sfxMasterVolume) * _masterVolume;
@@ -135,7 +135,7 @@ namespace Nextension
             return handler;
         }
 
-        public void stopById(int id)
+        public void stopById(ulong id)
         {
             if (_playingData.tryTakeAndRemove(id, out var data))
             {
@@ -147,12 +147,12 @@ namespace Nextension
                 release(audioSrc);
             }
         }
-        public void stopById(int id, float delay)
+        public void stopById(ulong id, float delay)
         {
             __stopById(id, delay).forget();
         }
 
-        private async NTaskVoid __stopById(int id, float delay)
+        private async NTaskVoid __stopById(ulong id, float delay)
         {
             await new NWaitSecond(delay);
             stopById(id);
@@ -160,12 +160,12 @@ namespace Nextension
 
         public void stopByAudioClip(AudioClip clip, bool isBgm, bool isStopAll)
         {
-            using var audioSources = NPUArray<int>.get();
+            using var audioSources = NPUArray<ulong>.get();
             foreach ((_, var data) in _playingData)
             {
                 if (data.isBgm == isBgm && data.audioSource.clip == clip)
                 {
-                    audioSources.Add(data.audioSource.GetInstanceID());
+                    audioSources.Add(data.audioSource.getEntityId());
                     if (!isStopAll) break;
                 }
             }
@@ -177,12 +177,12 @@ namespace Nextension
         }
         public void stopAllByType(bool isBgm)
         {
-            using var audioSources = NPUArray<int>.get();
+            using var audioSources = NPUArray<ulong>.get();
             foreach ((_, var data) in _playingData)
             {
                 if (data.isBgm == isBgm)
                 {
-                    audioSources.Add(data.audioSource.GetInstanceID());
+                    audioSources.Add(data.audioSource.getEntityId());
                 }
             }
 
@@ -251,8 +251,8 @@ namespace Nextension
     }
     public struct AudioPlayHandler
     {
-        public readonly int id;
-        public AudioPlayHandler(int id)
+        public readonly ulong id;
+        public AudioPlayHandler(ulong id)
         {
             this.id = id;
         }

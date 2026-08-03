@@ -31,19 +31,19 @@ namespace Nextension
         {
             Action<int> rAction = __onGuiCmdUI_R_ButtonClick;
             Action<int> sAction = __onGuiCmdUI_S_ButtonClick;
-            
-            _guiCmdUIView.onCellShown += (cell) =>
+
+            _guiCmdUIView.onBeforeCellShown += (cell) =>
             {
                 var guiCell = (GuiCmdUI)cell;
                 guiCell.onRButtonClick += rAction;
                 guiCell.onSButtonClick += sAction;
-            };;
+            }; ;
             _guiCmdUIView.onCellReleased += (cell) =>
             {
                 var guiCell = (GuiCmdUI)cell;
                 guiCell.onRButtonClick -= rAction;
                 guiCell.onSButtonClick -= sAction;
-            };;
+            }; ;
 
             _openCloseButton.onButtonClickEvent.AddListener(() =>
             {
@@ -262,7 +262,7 @@ namespace Nextension
             if (index >= 0)
             {
                 _savedData.RemoveAt(index);
-                _guiCmdUIView.remove(index);
+                _guiCmdUIView.removeAt(index);
             }
         }
 

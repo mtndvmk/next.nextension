@@ -11,25 +11,43 @@ namespace Nextension
 
         public void refreshCellData()
         {
-            onUpdateCellData(CellIndex, CellData);
+            if (!HasData) return;
+            onBeforeShowCell(CellIndex, in InfiniteScrollRect.getRefCellData(CellIndex));
         }
 
-        internal void releaseCellData()
-        {
-            CellIndex = -1;
-        }
-
-        internal void internalUpdateCellData(int index, in InfiniteCellData cellData)
+        internal void internalOnBeforeShowCell(int index, in InfiniteCellData cellData)
         {
             CellIndex = index;
             InfiniteScrollRect = cellData.infiniteScrollRect;
-            onUpdateCellData(index, in cellData);
+            onBeforeShowCell(index, in cellData);
         }
 
-        protected virtual void onUpdateCellData(int index, in InfiniteCellData cellData)
+        internal void internalOnLayoutUpdated()
+        {
+            onLayoutUpdated();
+        }
+
+        internal void internalOnBeforeCellHide()
+        {
+            onBeforeHideCell();
+            CellIndex = -1;
+        }
+
+        protected virtual void onBeforeShowCell(int index, in InfiniteCellData cellData)
         {
 
         }
+
+        protected virtual void onLayoutUpdated()
+        {
+            
+        }
+
+        protected virtual void onBeforeHideCell()
+        {
+
+        }
+
 
         protected void setScale(float scale)
         {
@@ -57,14 +75,5 @@ namespace Nextension
     public class InfiniteCell<T> : InfiniteCell
     {
         public T Data => (T)CellData.exData;
-
-        protected sealed override void onUpdateCellData(int index, in InfiniteCellData cellData)
-        {
-            onUpdateCellData(index, (T)cellData.exData);
-        }
-        protected virtual void onUpdateCellData(int index, T cellData)
-        {
-
-        }
     }
 }

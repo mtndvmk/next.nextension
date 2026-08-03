@@ -22,9 +22,9 @@ namespace Nextension
         {
             __onValueChanged();
         }
-        private void Start()
+        private void OnEnable()
         {
-            __onValueChanged();
+            __updateSprite();
         }
 
         public bool Value

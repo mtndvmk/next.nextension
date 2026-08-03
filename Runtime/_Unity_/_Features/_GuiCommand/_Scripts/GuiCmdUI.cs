@@ -21,7 +21,7 @@ namespace Nextension
             {
                 var data = Data;
                 data.isCollapsed = !data.isCollapsed;
-                onUpdateCellData(CellIndex, data);
+                setData(data);
             });
             _r_button.onButtonClickEvent.AddListener(() => { onRButtonClick?.Invoke(CellIndex); });
             _s_button.onButtonClickEvent.AddListener(() => { onSButtonClick?.Invoke(CellIndex); });
@@ -82,14 +82,16 @@ namespace Nextension
                         break;
                     }
             }
-        }
-        protected override void onUpdateCellData(int index, GuiCmdUIData cellData)
-        {
-            setData(cellData);
+        
             transform.rectTransform().markLayoutForRebuild(true);
             var size = CellData.cellSize;
             size.y = transform.rectTransform().rect.size.y;
             setSize(size);
+        }
+        
+        protected override void onBeforeShowCell(int index, in InfiniteCellData cellData)
+        {
+            setData(Data);
         }
     }
 

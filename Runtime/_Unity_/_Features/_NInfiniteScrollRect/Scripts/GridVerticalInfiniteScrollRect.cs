@@ -15,6 +15,7 @@ namespace Nextension
         [SerializeField] private Vector2 _spacing = new Vector2(10, 10);
         [SerializeField] private Vector2 _cellSize = new Vector2(100, 100);
         [SerializeField] private float _extendVisibleRange;
+        
         public Direction direction
         {
             get => _direction;
@@ -69,10 +70,16 @@ namespace Nextension
         protected NativeSegmentTree _rowSegmentTree;
         protected FTIndex _visibleIndices = new FTIndex(-1, -1);
 
+        private void __initialize()
+        {
+            if (!_rowSegmentTree.IsCreated) 
+                _rowSegmentTree = new NativeSegmentTree(16, Allocator.Persistent);
+        }
+
         protected override void Awake()
         {
             base.Awake();
-            _rowSegmentTree = new NativeSegmentTree(16, Allocator.Persistent);
+            __initialize();
             updateContentAnchorAndPivot();
         }
 
@@ -102,6 +109,8 @@ namespace Nextension
             {
                 calculateColumns();
             }
+
+            __initialize();
 
             int rowCount = Mathf.CeilToInt((float)_dataList.Count / Columns);
             _rowSegmentTree.SetSize(rowCount);
@@ -172,15 +181,21 @@ namespace Nextension
                 for (int i = toVisibleIndex + 1; i <= toMaxIndex; i++) hideCell(i);
             }
 
+            for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
+            {
+                updateCellLayoutUpdated(i);
+            }
+
             // Show visible cells
             var cellRectAnchor = new Vector2(0, anchorY);
 
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
+                var cell = requestCell(i);
+                
                 int row = i / Columns;
                 var rowAnchor = getRowFTAnchor(row);
                 Vector2 position = calculateCellPosition(i, rowAnchor);
-                var cell = showCell(i);
                 var cellRectTransform = cell.rectTransform();
                 var originPivot = cellRectTransform.pivot;
 
@@ -388,6 +403,10 @@ namespace Nextension
             _rowSegmentTree.Set(row, newSize.y + _spacing.y);
             int rowCount = Mathf.CeilToInt((float)_dataList.Count / Columns);
             scrollRect.content.sizeDelta = calculateContentSize(rowCount);
+            if (_visibleIndices.isBetween(index))
+            {
+                _visibleIndices = FTIndex.Invalid;
+            }
             setDirtyPosition(index);
         }
 

@@ -12,6 +12,7 @@ namespace Nextension
         public UnityEvent onExit = new UnityEvent();
         public UnityEvent onDown = new UnityEvent();
         public UnityEvent onUp = new UnityEvent();
+
         public void OnPointerClick(PointerEventData eventData)
         {
             onClick?.Invoke();

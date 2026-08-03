@@ -22,7 +22,7 @@ namespace Nextension
         public void writeUTF8(ReadOnlySpan<char> chars)
         {
             var byteCount = chars.Length;
-            buffer.ensureCapacity(buffer.Count + byteCount);
+            buffer.EnsureCapacity(buffer.Count + byteCount);
             var span = new Span<byte>(buffer.i_Items, buffer.Count, byteCount);
             System.Text.Encoding.UTF8.GetBytes(chars, span);
             buffer.i_Count += byteCount;
@@ -34,6 +34,10 @@ namespace Nextension
                 throw new InvalidOperationException("NBytesWriter is not created");
             }
             return new NBytesRef(buffer.AsSpan());
+        }
+        public void clear()
+        {
+            buffer?.Clear();
         }
     }
 }

@@ -109,9 +109,9 @@ namespace Nextension
 
         private int _currentStartupInstanceCount;
         private uint _clonedCount;
-        private int _id;
+        private ulong _id;
         private T _copiedPrefab;
-        public override int Id => _id;
+        public override ulong Id => _id;
         public T Prefab => getPrefab();
         public uint MaxPoolInstanceCount { get; set; }
 

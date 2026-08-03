@@ -15,13 +15,13 @@ namespace Nextension
         public static NPArray<T> get(IEnumerable<T> collection)
         {
             var collectionPool = get();
-            collectionPool._collection.copyFrom(collection);
+            collectionPool._collection.CopyFrom(collection);
             return collectionPool;
         }
         public static NPArray<T> get(Span<T> span)
         {
             var collectionPool = get();
-            collectionPool._collection.copyFrom(span);
+            collectionPool._collection.CopyFrom(span);
             return collectionPool;
         }
         public static NPArray<T> getWithoutTracking()
@@ -32,13 +32,13 @@ namespace Nextension
         public static NPArray<T> getWithoutTracking(IEnumerable<T> collection)
         {
             var collectionPool = getWithoutTracking();
-            collectionPool._collection.copyFrom(collection);
+            collectionPool._collection.CopyFrom(collection);
             return collectionPool;
         }
         public static NPArray<T> getWithoutTracking(Span<T> span)
         {
             var collectionPool = getWithoutTracking();
-            collectionPool._collection.copyFrom(span);
+            collectionPool._collection.CopyFrom(span);
             return collectionPool;
         }
         private NPArray() : base() { }
@@ -79,12 +79,12 @@ namespace Nextension
         public void EnsureCapacity(int capacity)
         {
             onAccessed();
-            _collection.ensureCapacity(capacity);
+            _collection.EnsureCapacity(capacity);
         }
         public void CopyFrom(IEnumerable<T> collection)
         {
             onAccessed();
-            _collection.copyFrom(collection);
+            _collection.CopyFrom(collection);
         }
         public void CopyTo(NPArray<T> dst)
         {

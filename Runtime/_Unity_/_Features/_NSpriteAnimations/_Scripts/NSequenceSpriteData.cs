@@ -8,6 +8,20 @@ namespace Nextension
     {
         public List<Sprite> sprites;
         public uint fps = 12;
-        public float duration => fps == 0 ? 0 : sprites.Count * 1f / fps;
+        public float duration
+        {
+            get
+            {
+                if (fps == 0) return 0;
+                var oneWayDuration = sprites.Count * 1f / fps;
+                if (!isBackAndForth)
+                {
+                    return oneWayDuration;
+                }
+                return oneWayDuration * 2 + backDelayTime;
+            }
+        }
+        public bool isBackAndForth;
+        public float backDelayTime;
     }
 }

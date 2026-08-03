@@ -6,17 +6,18 @@ using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    public class NList<T> : IList<T>
+    public class NList<T> : IList<T>, IReadOnlyList<T>
     {
-        private readonly static T[] _emptyArray = new T[0];
         public NList()
         {
-            i_Items = _emptyArray;
+            i_Items = Array.Empty<T>();
         }
+        
         public NList(int capacity)
         {
             i_Items = new T[capacity];
         }
+        
         public NList(IEnumerable<T> collection)
         {
             i_Items = collection.ToArray();
@@ -24,12 +25,15 @@ namespace Nextension
         }
 
         [NonSerialized] internal T[] i_Items;
+        
         [NonSerialized] internal int i_Count;
 
         public int Capacity => i_Items.Length;
+        
         public int Count => i_Count;
 
         public bool IsReadOnly => false;
+        
         public T this[int index]
         {
             get => (uint)index < i_Count ? i_Items[index] : throw new IndexOutOfRangeException();
@@ -39,22 +43,26 @@ namespace Nextension
                 i_Items[index] = value;
             }
         }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetAtWithoutChecks(int index)
         {
             return i_Items[index];
         }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetAtWithoutChecks(uint index)
         {
             return i_Items[index];
         }
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetWithoutChecks(int index, T value)
         {
             i_Items[index] = value;
         }
-        public void ensureCapacity(int capacity)
+
+        public void EnsureCapacity(int capacity)
         {
             var oldCapacity = Capacity;
             if (oldCapacity < capacity)
@@ -64,21 +72,28 @@ namespace Nextension
                 i_Items = newItems;
             }
         }
+
         public Span<T> AsSpan()
         {
             return new Span<T>(i_Items, 0, i_Count);
         }
+
         public Span<T> AsSpan(int count)
         {
-            ensureCapacity(count);
+            EnsureCapacity(count);
             if (count > i_Count) i_Count = count;
             return new Span<T>(i_Items, 0, count);
         }
-        public void copyFrom(IEnumerable<T> collection)
+
+        public void CopyFrom<TCollection>(TCollection collection) where TCollection : IEnumerable<T>
         {
             if (collection is ICollection<T> collection2)
             {
-                CopyFrom(collection2);
+                var cCount = collection2.Count;
+                EnsureCapacity(cCount);
+                collection2.CopyTo(i_Items, 0);
+                i_Count = cCount;
+                Array.Clear(i_Items, i_Count, i_Items.Length - i_Count);
             }
             else
             {
@@ -90,17 +105,10 @@ namespace Nextension
                 Array.Clear(i_Items, i_Count, i_Items.Length - i_Count);
             }
         }
-        public void CopyFrom(ICollection<T> collection)
+
+        public void CopyFrom(Span<T> span)
         {
-            var cCount = collection.Count;
-            ensureCapacity(cCount);
-            collection.CopyTo(i_Items, 0);
-            i_Count = cCount;
-            Array.Clear(i_Items, i_Count, i_Items.Length - i_Count);
-        }
-        public void copyFrom(Span<T> span)
-        {
-            ensureCapacity(span.Length);
+            EnsureCapacity(span.Length);
             span.CopyTo(i_Items.AsSpan());
             i_Count = span.Length;
         }
@@ -115,15 +123,17 @@ namespace Nextension
             }
             i_Items[i_Count++] = item;
         }
-        public void AddRange(IEnumerable<T> collection) 
+
+        public void AddRange<TCollection>(TCollection collection) where TCollection : IEnumerable<T>
         {
             InsertRange(i_Count, collection);
         }
+
         public void AddRange(ReadOnlySpan<T> span)
         {
             InsertRangeWithoutChecks(i_Count, span);
         }
-        
+
         public void Clear()
         {
             if (i_Count > 0)
@@ -132,6 +142,7 @@ namespace Nextension
                 i_Count = 0;
             }
         }
+
         public bool Contains(T item)
         {
             for (int i = 0; i < i_Count; i++)
@@ -143,6 +154,7 @@ namespace Nextension
             }
             return false;
         }
+
         public void CopyTo(T[] array, int arrayIndex)
         {
             if (i_Count > 0)
@@ -157,12 +169,13 @@ namespace Nextension
             {
                 if (item.equals(i_Items[i]))
                 {
-                    removeAtWithoutChecks(i);
+                    RemoveAtWithoutChecks(i);
                     return true;
                 }
             }
             return false;
         }
+
         public void RemoveAt(int index)
         {
             if ((uint)index >= i_Count)
@@ -175,14 +188,16 @@ namespace Nextension
             }
             i_Items[i_Count] = default;
         }
-        public void removeLast()
+
+        public void RemoveLast()
         {
             if (i_Count > 0)
             {
                 i_Items[--i_Count] = default;
             }
         }
-        public void removeAtWithoutChecks(int index)
+
+        public void RemoveAtWithoutChecks(int index)
         {
             if (index < --i_Count)
             {
@@ -190,7 +205,8 @@ namespace Nextension
             }
             i_Items[i_Count] = default;
         }
-        public void removeAtSwapBackWithoutChecks(int index)
+
+        public void RemoveAtSwapBackWithoutChecks(int index)
         {
             i_Items[index] = i_Items[--i_Count];
             i_Items[i_Count] = default;
@@ -207,6 +223,7 @@ namespace Nextension
             }
             return -1;
         }
+
         public void Insert(int index, T item)
         {
             if (i_Count == i_Items.Length)
@@ -222,13 +239,9 @@ namespace Nextension
             i_Items[index] = item;
             i_Count++;
         }
-        public void InsertRange(int index, IEnumerable<T> collection)
-        {
-            if (collection == null)
-            {
-                throw new ArgumentNullException();
-            }
 
+        public void InsertRange<TCollection>(int index, TCollection collection) where TCollection : IEnumerable<T>
+        {
             if (index > i_Count)
             {
                 throw new IndexOutOfRangeException();
@@ -239,7 +252,7 @@ namespace Nextension
                 int count = collection2.Count;
                 if (count > 0)
                 {
-                    ensureCapacity(this.i_Count + count);
+                    EnsureCapacity(this.i_Count + count);
                     if (index < this.i_Count)
                     {
                         Array.Copy(i_Items, index, i_Items, index + count, this.i_Count - index);
@@ -276,14 +289,15 @@ namespace Nextension
                 }
             }
         }
-        public void InsertRangeWithoutChecks(int index, IEnumerable<T> collection)
+
+        public void InsertRangeWithoutChecks<TCollection>(int index, TCollection collection) where TCollection : IEnumerable<T>
         {
             if (collection is ICollection<T> collection2)
             {
                 int count = collection2.Count;
                 if (count > 0)
                 {
-                    ensureCapacity(this.i_Count + count);
+                    EnsureCapacity(this.i_Count + count);
                     if (index < this.i_Count)
                     {
                         Array.Copy(i_Items, index, i_Items, index + count, this.i_Count - index);
@@ -320,10 +334,11 @@ namespace Nextension
                 }
             }
         }
+
         public void InsertRangeWithoutChecks(int index, ReadOnlySpan<T> span)
         {
             int count = span.Length;
-            ensureCapacity(this.i_Count + count);
+            EnsureCapacity(this.i_Count + count);
             if (index < this.i_Count)
             {
                 Array.Copy(i_Items, index, i_Items, index + count, this.i_Count - index);
@@ -336,10 +351,12 @@ namespace Nextension
         {
             return new ArrayEnumerator<T>(i_Items, 0, (uint)i_Count);
         }
+
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             return new ArrayEnumerator<T>(i_Items, 0, (uint)i_Count);
         }
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new ArrayEnumerator<T>(i_Items, 0, (uint)i_Count);

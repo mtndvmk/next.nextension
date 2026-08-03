@@ -18,29 +18,26 @@ namespace Nextension
             updateContentAnchorAndPivot();
         }
 
-        protected override float getCellMainSize(InfiniteCellData data)
+        protected override float getCellDirSize(InfiniteCellData data)
         {
             return data.cellSize.x;
         }
 
         protected override void onInheritedAddedNewItem(ref InfiniteCellData data)
         {
+            __ensureSegmentTreeCreated();
             _segmentTree.SetSize(_dataList.Count);
-            _segmentTree.Set(data.index, data.cellSize.x + _spacing);
+            for (int i = data.index; i < _dataList.Count; i++)
+            {
+                _segmentTree.Set(i, getCellDirSize(_dataList[i]) + _spacing);
+            }
 
             RectTransform scrollContent = scrollRect.content;
             var contentWidth = scrollContent.sizeDelta.x;
             var cellWidth = data.cellSize.x;
-            if (data.index == 0)
+            if (_dataList.Count == 1)
             {
-                if (_dataList.Count == 1)
-                {
-                    contentWidth = _headOffset + cellWidth + _tailOffset;
-                }
-                else
-                {
-                    contentWidth += cellWidth + _spacing;
-                }
+                contentWidth = _headOffset + cellWidth + _tailOffset;
             }
             else
             {
@@ -77,10 +74,15 @@ namespace Nextension
                 }
             }
 
+            for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
+            {
+                updateCellLayoutUpdated(i);
+            }
+
             float anchorX = direction == Direction.RIGHT_LEFT ? 1 : 0;
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
-                var cell = showCell(i);
+                var cell = requestCell(i);
                 var cellTopFTAnchor = getCellFTAnchor(i);
                 var posX = direction == Direction.RIGHT_LEFT ? cellTopFTAnchor.from : -cellTopFTAnchor.to;
                 var cellRectTransform = cell.rectTransform();
@@ -129,13 +131,21 @@ namespace Nextension
             {
                 var fromVisibleIndex = getFromVisibleIndex_1To0(viewportFTAnchor.from, 0, latestIndex);
                 var toVisibleIndex = getToVisibleIndex_1To0(viewportFTAnchor.to, fromVisibleIndex, latestIndex);
+                if (fromVisibleIndex > toVisibleIndex)
+                {
+                    return new FTIndex(toVisibleIndex, fromVisibleIndex);
+                }
                 return new FTIndex(fromVisibleIndex, toVisibleIndex);
             }
             else
             {
                 var fromVisibleIndex = getFromVisibleIndex_0To1(-viewportFTAnchor.from, 0, latestIndex);
                 var toVisibleIndex = getToVisibleIndex_0To1(-viewportFTAnchor.to, 0, fromVisibleIndex);
-                return new FTIndex(toVisibleIndex, fromVisibleIndex);
+                if (fromVisibleIndex > toVisibleIndex)
+                {
+                    return new FTIndex(toVisibleIndex, fromVisibleIndex);
+                }
+                return new FTIndex(fromVisibleIndex, toVisibleIndex);
             }
         }
 
@@ -231,7 +241,12 @@ namespace Nextension
             contentWidth -= oldSize.x;
             contentWidth += newSize.x;
             scrollRect.content.sizeDelta = new Vector2(contentWidth, scrollRectSizeDelta.y);
+            __ensureSegmentTreeCreated();
             _segmentTree.Set(index, newSize.x + _spacing);
+            if (_visibleIndices.isBetween(index))
+            {
+                _visibleIndices = FTIndex.Invalid;
+            }
             setDirtyLayout();
         }
         protected override void updateContentAnchorAndPivot()

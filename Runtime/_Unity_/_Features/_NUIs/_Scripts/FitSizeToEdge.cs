@@ -156,7 +156,7 @@ namespace Nextension
             _tracker.Clear();
             DrivenTransformPropertiesHolder.clear(this);
 
-            var trackValue = DrivenTransformProperties.Pivot;
+            var trackValue = DrivenTransformProperties.None;
             if (!_disableHorizontal)
             {
                 trackValue |= DrivenTransformProperties.AnchorMinX

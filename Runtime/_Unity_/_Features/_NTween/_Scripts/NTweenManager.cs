@@ -56,7 +56,7 @@ namespace Nextension.Tween
                     if (tweener.startTime <= (tweener.updateMode == NTweener.UpdateMode.ScaleTime ? currentTime : currentUnscaledTime))
                     {
                         tweener.invokeOnStart();
-                        _queuedCombinedTweeners.removeAtSwapBackWithoutChecks(i);
+                        _queuedCombinedTweeners.RemoveAtSwapBackWithoutChecks(i);
                     }
                 }
             }

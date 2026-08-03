@@ -1464,6 +1464,8 @@ MonoBehaviour:
     right: 0
     top: 0
     bottom: 0
+  _disableHorizontal: 0
+  _disableVertical: 0
 --- !u!1 &4783007558221415573
 GameObject:
   m_ObjectHideFlags: 0

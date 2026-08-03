@@ -28,12 +28,13 @@ namespace Nextension
 
         private readonly NPUArray<char> _charArray;
         public readonly int Count => _charArray.Count;
+        public readonly int Length => _charArray.Count;
         public readonly bool IsCreated => _charArray.IsCreated;
         public readonly bool IsReadOnly => _charArray.IsReadOnly;
 
         public void stopTracking()
         {
-            _charArray.stopTracking();
+            _charArray.StopTracking();
         }
 
         public readonly NStringBuilder this[int value]
@@ -84,7 +85,8 @@ namespace Nextension
                 return this;
             }
         }
-        public readonly NStringBuilder this[object value]
+
+        public readonly NStringBuilder this[NStringBuilder value]
         {
             get
             {
@@ -92,7 +94,8 @@ namespace Nextension
                 return this;
             }
         }
-        public readonly NStringBuilder this[NStringBuilder value]
+
+        public readonly NStringBuilder this[NStringFormat value]
         {
             get
             {
@@ -268,11 +271,13 @@ namespace Nextension
         }
         public readonly NStringBuilder Append(string value)
         {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value.Length == 0) return this;
             return Insert(Count, value);
         }
         public readonly NStringBuilder Append(object value)
         {
-            if (value == null) throw new ArgumentNullException();
+            if (value == null) throw new ArgumentNullException(nameof(value));
             return Insert(Count, value.ToString());
         }
         public readonly NStringBuilder Append(ReadOnlySpan<char> value)
@@ -281,11 +286,24 @@ namespace Nextension
         }
         public readonly NStringBuilder Append(NStringBuilder value)
         {
-            return Insert(Count, value);
+            return Append(value, true);
         }
+        public readonly NStringBuilder Append(NStringBuilder value, bool consume)
+        {
+            var sb = Insert(Count, value);
+            if (consume) value.Dispose();
+            return sb;
+        }
+
         public readonly NStringBuilder Append(NStringFormat value)
         {
-            return Insert(Count, value.AsSpan());;
+            return Append(value, true);
+        }
+        public readonly NStringBuilder Append(NStringFormat value, bool consume)
+        {
+            var sb = Insert(Count, value.AsSpan());
+            if (consume) value.Dispose();
+            return sb;
         }
 
         public readonly NStringBuilder AppendLine()
@@ -335,13 +353,17 @@ namespace Nextension
             AppendLine();
             return this;
         }
-        public readonly NStringBuilder AppendLine(NStringBuilder value)
+        public readonly NStringBuilder AppendLine(NStringBuilder value, bool consume = true)
         {
-            return Append(value).AppendLine();
+            var sb = Append(value, consume);
+            sb.AppendLine();
+            return sb;
         }
-        public readonly NStringBuilder AppendLine(NStringFormat value)
+        public readonly NStringBuilder AppendLine(NStringFormat value, bool consume = true)
         {
-            return Append(value).AppendLine();
+            var sb = Append(value, consume);
+            sb.AppendLine();
+            return sb;
         }
 
         public readonly NStringBuilder Append<T>(T value)
@@ -362,7 +384,8 @@ namespace Nextension
             if (value is NStringBuilder nsb) return Append(nsb);
             if (value is NStringFormat nsf) return Append(nsf);
 
-            return Append(value?.ToString() ?? "");
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            return Append(value.ToString());
         }
 
         public readonly NStringBuilder Insert(int index, char item)
@@ -372,6 +395,8 @@ namespace Nextension
         }
         public readonly unsafe NStringBuilder Insert(int index, string value)
         {
+            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value.Length == 0) return this;
             fixed (char* p = value)
             {
                 _charArray.InsertRange(index, p, value.Length);
@@ -386,14 +411,35 @@ namespace Nextension
                 return this;
             }
         }
-        public readonly unsafe NStringBuilder Insert(int index, NStringBuilder value)
+        public readonly NStringBuilder Insert(int index, NStringBuilder value)
         {
-
+            return Insert(index, value, true);
+        }
+        
+        public readonly unsafe NStringBuilder Insert(int index, NStringBuilder value, bool consume)
+        {
             byte* bPtr = value._charArray.i_array.Collection.GetUnsafePtr();
             {
                 _charArray.InsertRange(index, (char*)bPtr, value.Count);
-                return this;
             }
+            if (consume) value.Dispose();
+            return this;
+        }
+
+        public readonly NStringBuilder Insert(int index, NStringFormat value)
+        {
+            return Insert(index, value, true);
+        }
+
+        public readonly unsafe NStringBuilder Insert(int index, NStringFormat value, bool consume)
+        {
+            var span = value.AsSpan();
+            fixed (char* p = span)
+            {
+                _charArray.InsertRange(index, p, span.Length);
+            }
+            if (consume) value.Dispose();
+            return this;
         }
 
         public readonly NStringBuilder SetValue(int index, char value)
@@ -444,16 +490,51 @@ namespace Nextension
 
         public readonly Span<char> AsSpan() => _charArray.AsSpan();
 
+        public readonly Span<char> AsSpan(int length) => _charArray.AsSpan(length);
+
         public readonly string getString(bool removeLastLineBreak = false)
         {
             if (removeLastLineBreak)
             {
-                if (Count > 0 && _charArray[Count - 1] == '\n')
+                var count = Count;
+                if (count > 0 && _charArray[^1] == '\n')
                 {
-                    return ToString(0, Count - 1);
+                    return ToString(0, count - 1);
                 }
             }
             return ToString();
+        }
+
+        public readonly int IndexOf(char value, int startIndex = 0)
+        {
+            return _charArray.IndexOf(value, startIndex);
+        }
+
+        public readonly int IndexOf(string value, int startIndex = 0)
+        {
+            int indexOfFirstChar = IndexOf(value[0], startIndex);
+            while (indexOfFirstChar != -1)
+            {
+                if (StartsWith(value, indexOfFirstChar))
+                {
+                    return indexOfFirstChar;
+                }
+                indexOfFirstChar = IndexOf(value[0], indexOfFirstChar + 1);
+            }
+            return -1;
+        }
+
+        public readonly bool StartsWith(string value, int startIndex = 0)
+        {
+            if (startIndex < 0 || startIndex > Count - value.Length)
+                return false;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (_charArray[i + startIndex] != value[i])
+                    return false;
+            }
+            return true;
         }
 
         public readonly unsafe override string ToString()

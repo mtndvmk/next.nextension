@@ -13,7 +13,7 @@ namespace Nextension
         [SerializeField] private List<Sprite> _orderSprites;
         [Space, NGroup("Event")] public UnityEvent<uint> onOrderChanged;
 
-        public int TotalSprites => _orderSprites.Count;
+        public int TotalSprites => _orderSprites?.Count ?? 0;
 
         private void OnValidate()
         {

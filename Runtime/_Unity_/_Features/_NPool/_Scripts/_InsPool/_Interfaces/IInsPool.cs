@@ -6,10 +6,10 @@ namespace Nextension
 {
     public interface IInsPool : IGameObjectInstantiator
     {
-        public int Id { get; }
+        public ulong Id { get; }
         void clearPool();
         void release(OriginInstance origin);
-        IGameObjectInstantiator getGameObjectInstantiate();
+        IGameObjectInstantiator getGameObjectInstantiator();
     }
     public interface IInsPool<T> : IInsPool, IComponentInstantiator<T> where T : Object
     {
@@ -19,12 +19,13 @@ namespace Nextension
         IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true);
         void release(T instance);
         bool poolContains(T instance);
-        IComponentInstantiator<T> getComponentInstantiate();
+        IComponentInstantiator<T> getComponentInstantiator();
     }
-
+    
+    [System.Serializable]
     public abstract class AbsInsPool<T> : IInsPool<T> where T : Object
     {
-        public abstract int Id { get; }
+        public abstract ulong Id { get; }
 
         public abstract void clearPool();
 
@@ -53,14 +54,19 @@ namespace Nextension
             return get();
         }
 
-        public IGameObjectInstantiator getGameObjectInstantiate()
+        public IGameObjectInstantiator getGameObjectInstantiator()
         {
             return this;
         }
 
-        public IComponentInstantiator<T> getComponentInstantiate()
+        public IComponentInstantiator<T> getComponentInstantiator()
         {
             return this;
+        }
+
+        public IComponentInstantiator<T2> getComponentInstantiator<T2>() where T2 : Object
+        {
+            return new ComponentInstantiator<T2>(this);
         }
 
         public IEnumerable<T> getInstances(int count, Transform parent, bool worldPositionStays = true)

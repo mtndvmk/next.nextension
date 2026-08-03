@@ -21,9 +21,9 @@ namespace Nextension
         static PoolTracker()
         {
             reset();
+            NUpdater.onUpdateEvent.add(update);
         }
 
-        [LoopMethod(NLoopType.LateUpdate)]
         private static void update()
         {
             var currentTimeMs = NUpdater.LatestUpdatedTimeMs;

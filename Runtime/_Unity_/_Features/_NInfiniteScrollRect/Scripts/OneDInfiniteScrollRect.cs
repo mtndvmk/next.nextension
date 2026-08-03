@@ -8,7 +8,7 @@ namespace Nextension
         [SerializeField] protected float _extendVisibleRange;
         [SerializeField] protected bool _isReverse;
 
-        protected abstract float getCellMainSize(InfiniteCellData data);
+        protected abstract float getCellDirSize(InfiniteCellData data);
 
         public float Spacing
         {
@@ -53,7 +53,12 @@ namespace Nextension
         protected override void Awake()
         {
             base.Awake();
-            _segmentTree = new NativeSegmentTree(16, Unity.Collections.Allocator.Persistent);
+            __ensureSegmentTreeCreated();
+        }
+
+        protected void __ensureSegmentTreeCreated()
+        {
+            if (!_segmentTree.IsCreated) _segmentTree = new NativeSegmentTree(16, Unity.Collections.Allocator.Persistent);
         }
 
         protected virtual void OnDestroy()
@@ -86,7 +91,7 @@ namespace Nextension
             if (_isReverse)
             {
                 float targetSum = _segmentTree.TotalSum + coord + _headOffset;
-                int index = _segmentTree.FindIndex(targetSum) - 1;
+                int index = _segmentTree.FindIndex(targetSum);
                 return Mathf.Clamp(index, 0, _dataList.Count - 1);
             }
             else
@@ -164,13 +169,14 @@ namespace Nextension
 
             for (int i = startIndex; i < _dataList.Count; i++)
             {
-                _segmentTree.Set(i, getCellMainSize(_dataList[i]) + _spacing);
+                _segmentTree.Set(i, getCellDirSize(_dataList[i]) + _spacing);
             }
         }
         public override void clear()
         {
             base.clear();
             _visibleIndices = new FTIndex(-1, -1);
+            __ensureSegmentTreeCreated();
             _segmentTree.SetSize(0);
         }
     }

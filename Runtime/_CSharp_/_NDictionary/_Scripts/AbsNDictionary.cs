@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace Nextension
 {
+    [Serializable]
     public abstract class NDictionary
     {
         public abstract Type KeyType { get; }
@@ -11,6 +12,7 @@ namespace Nextension
         public abstract void removeInvalidItems();
         public abstract bool isHasInvalidKeys();
     }
+    [Serializable]
     public abstract class AbsNDictionary<K, V> : NDictionary
     {
         [Serializable]

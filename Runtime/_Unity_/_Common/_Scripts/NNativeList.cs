@@ -281,14 +281,14 @@ namespace Nextension
 
         public Span<T> AsSpan()
         {
-            return AsArray();
+            return AsArray().AsSpan();
         }
 
         public Span<T> AsSpan(int count)
         {
             ensureCapacity(count);
             if (count > i_Count) i_Count = count;
-            return i_Items.GetSubArray(0, count);
+            return i_Items.GetSubArray(0, count).AsSpan();
         }
 
         public void CopyFrom(NNativeList<T> src)

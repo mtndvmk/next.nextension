@@ -232,7 +232,7 @@ namespace Nextension
             {
                 if (s_Instance.isNull())
                 {
-                    s_Instance = FindFirstObjectByType<T>(FindObjectsInactive.Include);
+                    s_Instance = FindAnyObjectByType<T>(FindObjectsInactive.Include);
                     NSingleton<T> singleton;
                     if (s_Instance.isNull())
                     {
@@ -329,7 +329,11 @@ namespace Nextension
                 var tType = typeof(T);
                 if (NUtils.isInherited(tType, typeof(MonoBehaviour)))
                 {
+                    #if UNITY_6000_4_OR_NEWER
+                    var allObjects = UnityEngine.Object.FindObjectsByType(tType, FindObjectsInactive.Include);
+                    #else
                     var allObjects = UnityEngine.Object.FindObjectsByType(tType, FindObjectsInactive.Include, FindObjectsSortMode.None);
+                    #endif
                     foreach (var obj in allObjects)
                     {
                         var ins = obj as T;

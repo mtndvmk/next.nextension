@@ -9,7 +9,7 @@ namespace Nextension
         [SerializeField] private Transform _target;
         [SerializeField] private float _zoomRatio = 1.1f;
         [SerializeField] private float _zoomTime = 0.1f;
-        [SerializeField] private NTweener.UpdateMode _updateMode;
+        [SerializeField] private NTweener.UpdateMode _updateMode = NTweener.UpdateMode.UnscaledTime;
         [SerializeField] private bool _isResetScaleOnInteractable = true;
 
         private NRunnableTweener _effectTweener;

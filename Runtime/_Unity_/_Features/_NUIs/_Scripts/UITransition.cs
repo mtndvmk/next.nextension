@@ -1,7 +1,8 @@
-using Nextension.Tween;
 using System;
+using Nextension.Tween;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Nextension.UI
 {
@@ -23,45 +24,57 @@ namespace Nextension.UI
         [SerializeField] protected bool _hideWhenClickOnOutSide = true;
         [SerializeField] protected EffectOption _effectOption = EffectOption.MoveDown;
 
+        [Header("Optimize")]
+        [SerializeField] protected bool _notUseSubCanvas;
+        [SerializeField] protected bool _forceDeactiveOnHide;
+
         private NButton _closeBgButton;
         private CanvasGroup _canvasGroup;
+        private Canvas _canvas;
         private Func<bool> _waitHidden;
-        private Func<bool> _waitEndEffect;
-        private byte _showHideEffectState;
         private Action<float2> _setScalerAnchorPositionAction;
-        private Action _deactiveGameObjectAction;
+        private Action _hideUIComponentAction;
         private Action _scaleScalerToOneAction;
         private Action<float> _setCanvasGroupAlphaAction;
 
         protected bool _isShown = true;
         protected bool _isHiding = false;
         protected bool _isSetup;
+        protected Vector2 _anchoredPosition;
 
         public RectTransform Scaler => _scaler;
         public Func<bool> WaitHidden => _waitHidden ??= isHidden;
-        public Func<bool> WaitEndEffect => _waitEndEffect ??= () => _showHideEffectState == 0;
-
-        protected Vector2 _anchoredPosition;
-
         public bool IsShown => _isShown;
         public float EffectDuration => _effectDuration;
 
-
         protected virtual void Awake()
         {
-            innerSetup();
+            __innerSetup();
         }
 
-        private void innerSetup()
+        protected virtual void OnDisable()
+        {
+            if (_isShown)
+            {
+                __runHideAnimation(true);
+            }
+        }
+        
+        private void __innerSetup()
         {
             if (_isSetup) return;
 
             _canvasGroup = gameObject.getOrAddComponent<CanvasGroup>();
             _closeBgButton = gameObject.getOrAddComponent<NButton>();
+            if (!_notUseSubCanvas)
+            {
+                _canvas = gameObject.getOrAddComponent<Canvas>();
+                gameObject.getOrAddComponent<GraphicRaycaster>();
+            }
 
             if (_addBlockingUIForScaler)
             {
-                if (!_scaler.TryGetComponent<UnityEngine.UI.Graphic>(out _))
+                if (!_scaler.TryGetComponent<Graphic>(out _))
                 {
                     _scaler.gameObject.getOrAddComponent<NRaycastTargetUI>();
                 }
@@ -72,6 +85,7 @@ namespace Nextension.UI
             }
 
             _anchoredPosition = _scaler.anchoredPosition;
+            
             _closeBgButton.onButtonClickEvent.AddListener(() =>
             {
                 hide();
@@ -86,19 +100,25 @@ namespace Nextension.UI
             {
                 innerHide(true, true);
             }
-
         }
 
         public void hide()
         {
             innerHide(false);
         }
+
         public void hide(bool isImmediate)
         {
             innerHide(isImmediate);
         }
 
-        public bool isHidden() => !gameObject.activeSelf;
+        public bool isHidden() => !_isHiding && !_isShown;
+
+        public async NTask asyncWaitHidden()
+        {
+            await new NWaitUntil(WaitHidden);
+        }
+
         public void setAnchorPosition(Vector2 anchorPosition)
         {
             _anchoredPosition = anchorPosition;
@@ -109,26 +129,26 @@ namespace Nextension.UI
             _hideWhenClickOnOutSide = isClosable;
             _closeBgButton.Interactable = isClosable;
         }
+
         protected void innerShow(bool isImmediate = false, bool isForceAnimation = false)
         {
-            innerSetup();
+            __innerSetup();
             if (!_isShown)
             {
-                onDerivedBeforeShow();
-                _isShown = true;
-                gameObject.setActive(true);
-                runShowAnimation(isImmediate);
+                __showUIComponent();
+                __runShowAnimation(isImmediate);
                 _canvasGroup.blocksRaycasts = true;
             }
             else if (isForceAnimation)
             {
                 __runHideAnimation(true);
-                runShowAnimation(isImmediate);
+                __runShowAnimation(isImmediate);
             }
         }
+
         protected void innerHide(bool isImmediate = false, bool isforce = false)
         {
-            innerSetup();
+            __innerSetup();
             if ((!_isShown || _isHiding) && !isforce)
             {
                 return;
@@ -136,23 +156,20 @@ namespace Nextension.UI
             _isHiding = true;
             onDerivedBeforeHide();
             _isShown = false;
-            __runHideAnimation(isImmediate);
             _canvasGroup.blocksRaycasts = false;
-            _isHiding = false;
+            __runHideAnimation(isImmediate);
         }
 
-        private void runShowAnimation(bool isImmediate = false)
+        private void __runShowAnimation(bool isImmediate = false)
         {
             NTween.cancelAllTweeners(gameObject);
             if (isImmediate || _effectOption == EffectOption.None)
             {
                 _scaler.localScale = Vector3.one;
                 _canvasGroup.alpha = 1;
-                _showHideEffectState = 0;
             }
             else
             {
-                __checkEffectRunningState().forget();
                 if (_effectOption == EffectOption.Scale)
                 {
                     if (_punchScaleValue > 0)
@@ -185,16 +202,6 @@ namespace Nextension.UI
             }
         }
 
-        private async NTaskVoid __checkEffectRunningState()
-        {
-            var state = ++_showHideEffectState;
-            await new NWaitSecond(_effectDuration);
-            if (state == _showHideEffectState)
-            {
-                _showHideEffectState = 0;
-            }
-        }
-
         private void __scaleScalerToOne()
         {
             NTween.scaleTo(_scaler, new float3(1), _effectDuration * 0.2f).setCancelControlKey(gameObject);
@@ -206,7 +213,7 @@ namespace Nextension.UI
             if (isImmediate)
             {
                 _canvasGroup.alpha = 0;
-                gameObject.setActive(false);
+                __hideUIComponent();
 
                 if (_effectOption == EffectOption.MoveDown)
                 {
@@ -216,11 +223,9 @@ namespace Nextension.UI
                 {
                     _scaler.localScale = new Vector3(_fromScaleValue, _fromScaleValue, _fromScaleValue);
                 }
-                _showHideEffectState = 0;
             }
             else
             {
-                __checkEffectRunningState().forget();
                 if (_effectOption == EffectOption.Scale)
                 {
                     NTween.scaleTo(_scaler, new float3(_fromScaleValue), _effectDuration).setCancelControlKey(gameObject);
@@ -232,19 +237,31 @@ namespace Nextension.UI
                     NTween.fromTo(_scaler.anchoredPosition, targetAnchorPos, _effectDuration, _setScalerAnchorPositionAction);
                 }
 
-                _deactiveGameObjectAction ??= __deactiveGameObject;
-                NTween.fromTo(_canvasGroup.alpha, 0, _effectDuration, v => _canvasGroup.alpha = v).onCompleted(_deactiveGameObjectAction).setCancelControlKey(gameObject);
+                _hideUIComponentAction ??= __hideUIComponent;
+                NTween.fromTo(_canvasGroup.alpha, 0, _effectDuration, v => _canvasGroup.alpha = v).onCompleted(_hideUIComponentAction).setCancelControlKey(gameObject);
             }
         }
 
         private void __setScalerAnchorPosition(float2 anchorPosition)
         {
+            if (_scaler.isNull()) return;
             _scaler.anchoredPosition = anchorPosition;
         }
-        
-        private void __deactiveGameObject()
+
+        private void __showUIComponent()
         {
-            gameObject.setActive(false);
+            onDerivedBeforeShow();
+            _isShown = true;
+            _isHiding = false;
+            if (_canvas != null) _canvas.setEnable(true);
+            gameObject.setActive(true);
+        }
+
+        private void __hideUIComponent()
+        {
+            if (_forceDeactiveOnHide) gameObject.setActive(false);
+            if (_canvas != null) _canvas.setEnable(false);
+            _isHiding = false;
             onDerivedOnAfterHide();
         }
 
@@ -252,22 +269,21 @@ namespace Nextension.UI
         {
 
         }
+
         protected virtual void onDerivedBeforeShow()
         {
 
         }
+
         protected virtual void onDerivedBeforeHide()
         {
 
         }
+
         protected virtual void onDerivedOnAfterHide()
         {
         }
 
-        public async NTask asyncWaitHidden()
-        {
-            await new NWaitUntil(WaitHidden);
-        }
     }
 
     public abstract class S_UITransition<T> : UITransition, ISingletonable where T : UITransition, ISingletonable

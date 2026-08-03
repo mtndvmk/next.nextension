@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
-    public readonly struct NPUArray<T> : IList<T>, IReadOnlyList<T>, IDisposable where T : unmanaged
+    public readonly struct NPUArray<T> :IDisposable where T : unmanaged
     {
         public static NPUArray<T> get()
         {
@@ -13,24 +13,38 @@ namespace Nextension
         }
         public static NPUArray<T> get(T t0)
         {
-            return new NPUArray<T>(NPNativeList<byte>.get()) { t0 };
+            var arr = get();
+            arr.Add(t0);
+            return arr;
         }
         public static NPUArray<T> get(T t0, T t1)
         {
-            return new NPUArray<T>(NPNativeList<byte>.get()) { t0, t1 };
+            var arr = get();
+            arr.Add(t0);
+            arr.Add(t1);
+            return arr;
         }
         public static NPUArray<T> get(T t0, T t1, T t2)
         {
-            return new NPUArray<T>(NPNativeList<byte>.get()) { t0, t1, t2 };
+            var arr = get();
+            arr.Add(t0);
+            arr.Add(t1);
+            arr.Add(t2);
+            return arr;
         }
         public static NPUArray<T> get(T t0, T t1, T t2, T t3)
         {
-            return new NPUArray<T>(NPNativeList<byte>.get()) { t0, t1, t2, t3 };
+            var arr = get();
+            arr.Add(t0);
+            arr.Add(t1);
+            arr.Add(t2);
+            arr.Add(t3);
+            return arr;
         }
         public static NPUArray<T> get(int capacity)
         {
             var npArray = new NPUArray<T>(NPNativeList<byte>.get());
-            npArray.ensureCapacity(capacity);
+            npArray.EnsureCapacity(capacity);
             return npArray;
         }
         public static NPUArray<T> get(IEnumerable<T> collection)
@@ -47,7 +61,7 @@ namespace Nextension
         public static NPUArray<T> getWithoutTracking(int capacity)
         {
             var npArray = new NPUArray<T>(NPNativeList<byte>.getWithoutTracking());
-            npArray.ensureCapacity(capacity);
+            npArray.EnsureCapacity(capacity);
             return npArray;
         }
         public static NPUArray<T> getWithoutTracking(IEnumerable<T> collection)
@@ -57,7 +71,7 @@ namespace Nextension
             return npArray;
         }
 
-        public readonly void stopTracking()
+        public readonly void StopTracking()
         {
             i_array.stopTracking();
         }
@@ -73,7 +87,8 @@ namespace Nextension
         public readonly bool IsCreated => i_array != null;
         public readonly bool IsReadOnly => i_array.IsReadOnly;
         public readonly int Capacity => IsCreated ? i_array.Capacity / NUtils.sizeOf<T>() : throw new InvalidOperationException("Array is not created.");
-        public readonly bool IsDisposed => IsCreated ? i_array.IsDisposed : true;
+        public readonly bool IsDisposed => !IsCreated || i_array.IsDisposed;
+        public readonly T[] Items => ToArray();
 
         public readonly T this[int index]
         {
@@ -100,6 +115,7 @@ namespace Nextension
             T* ptr = (T*)i_array.Collection.GetUnsafePtr();
             return ptr[index];
         }
+        
         public readonly unsafe void SetWithoutChecks(int index, T value)
         {
             byte* bPtr = i_array.Collection.GetUnsafePtr();
@@ -107,17 +123,19 @@ namespace Nextension
             ptr[index] = value;
         }
 
-        public readonly void ensureCapacity(int capacity)
+        public readonly void EnsureCapacity(int capacity)
         {
             var capacityInBytes = capacity * NUtils.sizeOf<T>();
-            ensureCapacityInBytes(capacityInBytes);
+            EnsureCapacityInBytes(capacityInBytes);
         }
-        public readonly void ensureCapacityInBytes(int capacityInBytes)
+        
+        public readonly void EnsureCapacityInBytes(int capacityInBytes)
         {
             var byteArray = i_array.Collection;
             if (byteArray.Capacity >= capacityInBytes) return;
             byteArray.ensureCapacity(capacityInBytes > 16 ? capacityInBytes : 16);
         }
+        
         public readonly unsafe void Add(T item)
         {
             var sizeOfT = NUtils.sizeOf<T>();
@@ -134,11 +152,54 @@ namespace Nextension
             ((T*)bPtr)[byteArray.i_Count / sizeOfT] = item;
             byteArray.i_Count += sizeOfT;
         }
-        public readonly void AddRange(IEnumerable<T> collection)
+
+        public readonly bool AddIfNotPresent(T item)
         {
-            if (collection is ICollection<T> collection2)
+            if (Contains(item)) return false;
+            Add(item);
+            return true;
+        }
+        
+        public unsafe readonly void AddRange<TCollection>(TCollection collection) where TCollection : IEnumerable<T>
+        {
+            if (collection is IList<T> list)
             {
-                AddRange(collection2);
+                int addSizeInBytes = list.Count * NUtils.sizeOf<T>();
+                int startIndex = Count;
+                var byteArray = i_array.Collection;
+                EnsureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
+                byte* bPtr = byteArray.GetUnsafePtr(byteArray.i_Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    ((T*)bPtr)[startIndex++] = list[i];
+                }
+                byteArray.i_Count += addSizeInBytes;
+            }
+            else if (collection is IReadOnlyList<T> rolist)
+            {
+                int addSizeInBytes = rolist.Count * NUtils.sizeOf<T>();
+                int startIndex = Count;
+                var byteArray = i_array.Collection;
+                EnsureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
+                byte* bPtr = byteArray.GetUnsafePtr(byteArray.i_Count);
+                for (int i = 0; i < rolist.Count; i++)
+                {
+                    ((T*)bPtr)[startIndex++] = rolist[i];
+                }
+                byteArray.i_Count += addSizeInBytes;
+            }
+            else if (collection is ICollection<T> collection2)
+            {
+                int addSizeInBytes = collection2.Count * NUtils.sizeOf<T>();
+                int startIndex = Count;
+                var byteArray = i_array.Collection;
+                EnsureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
+                byte* bPtr = byteArray.GetUnsafePtr(byteArray.i_Count);
+                foreach (var item in collection2)
+                {
+                    ((T*)bPtr)[startIndex++] = item;
+                }
+                byteArray.i_Count += addSizeInBytes;
             }
             else
             {
@@ -148,16 +209,18 @@ namespace Nextension
                 }
             }
         }
+        
         public readonly void AddRange(T[] items)
         {
             AddRange(items.AsSpan());
         }
+        
         public readonly unsafe void AddRange(ReadOnlySpan<T> items)
         {
             if (items.Length == 0) return;
             var addSizeInBytes = NUtils.sizeOf<T>() * items.Length;
             var byteArray = i_array.Collection;
-            ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
+            EnsureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
             fixed (T* tPtr = items)
             {
                 byte* dst = byteArray.GetUnsafePtr(byteArray.i_Count);
@@ -165,29 +228,18 @@ namespace Nextension
                 byteArray.i_Count += addSizeInBytes;
             }
         }
-        public readonly unsafe void AddRange(ICollection<T> collection)
-        {
-            int addSizeInBytes = collection.Count * NUtils.sizeOf<T>();
-            int startIndex = Count;
-            var byteArray = i_array.Collection;
-            ensureCapacityInBytes(addSizeInBytes + byteArray.i_Count);
-            byte* bPtr = byteArray.GetUnsafePtr(byteArray.i_Count);
-            foreach (var item in collection)
-            {
-                ((T*)bPtr)[startIndex++] = item;
-            }
-            byteArray.i_Count += addSizeInBytes;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Clear()
         {
             i_array.Clear();
         }
+        
         public readonly bool Contains(T item)
         {
             return IndexOf(item) >= 0;
         }
+        
         public readonly int FirstIndexOf(Predicate<T> predicate)
         {
             for (int i = 0; i < Count; i++)
@@ -196,10 +248,12 @@ namespace Nextension
             }
             return -1;
         }
+        
         public readonly void CopyTo(T[] dst)
         {
             CopyTo(dst, 0);
         }
+        
         public readonly unsafe void CopyTo(T[] dst, int dstIndex)
         {
             if (dstIndex + Count > dst.Length)
@@ -215,11 +269,13 @@ namespace Nextension
                 Buffer.MemoryCopy(srcPtr, dstPtr, sizeInBytes, sizeInBytes);
             }
         }
+        
         public readonly void CopyTo(NPUArray<T> dst)
         {
-            dst.ensureCapacity(Count);
+            dst.EnsureCapacity(Count);
             dst.i_array.CopyFrom(i_array);
         }
+        
         public readonly bool Remove(T item)
         {
             int index = IndexOf(item);
@@ -252,14 +308,14 @@ namespace Nextension
             }
         }
 
-        public readonly unsafe int IndexOf(T item)
+        public readonly unsafe int IndexOf(T item, int startIndex = 0)
         {
             var collection = i_array.Collection;
             var sizeOfT = NUtils.sizeOf<T>();
             int tCount = collection.i_Count / sizeOfT;
             byte* bPtr = collection.GetUnsafePtr();
             T* ptr = (T*)bPtr;
-            for (int i = 0; i < tCount; i++)
+            for (int i = startIndex; i < tCount; i++)
             {
                 if (ptr[i].equals(item))
                 {
@@ -296,6 +352,11 @@ namespace Nextension
             NUtils.quickSort(AsSpan());
         }
 
+        public readonly void Sort(Comparison<T> comparision)
+        {
+            NUtils.quickSort(AsSpan(), comparision);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Dispose()
         {
@@ -310,30 +371,23 @@ namespace Nextension
                 return new UnsafeArrayEnumerator<T>(tPtr, (uint)Count);
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
-        {
-            return GetUnsafeEnumerator();
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        readonly IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetUnsafeEnumerator();
-        }
+ 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly UnsafeArrayEnumerator<T> GetEnumerator()
         {
             return GetUnsafeEnumerator();
         }
+        
         public readonly Span<T> AsSpan()
         {
             return i_array.Collection.AsSpan().asSpan<byte, T>();
         }
+        
         public readonly Span<T> AsSpan(int count)
         {
             return i_array.Collection.AsSpan(count).asSpan<byte, T>();
         }
+        
         public readonly T[] ToArray()
         {
             return AsSpan().ToArray();

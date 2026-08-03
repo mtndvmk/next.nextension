@@ -9,6 +9,7 @@ namespace Nextension
     }
     public interface ICustomWaitable
     {
-        internal NWaitableState getCurrentState();
+        NLoopType LoopType => NLoopType.Update;
+        NWaitableState getCurrentState();
     }
 }

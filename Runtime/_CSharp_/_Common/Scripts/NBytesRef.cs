@@ -17,7 +17,7 @@ namespace Nextension
         public readonly ReadOnlySpan<byte> content;
 
         public int ContentLength => content.Length;
-        public int SizeInBytes => content.Length + NInteger.fromBytes(content).estNumBytesLength() + 1;
+        public int SizeInBytes => content.Length + NInteger.estNumPartBytesLength(content.Length) + 1;
 
 
 
@@ -36,10 +36,10 @@ namespace Nextension
         public byte[] toBytes()
         {
             var nLength = new NInteger(content.Length);
-            var numBytesLength = nLength.estNumBytesLength();
-            byte[] result = new byte[numBytesLength + 1 + content.Length];
+            var numPartBytesLength = NInteger.estNumPartBytesLength(content.Length);
+            byte[] result = new byte[numPartBytesLength + 1 + content.Length];
             int startIndex = 0;
-            nLength.writeTo(result, numBytesLength, ref startIndex);
+            nLength.writeTo(result, ref startIndex);
             content.CopyTo(result.AsSpan(startIndex, content.Length));
             return result;
         }

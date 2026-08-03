@@ -30,7 +30,9 @@ namespace Nextension
         [MenuItem("Nextension/SerializedFieldCheck/Enable Auto Check", secondaryPriority = 1, validate = true)]
         static bool isDisableAutoCheck()
         {
-            return !EditorPrefs.GetBool(__getEditorPrefKey(), false);
+            var isEnable = EditorPrefs.GetBool(__getEditorPrefKey(), false);
+            Menu.SetChecked("Nextension/SerializedFieldCheck/Enable Auto Check", isEnable);
+            return !isEnable;
         }
 
         [MenuItem("Nextension/SerializedFieldCheck/Disable Auto Check", secondaryPriority = 2)]
@@ -41,7 +43,9 @@ namespace Nextension
         [MenuItem("Nextension/SerializedFieldCheck/Disable Auto Check", secondaryPriority = 2, validate = true)]
         static bool isEnableAutoCheck()
         {
-            return EditorPrefs.GetBool(__getEditorPrefKey(), false);
+            var isEnable = EditorPrefs.GetBool(__getEditorPrefKey(), false);
+            Menu.SetChecked("Nextension/SerializedFieldCheck/Disable Auto Check", !isEnable);
+            return isEnable;
         }
 
         [MenuItem("Nextension/SerializedFieldCheck/Check All", priority = 5, secondaryPriority = 0)]

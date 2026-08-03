@@ -20,6 +20,11 @@ namespace Nextension.Tween
                 _transformTweenType = transformTweenType;
             }
 
+            internal override void invokeValueChanged(TValue value)
+            {
+                
+            }
+
             private void applyValue(TValue value)
             {
                 switch (_transformTweenType)

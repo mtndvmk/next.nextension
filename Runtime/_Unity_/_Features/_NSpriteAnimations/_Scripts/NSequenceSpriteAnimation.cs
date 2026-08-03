@@ -23,7 +23,8 @@ namespace Nextension
         [SerializeField] private uint _fps = 12;
         [SerializeField] private bool _isLoop;
         [NIndent, NShowIf(nameof(_isLoop)), SerializeField] private float _delayInNewLoop;
-        [NIndent, NShowIf(nameof(_isLoop)), SerializeField] private bool _isBackAndForthLoop;
+        [SerializeField] private bool _isBackAndForth;
+        [NIndent, NShowIf(nameof(_isBackAndForth)), SerializeField] private float _backDelayTime;
 
         [SerializeField, NSlider(-1, nameof(MaxIndex))] private int _requestFrameIndex = -1;
         [NGroup("Event")] public UnityEvent onEndOfAnimation;
@@ -61,6 +62,8 @@ namespace Nextension
             {
                 if (_playFromAnimationData && _animationData)
                 {
+                    _isBackAndForth = _animationData.isBackAndForth;
+                    _backDelayTime = _animationData.backDelayTime;
                     play(_animationData.sprites, _animationData.fps);
                     return;
                 }
@@ -83,16 +86,13 @@ namespace Nextension
 
             if (Time.time >= _nextFrameTime)
             {
-                if (_isLoop)
+                if (_isBackAndForth)
                 {
-                    if (_isBackAndForthLoop)
-                    {
-                        updateNextFrameOnBackAndForthLoop(lastestFrameIndex);
-                    }
-                    else
-                    {
-                        updateNextFrameOnForthLoop(lastestFrameIndex);
-                    }
+                    updateNextFrameOnBackAndForth(lastestFrameIndex);
+                }
+                else if (_isLoop)
+                {
+                    updateNextFrameOnForthLoop(lastestFrameIndex);
                 }
                 else
                 {
@@ -110,7 +110,12 @@ namespace Nextension
                 _currentFrameIndex = _requestFrameIndex;
                 setSprite(_spriteFrames[_currentFrameIndex]);
 
-                if (_requestFrameIndex >= lastestFrameIndex && !_isLoop)
+                if (_requestFrameIndex >= lastestFrameIndex && !_isLoop && !_isBackAndForth)
+                {
+                    onEndOfAnimation?.Invoke();
+                    stop();
+                }
+                else if (_requestFrameIndex <= 0 && _loopbackIsBacking && !_isLoop && _isBackAndForth)
                 {
                     onEndOfAnimation?.Invoke();
                     stop();
@@ -118,7 +123,7 @@ namespace Nextension
             }
         }
 
-        private void updateNextFrameOnBackAndForthLoop(int lastestFrameIndex)
+        private void updateNextFrameOnBackAndForth(int lastestFrameIndex)
         {
             if (_requestFrameIndex <= 0)
             {
@@ -147,7 +152,14 @@ namespace Nextension
             }
             else
             {
-                _nextFrameTime = Time.time + 1f / _fps;
+                if (_requestFrameIndex == lastestFrameIndex && _isBackAndForth)
+                {
+                    _nextFrameTime = Time.time + 1f / _fps + _backDelayTime;
+                }
+                else
+                {
+                    _nextFrameTime = Time.time + 1f / _fps;
+                }
             }
         }
         private void updateNextFrameOnForthLoop(int lastestFrameIndex)
@@ -210,6 +222,13 @@ namespace Nextension
             _nextFrameTime = Time.time + 1 / _fps;
             _isPlaying = true;
             setSprite(startFrameIndex);
+        }
+
+        public void play(NSequenceSpriteData data)
+        {
+            _isBackAndForth = data.isBackAndForth;
+            _backDelayTime = data.backDelayTime;
+            play(data.sprites, data.fps);
         }
 
         public void play(ICollection<Sprite> sprites, uint fps, int startFrameIndex = 0)

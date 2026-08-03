@@ -2,10 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-#if UNITY_5_3_OR_NEWER
 using UnityEngine;
-#endif
-
 
 namespace Nextension
 {
@@ -20,6 +17,7 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="TValue">Value Type of List</typeparam>
     /// <typeparam name="TCompareKey">Key Type to compare Value in List</typeparam>
+    [Serializable]
     public abstract class AbsBList<TValue, TCompareKey> : IBList, IList<TValue>, IEnumerable<TValue>, IReadOnlyCollection<TValue>, IReadOnlyList<TValue>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -128,7 +126,7 @@ namespace Nextension
             int listCount = _list.Count;
             if (listCount == 0)
             {
-                return -1;
+                return ~0;
             }
 
             int startIndex = 0;
@@ -137,15 +135,16 @@ namespace Nextension
             int compareResult;
             var span = _list.AsSpan();
 
-            while (startIndex < endIndex)
+            while (startIndex <= endIndex)
             {
                 midIndex = startIndex + ((endIndex - startIndex) >> 1);
                 compareResult = exeCompareKey(searchKey, getCompareKeyFromValue(span[midIndex]));
+
                 if (compareResult == 0)
                 {
                     return midIndex;
                 }
-                else if (compareResult > 0)
+                if (compareResult > 0)
                 {
                     startIndex = midIndex + 1;
                 }
@@ -155,15 +154,7 @@ namespace Nextension
                 }
             }
 
-            compareResult = exeCompareKey(searchKey, getCompareKeyFromValue(span[startIndex]));
-            if (compareResult == 0)
-            {
-                return startIndex;
-            }
-            else
-            {
-                return -1;
-            }
+            return ~startIndex;
         }
         public int FindInsertIndex(TCompareKey searchKey)
         {
@@ -232,7 +223,7 @@ namespace Nextension
         {
             var fIndex = FindIndex(searchKey);
 
-            if (fIndex == -1)
+            if (fIndex < 0)
             {
                 return new Span<int>();
             }
@@ -496,6 +487,7 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="TValue">Value Type of List</typeparam>
     /// <typeparam name="TCompareKey">Key Type to compare Value in List</typeparam>
+    [Serializable]
     public abstract class AbsBListGenericComparable<TValue, TCompareKey> : AbsBList<TValue, TCompareKey> where TCompareKey : IComparable<TCompareKey>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -564,6 +556,10 @@ namespace Nextension
         protected override int getCompareKeyFromValue(TValue item)
         {
             return item.GetHashCode();
+        }
+        public int FindIndex(TValue item)
+        {
+            return base.FindIndex(getCompareKeyFromValue(item));
         }
     }
 }

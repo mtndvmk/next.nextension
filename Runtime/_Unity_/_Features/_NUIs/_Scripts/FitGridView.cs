@@ -28,13 +28,20 @@ namespace Nextension.UI
         }
         private void Start()
         {
-            ScreenSizeChangedDetector.onScreenResizeEvent += (size) =>
+            ScreenSizeChangedDetector.onScreenResizeEvent += __onScreenResizeEvent;
+        }
+
+        private void OnDestroy()
+        {
+            ScreenSizeChangedDetector.onScreenResizeEvent -= __onScreenResizeEvent;
+        }
+
+        private void __onScreenResizeEvent(Vector2Int size)
+        {
+            if (m_IsUpdateOnScreenSizeChanged)
             {
-                if (m_IsUpdateOnScreenSizeChanged)
-                {
-                    updateGrid();
-                }
-            };
+                updateGrid();
+            }
         }
 #if UNITY_EDITOR
         private void Update()

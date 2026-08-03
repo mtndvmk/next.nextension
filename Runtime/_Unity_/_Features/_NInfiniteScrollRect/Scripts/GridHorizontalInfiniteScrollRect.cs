@@ -73,10 +73,16 @@ namespace Nextension
         protected NativeSegmentTree _colSegmentTree;
         protected FTIndex _visibleIndices = new FTIndex(-1, -1);
 
+        private void __initialize()
+        {
+            if (!_colSegmentTree.IsCreated) 
+                _colSegmentTree = new NativeSegmentTree(16, Allocator.Persistent);
+        }
+
         protected override void Awake()
         {
             base.Awake();
-            _colSegmentTree = new NativeSegmentTree(16, Allocator.Persistent);
+            __initialize();
             updateContentAnchorAndPivot();
         }
 
@@ -120,6 +126,8 @@ namespace Nextension
             {
                 calculateRows();
             }
+
+            __initialize();
 
             int colCount = Mathf.CeilToInt((float)_dataList.Count / Rows);
             _colSegmentTree.SetSize(colCount);
@@ -176,15 +184,21 @@ namespace Nextension
                 for (int i = toVisibleIndex + 1; i <= toMaxIndex; i++) hideCell(i);
             }
 
+            for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
+            {
+                updateCellLayoutUpdated(i);
+            }
+
             // Show visible cells
             var cellRectAnchor = new Vector2(anchorX, 1);
 
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
+                var cell = requestCell(i);
+                
                 int col = i / Rows;
                 var colAnchor = getColFTAnchor(col);
                 Vector2 position = calculateCellPosition(i, colAnchor);
-                var cell = showCell(i);
                 var cellRectTransform = cell.rectTransform();
                 var originPivot = cellRectTransform.pivot;
 
@@ -392,6 +406,10 @@ namespace Nextension
             _colSegmentTree.Set(col, newSize.x + _spacing.x);
             int colCount = Mathf.CeilToInt((float)_dataList.Count / Rows);
             scrollRect.content.sizeDelta = calculateContentSize(colCount);
+            if (_visibleIndices.isBetween(index))
+            {
+                _visibleIndices = FTIndex.Invalid;
+            }
             setDirtyPosition(index);
         }
 

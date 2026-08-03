@@ -29,6 +29,8 @@ namespace Nextension.UI
 
         private Vector2 _lastNormalizedPosition;
 
+        private bool _isDirty;
+
         public void setPadding(float left, float right, float bottom, float top)
         {
             _padding.left = left;
@@ -85,9 +87,16 @@ namespace Nextension.UI
             }
         }
 
+        private void LateUpdate()
+        {
+            if (_isDirty)
+            {
+                forceUpdate();
+            }
+        }
         void OnRectTransformDimensionsChange()
         {
-            forceUpdate();
+            _isDirty = true;
         }
 
         private void OnDisable()
@@ -114,6 +123,8 @@ namespace Nextension.UI
 
         public void forceUpdate()
         {
+            _isDirty = false;
+
             var viewport = _scrollRect.viewport;
             var viewportInContentRect = NUtils.getRectInRootSpace(viewport, _scrollRect.content);
 

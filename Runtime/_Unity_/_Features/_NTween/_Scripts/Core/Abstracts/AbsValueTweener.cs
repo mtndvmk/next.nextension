@@ -20,11 +20,11 @@ namespace Nextension
             this.onValueChanged = onValueChanged;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void invokeValueChanged(TValue value)
+        internal virtual void invokeValueChanged(TValue value)
         {
             try
             {
-                onValueChanged(value);
+                onValueChanged?.Invoke(value);
             }
             catch (Exception e)
             {

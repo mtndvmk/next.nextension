@@ -8,15 +8,38 @@ namespace Nextension.NEditor
 {
     public class NEditorMenuItems
     {
-        [MenuItem("Nextension/Project/Force save project/Selected items", priority = 1)]
+        [MenuItem("Assets/Nextension/Save selected items")]
         public static void forceSaveProject_SelectedItems()
         {
             var objs = Selection.objects;
+            int count = 0;
             foreach (var o in objs)
             {
-                NAssetUtils.saveAsset(o);
+                var path = AssetDatabase.GetAssetPath(o);
+                if (!string.IsNullOrEmpty(path) && AssetDatabase.IsValidFolder(path))
+                {
+                    var guids = AssetDatabase.FindAssets("", new[] { path });
+                    foreach (var guid in guids)
+                    {
+                        var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                        if (!AssetDatabase.IsValidFolder(assetPath))
+                        {
+                            var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                            if (asset != null)
+                            {
+                                NAssetUtils.saveAsset(asset);
+                                count++;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    NAssetUtils.saveAsset(o);
+                    count++;
+                }
             }
-            Debug.Log($"Saved {objs.Length} objects");
+            Debug.Log($"Saved {count} objects");
         }
         [MenuItem("Nextension/Project/Force save project/*.asset")]
         public static void forceSaveProject_Asset()
@@ -300,7 +323,9 @@ namespace Nextension.NEditor
         [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Enable", true)]
         private static bool validateEnableNPoolLogFullStackTrace()
         {
-            return !EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
+            var isEnabled = EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
+            Menu.SetChecked("Nextension/Project/Full Stack Trace for NPool Log/Enable", isEnabled);
+            return !isEnabled;
         }
         [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Disable")]
         public static void disableNPoolLogFullStackTrace()
@@ -323,7 +348,9 @@ namespace Nextension.NEditor
         [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Disable", true)]
         private static bool validateDisableNPoolLogFullStackTrace()
         {
-            return EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
+            var isEnabled = EditorUserBuildSettings.activeScriptCompilationDefines.Contains(NPoolLogFullStackTraceSymbol);
+            Menu.SetChecked("Nextension/Project/Full Stack Trace for NPool Log/Disable", !isEnabled);
+            return isEnabled;
         }
 
         [MenuItem("Assets/Nextension/Export to PNG")]
@@ -444,6 +471,39 @@ namespace Nextension.NEditor
                         {
                             var rectTf = go.transform.asRectTransform();
                             rectTf.anchorToParent();
+                            Undo.RecordObject(rectTf, "Anchor to parent");
+                            NAssetUtils.setDirty(rectTf);
+                        }
+                    }
+                }
+                if (GUILayout.Button("Median anchor X"))
+                {
+                    foreach (var obj in selectedObjects)
+                    {
+                        if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
+                        {
+                            var rectTf = go.transform.asRectTransform();
+                            var anchorMin = rectTf.anchorMin;
+                            var anchorMax = rectTf.anchorMax;
+                            anchorMin.x = anchorMax.x = (anchorMin.x + anchorMax.x) / 2;
+                            Undo.RecordObject(rectTf, "Median anchor X");
+                            rectTf.setAnchorsWithoutChange(anchorMin, anchorMax);
+                            NAssetUtils.setDirty(rectTf);
+                        }
+                    }
+                }
+                if (GUILayout.Button("Median anchor Y"))
+                {
+                    foreach (var obj in selectedObjects)
+                    {
+                        if (obj is GameObject go && go.GetComponent<RectTransform>() != null)
+                        {
+                            var rectTf = go.transform.asRectTransform();
+                            var anchorMin = rectTf.anchorMin;
+                            var anchorMax = rectTf.anchorMax;
+                            anchorMin.y = anchorMax.y = (anchorMin.y + anchorMax.y) / 2;
+                            Undo.RecordObject(rectTf, "Median anchor Y");
+                            rectTf.setAnchorsWithoutChange(anchorMin, anchorMax);
                             NAssetUtils.setDirty(rectTf);
                         }
                     }
@@ -456,6 +516,7 @@ namespace Nextension.NEditor
                         {
                             var rectTf = go.transform.asRectTransform();
                             rectTf.stretchToParent();
+                            Undo.RecordObject(rectTf, "Stretch to parent");
                             NAssetUtils.setDirty(rectTf);
                         }
                     }

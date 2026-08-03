@@ -11,7 +11,7 @@ namespace Nextension
         void onDespawn() { }
         void onDestroy() { }
     }
-    internal class NPool<T> : IDisposable where T : class, IPoolable
+    internal class NPool<T> : IDisposable where T : class
     {
         [NonSerialized] private readonly HashSet<T> _pool;
         [NonSerialized] private int _countAll;
@@ -36,10 +36,12 @@ namespace Nextension
             else
             {
                 item = NUtils.createInstance<T>();
-                item.onCreated();
+                if (item is IPoolable poolable) poolable.onCreated();
                 _countAll++;
             }
-            item.onSpawn();
+            {
+                if (item is IPoolable poolable) poolable.onSpawn();
+            }
             return item;
         }
         public bool contains(T item)
@@ -50,14 +52,14 @@ namespace Nextension
         {
             if (_pool.Count >= maxPoolItemCount)
             {
-                item.onDestroy();
+                if (item is IPoolable poolable) poolable.onDestroy();
                 return true;
             }
             else
             {
                 if (_pool.Add(item))
                 {
-                    item.onDespawn();
+                    if (item is IPoolable poolable) poolable.onDespawn();
                     return true;
                 }
                 return false;
@@ -92,7 +94,7 @@ namespace Nextension
                 _countAll -= _pool.Count;
                 foreach (var item in _pool)
                 {
-                    item.onDestroy();
+                    if (item is IPoolable poolable) poolable.onDestroy();
                 }
                 _pool.Clear();
             }
@@ -104,15 +106,11 @@ namespace Nextension
 
         public void Dispose()
         {
-            foreach (var item in _pool)
-            {
-                item.onDestroy();
-            }
-            _pool.Clear();
+            clear();
         }
     }
 
-    public static class NStaticPool<T> where T : class, IPoolable
+    public static class NStaticPool<T> where T : class
     {
         private static NPool<T> _pool = new NPool<T>();
         internal static NPool<T> getPool() => _pool;

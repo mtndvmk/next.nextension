@@ -4,7 +4,7 @@ namespace Nextension
 {
     public class OriginInstance : MonoBehaviour, IInsPoolable
     {
-        public int Id => Pool.Id;
+        public ulong Id => Pool.Id;
 
         public bool IsInPool { get; private set; } = true;
         public bool IsSharedPool => SharedInsPoolUtil.exists(Id);
@@ -38,7 +38,12 @@ namespace Nextension
         [ContextMenu("Ping origin")]
         private void pingOrigin()
         {
-            var alls = FindObjectsByType<OriginInstance>(FindObjectsInactive.Include, FindObjectsSortMode.InstanceID);
+            OriginInstance[] alls;
+#if UNITY_6000_4_OR_NEWER
+            alls = FindObjectsByType<OriginInstance>(FindObjectsInactive.Include);
+#else
+            alls = FindObjectsByType<OriginInstance>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+#endif
             foreach (var o in alls)
             {
                 if (o.isOrigin && o.Id == Id)

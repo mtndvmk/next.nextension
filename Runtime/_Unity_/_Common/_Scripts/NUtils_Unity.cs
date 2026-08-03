@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -989,6 +991,27 @@ namespace Nextension
             self.anchoredPosition = Vector2.zero;
             self.sizeDelta = Vector2.zero;
         }
+        public static void setAnchorsWithoutChange(this RectTransform self, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            if (self.parent.isNull())
+            {
+                self.anchorMin = anchorMin;
+                self.anchorMax = anchorMax;
+                return;
+            }
+
+            var parentRect = self.parent.asRectTransform().rect;
+            float left = self.anchorMin.x * parentRect.width + self.offsetMin.x;
+            float right = self.anchorMax.x * parentRect.width + self.offsetMax.x;
+            float bottom = self.anchorMin.y * parentRect.height + self.offsetMin.y;
+            float top = self.anchorMax.y * parentRect.height + self.offsetMax.y;
+
+            self.anchorMin = anchorMin;
+            self.anchorMax = anchorMax;
+
+            self.offsetMin = new Vector2(left - anchorMin.x * parentRect.width, bottom - anchorMin.y * parentRect.height);
+            self.offsetMax = new Vector2(right - anchorMax.x * parentRect.width, top - anchorMax.y * parentRect.height);
+        }
         #endregion
 
         #region Camera matrix
@@ -1425,7 +1448,8 @@ namespace Nextension
         }
         public unsafe static void fill<T>(void* self, T value, int count) where T : unmanaged
         {
-            UnsafeUtility.MemCpyReplicate(self, &value, UnsafeUtility.SizeOf<T>(), count);
+            void* valuePtr = UnsafeUtility.AddressOf(ref value);
+            UnsafeUtility.MemCpyReplicate(self, valuePtr, UnsafeUtility.SizeOf<T>(), count);
         }
         public unsafe static NativeArray<T> convertToNativeArray<T>(IntPtr src, int bytesLength, Allocator allocator) where T : unmanaged
         {
@@ -1531,7 +1555,6 @@ namespace Nextension
             return result;
         }
 
-
         public static T randItem<T>(this IList<T> list, out int randIndex, uint seed = 0)
         {
             return randItem(list, out randIndex, getRandom(seed));
@@ -1562,6 +1585,39 @@ namespace Nextension
         {
             return list[rand.NextInt(list.Count)];
         }
+
+
+        public static T randItem<T>(this NPUArray<T> list, out int randIndex, uint seed = 0) where T : unmanaged
+        {
+            return list.randItem(out randIndex, getRandom(seed));
+        }
+        public static T randItem<T>(this NPUArray<T> list, out int randIndex, Random rand) where T : unmanaged
+        {
+            randIndex = rand.NextInt(list.Count);
+            return list[randIndex];
+        }
+        public static T randItem<T>(this NPUArray<T> list, out int randIndex, ref Random rand) where T : unmanaged
+        {
+            randIndex = rand.NextInt(list.Count);
+            return list[randIndex];
+        }
+
+
+        public static T randItem<T>(this NPUArray<T> list, uint seed = 0) where T : unmanaged
+        {
+            return list.randItem(out _, getRandom(seed));
+        }
+
+        public static T randItem<T>(this NPUArray<T> list, Random rand) where T : unmanaged
+        {
+            return list.randItem(out _, rand);
+        }
+
+        public static T randItem<T>(this NPUArray<T> list, ref Random rand) where T : unmanaged
+        {
+            return list[rand.NextInt(list.Count)];
+        }
+
 
 
         public static T randItem<T>(this Span<T> self, uint seed = 0)
@@ -1713,44 +1769,51 @@ namespace Nextension
 
         #region GameObject and Component
 
-        public static void setActive(this Component target, bool isActive)
+        public static bool setActive(this Component target, bool isActive)
         {
-            target.gameObject.setActive(isActive);
+            return target.gameObject.setActive(isActive);
         }
-        public static void setActive(this UnityEngine.Object target, bool isActive)
+        public static bool setActive(this UnityEngine.Object target, bool isActive)
         {
             if (target is Component component)
             {
-                component.setActive(isActive);
+                return component.setActive(isActive);
             }
             else if (target is GameObject gameObject)
             {
-                gameObject.setActive(isActive);
+                return gameObject.setActive(isActive);
             }
+            return false;
         }
 
-        public static void setEnable(this Behaviour target, bool isEnable)
+        public static bool setEnable(this Behaviour target, bool isEnable)
         {
             if (target.enabled != isEnable)
             {
                 target.enabled = isEnable;
+                return true;
             }
+            return false;
         }
 
-        public static void setEnable(this Renderer target, bool isEnable)
+        public static bool setEnable(this Renderer target, bool isEnable)
         {
             if (target.enabled != isEnable)
             {
                 target.enabled = isEnable;
+                return true;
             }
+            return false;
         }
 
-        public static void setActive(this GameObject target, bool isActive)
+        public static bool setActive(this GameObject target, bool isActive)
         {
             if (isActive != target.activeSelf)
             {
                 target.SetActive(isActive);
+                return true;
             }
+            return false;
         }
 
         public static T getOrAddComponent<T>(this GameObject target) where T : Component
@@ -2027,6 +2090,7 @@ namespace Nextension
         }
         public static bool isNull<T>(this T self)
         {
+            if (typeof(T).isUnmanaged()) return false;
             if (self == null || self.Equals(null)) return true;
             return false;
         }
@@ -2046,6 +2110,15 @@ namespace Nextension
             if (isNull(self)) return true;
             if (self.Count == 0) return true;
             return false;
+        }
+
+        public static ulong getEntityId<T>(this T self) where T : UnityEngine.Object
+        {
+            #if UNITY_6000_4_OR_NEWER
+            return EntityId.ToULong(self.GetEntityId());
+            #else
+            return NConverter.bitConvertWithoutChecks<int, uint>(self.GetInstanceID()); 
+            #endif
         }
         #endregion
 
@@ -2365,7 +2438,7 @@ namespace Nextension
                 var subSytem = subSystemList[i];
                 if (loopSystemType == subSytem.type)
                 {
-                    subSytem.subSystemList = subSytem.subSystemList.createOrAdd(sys);
+                    subSytem.subSystemList = subSytem.subSystemList.add(sys);
                     subSystemList[i] = subSytem;
                     added = true;
                     break;
@@ -2416,5 +2489,135 @@ namespace Nextension
             NStartRunner.quit();
         }
         #endregion
+
+        public static NStringBuilder appendHHMMSS(this NStringBuilder sb, long totalSeconds)
+        {
+            var h = totalSeconds / 3600;
+            var remainingM = totalSeconds % 3600;
+            var m = remainingM / 60;
+            var s = remainingM % 60;
+            if (h < 10) sb.Append('0');
+            sb.Append(h);
+            sb.Append(':');
+            if (m < 10) sb.Append('0');
+            sb.Append(m);
+            sb.Append(':');
+            if (s < 10) sb.Append('0');
+            sb.Append(s);
+            return sb;
+        }
+
+        public static NStringBuilder appendDDHHMMSS(this NStringBuilder sb, long totalSeconds)
+        {
+            var d = totalSeconds / 86400;
+            if (d > 0)
+            {
+                sb.Append(d);
+                sb.Append("d, ");
+                totalSeconds %= 86400;
+            }
+            return sb.appendHHMMSS(totalSeconds);
+        }
+
+        public static NStringBuilder appendToMMSS(this NStringBuilder sb, long totalSeconds)
+        {
+            var m = totalSeconds / 60;
+            var s = totalSeconds % 60;
+            if (m < 10) sb.Append('0');
+            sb.Append(m);
+            sb.Append(':');
+            if (s < 10) sb.Append('0');
+            sb.Append(s);
+            return sb;
+        }
+
+        public static string formatToMMSS(this long totalSeconds)
+        {
+            return NStringBuilder.get().appendToMMSS(totalSeconds).consume();
+        }
+
+        public static string formatToHHMMSS(this long totalSeconds)
+        {
+            return NStringBuilder.get().appendHHMMSS(totalSeconds).consume();
+        }
+
+        public static unsafe string bytesToHex(byte* inData, int inDataLength, bool include0xPrefix = false)
+        {
+            int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
+            using var sb = NStringBuilder.get(hexLength);
+            bytesToHex(sb, inData, inDataLength, include0xPrefix);
+            return sb.ToString();
+        }
+
+        public static unsafe void bytesToHex(NStringBuilder sb, byte* inData, int inDataLength, bool include0xPrefix = false)
+        {
+            int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
+            if (include0xPrefix)
+            {
+                sb.Append('0');
+                sb.Append('x');
+            }
+            for (int i = 0; i < inDataLength; i++)
+            {
+                var b = inData[i] >> 4;
+                var b1 = (int)((uint)(9 - b) >> 31);
+                sb.Append((char)(0x30 + b + (b1 << 3) - b1));
+                b = inData[i] & 0xf;
+                b1 = (int)((uint)(9 - b) >> 31);
+                sb.Append((char)(0x30 + b + (b1 << 3) - b1));
+            }
+        }
+
+        public static byte[] decompressFromDeflateString(this string str)
+        {
+            return decompressFromDeflateString(str, out _);
+        }
+        public static byte[] decompressFromDeflateString(this string str, out int version)
+        {
+            if (str == null) throw new ArgumentNullException(nameof(str));
+            ReadOnlySpan<char> span = str.AsSpan();
+            if (span[0] != ':') throw new FormatException("Invalid deflate string format");
+            ReadOnlySpan<char> remaining = span[1..];
+            int secondColon = remaining.IndexOf(':');
+            if (secondColon == -1) throw new FormatException("Invalid deflate string format");
+
+            ReadOnlySpan<char> versionSpan = remaining[..secondColon];
+            if (!int.TryParse(versionSpan, out version))
+            {
+                throw new FormatException("Invalid version format");
+            }
+
+            ReadOnlySpan<char> base64Span = remaining[(secondColon + 1)..];
+
+            int maxBase64Length = base64Span.Length * 3 / 4; 
+            byte[] base64PoolArray = new byte[maxBase64Length];
+            
+            if (!Convert.TryFromBase64Chars(base64Span, base64PoolArray, out int bytesWritten))
+            {
+                throw new FormatException("Invalid base64 string");
+            }
+
+            using var input = new MemoryStream(base64PoolArray, 0, bytesWritten, writable: false);
+            using var deflate = new DeflateStream(input, CompressionMode.Decompress);
+            using var output = new MemoryStream();
+            
+            deflate.CopyTo(output);
+            return output.ToArray(); 
+        }
+
+        public static string compressToDeflateString(this byte[] data, int version = 0)
+        {
+            return compressToDeflateString(data.AsSpan(), version);
+        }
+
+        public static string compressToDeflateString(ReadOnlySpan<byte> data, int version = 0)
+        {
+            using var output = new MemoryStream();
+            var deflate = new DeflateStream(output, CompressionMode.Compress);
+            deflate.Write(data);
+            deflate.Dispose();
+            var outputBytes = output.ToArray();
+            return NStringBuilder.get()[':'][version][':'].Append(Convert.ToBase64String(outputBytes)).consume();
+        }
     }
 }

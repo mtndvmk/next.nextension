@@ -275,7 +275,7 @@ namespace Nextension
                 return;
             }
 
-            var currentTime = Time.time;
+            var currentTime = Time.unscaledTime;
             if (currentTime < _nextClickableTime)
             {
                 return;

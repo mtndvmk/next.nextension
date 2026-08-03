@@ -48,7 +48,7 @@ namespace Nextension.Tween
             nextChunk.addTweener(tweener);
             if (nextChunk.isFull())
             {
-                _notFullChunks.removeAtWithoutChecks(lastIndex);
+                _notFullChunks.RemoveAtWithoutChecks(lastIndex);
             }
         }
         public sealed override void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks)
@@ -82,7 +82,7 @@ namespace Nextension.Tween
                 {
                     if (_notFullChunks.GetAtWithoutChecks(i).isDisposed())
                     {
-                        _notFullChunks.removeAtSwapBackWithoutChecks(i);
+                        _notFullChunks.RemoveAtSwapBackWithoutChecks(i);
                     }
                 }
             }

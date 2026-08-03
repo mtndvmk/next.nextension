@@ -4,39 +4,104 @@ using System.Collections.Generic;
 
 namespace Nextension
 {
+    public struct ListEnumerator<T> : IEnumerator<T>
+    {
+        private readonly IReadOnlyList<T> _list;
+        private readonly int _count;
+        private readonly int _start;
+        private int _index;
+            
+        public readonly T Current => _list[_index];
+
+        readonly object IEnumerator.Current => Current;
+
+        public ListEnumerator(IReadOnlyList<T> list)
+        {
+            _list = list;
+            _count = list?.Count ?? 0;
+            _index = -1;
+            _start = 0;
+        }
+
+        public ListEnumerator(IReadOnlyList<T> list, int start, int length)
+        {
+            _list = list;
+            _start = start;
+            _count = start + length;
+            _index = start - 1;
+        }
+
+        public readonly void Dispose()
+        {
+            
+        }
+
+        public bool MoveNext()
+        {
+            _index++;
+            return _index < _count;
+        }
+
+        public void Reset()
+        {
+            _index = _start - 1;
+        }
+    }
+
     public struct ArrayEnumerator<T> : IEnumerator<T>
     {
+        private enum Mode
+        {
+            SingleItem,
+            Array
+        }
+        public ArrayEnumerator(T item)
+        {
+            _mode = Mode.SingleItem;
+            _current = item;
+            _index = startIndex = 0;
+            
+            array = default;
+            maxIndex = 1;
+        }
         public ArrayEnumerator(T[] array)
         {
-            this.array = array;
+            _mode = Mode.Array;
             _index = startIndex = 0;
-            maxIndex = (uint)array.Length;
             _current = default;
+
+            this.array = array;
+            maxIndex = (uint)array.Length;
         }
         public ArrayEnumerator(T[] array, uint startIndex)
         {
-            this.array = array;
+            _mode = Mode.Array;
             _index = this.startIndex = startIndex;
-            maxIndex = (uint)array.Length;
             _current = default;
+
+            this.array = array;
+            maxIndex = (uint)array.Length;
         }
         public ArrayEnumerator(T[] array, uint startIndex, uint count)
         {
-            this.array = array;
+            _mode = Mode.Array;
             _index = this.startIndex = startIndex;
             maxIndex = startIndex + count;
+            
+            this.array = array;
+            _current = default;
 
             if (maxIndex > array.Length)
             {
                 throw new ArgumentOutOfRangeException();
             }
-            _current = default;
         }
 
         internal readonly T[] array;
         internal readonly uint startIndex;
         internal readonly uint maxIndex;
 
+        private Mode _mode;
         private uint _index;
         private T _current;
 
@@ -60,6 +125,11 @@ namespace Nextension
         {
             if (_index < maxIndex)
             {
+                if (_mode == Mode.SingleItem)
+                {
+                    _index++;
+                    return true;
+                }
                 _current = array[_index++];
                 return true;
             }
@@ -68,7 +138,7 @@ namespace Nextension
         public void Reset()
         {
             _index = startIndex;
-            _current = default;
+            if (_mode != Mode.SingleItem) _current = default;
         }
 
         public readonly ArrayEnumerator<T> GetEnumerator()
@@ -76,6 +146,7 @@ namespace Nextension
             return this;
         }
     }
+    
     public unsafe struct UnsafeArrayEnumerator<T> : IEnumerator<T> where T : unmanaged
     {
         public UnsafeArrayEnumerator(void* array, uint itemCount)
@@ -145,6 +216,7 @@ namespace Nextension
             return this;
         }
     }
+    
     public struct RandomEnumerator<T> : IEnumerator<T> where T : unmanaged
     {
         private readonly NPUArray<T> _values;

@@ -155,7 +155,7 @@ namespace Nextension
                 return;
             }
 
-            var currentTime = Time.time;
+            var currentTime = Time.unscaledTime;
             if (currentTime < _nextClickableTime)
             {
                 return;
@@ -192,7 +192,7 @@ namespace Nextension
                 return;
             }
             _isDown = true;
-            _downTime = Time.time;
+            _downTime = Time.unscaledTime;
 
             foreach (var listener in _listeners)
             {
@@ -229,7 +229,7 @@ namespace Nextension
 
             if (_isDown)
             {
-                if (Time.time - _downTime < 0.2f)
+                if (Time.unscaledTime - _downTime < 0.2f)
                 {
                     invokeClickEvent();
                 }

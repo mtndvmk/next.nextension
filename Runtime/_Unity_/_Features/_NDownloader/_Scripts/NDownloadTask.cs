@@ -25,7 +25,7 @@ namespace Nextension
         {
             this.url = url;
             this.isStoreOnDisk = isStoreDisk && !string.IsNullOrEmpty(_storePath);
-            this._storePath = Path.GetFullPath(storePath);
+            this._storePath = isStoreOnDisk ? Path.GetFullPath(storePath) : null;
         }
         internal void updateProgress()
         {

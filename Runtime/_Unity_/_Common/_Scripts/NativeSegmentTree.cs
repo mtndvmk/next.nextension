@@ -80,7 +80,7 @@ namespace Nextension
         {
             if (_size > 0)
             {
-                _tree.fill(0, _size);
+                _tree.fill(0);
                 _size = 0;
             }
         }

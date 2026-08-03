@@ -14,15 +14,15 @@ namespace Nextension
         }
         public readonly byte[] content;
         public int ContentLength => content.Length;
-        public int SizeInBytes => content.Length + new NInteger(content.Length).estNumBytesLength() + 1;
+        public int SizeInBytes => content.Length + NInteger.estNumPartBytesLength(content.Length) + 1;
 
         public byte[] toBytes()
         {
             var nLength = new NInteger(content.Length);
-            var numBytesLength = nLength.estNumBytesLength();
-            byte[] result = new byte[numBytesLength + 1 + content.Length];
+            var numPartBytesLength = NInteger.estNumPartBytesLength(content.Length);
+            byte[] result = new byte[numPartBytesLength + 1 + content.Length];
             int startIndex = 0;
-            nLength.writeTo(result, numBytesLength, ref startIndex);
+            nLength.writeTo(result, ref startIndex);
             Buffer.BlockCopy(content, 0, result, startIndex, content.Length);
             return result;
         }
@@ -71,7 +71,7 @@ namespace Nextension
             for (int i = 0; i < nDataCount; ++i)
             {
                 dataLengthNInteger.Value = nData[i].ContentLength;
-                totalLength += dataLengthNInteger.Value + (nDataLengthSpan[i] = dataLengthNInteger.estNumBytesLength());
+                totalLength += dataLengthNInteger.Value + (nDataLengthSpan[i] = NInteger.estNumPartBytesLength(dataLengthNInteger.Value));
             }
             var data = new byte[totalLength];
             int pointer = 0;
@@ -79,7 +79,7 @@ namespace Nextension
             {
                 var item = nData[i];
                 dataLengthNInteger.Value = item.ContentLength;
-                dataLengthNInteger.writeTo(data, nDataLengthSpan[i], ref pointer);
+                dataLengthNInteger.writeTo(data, ref pointer);
                 Buffer.BlockCopy(item.content, 0, data, pointer, item.ContentLength); pointer += item.ContentLength;
             }
             return data;

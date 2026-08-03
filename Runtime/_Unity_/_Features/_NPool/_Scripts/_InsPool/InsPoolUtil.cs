@@ -15,9 +15,9 @@ namespace Nextension
                 return instance as GameObject;
             }
         }
-        public static int computePoolId<T>(T prefab) where T : Object
+        public static ulong computePoolId<T>(T prefab) where T : Object
         {
-            return getGameObject(prefab).GetInstanceID();
+            return getGameObject(prefab).getEntityId();
         }
         public static T getInstanceFromGO<T>(GameObject go) where T : Object
         {

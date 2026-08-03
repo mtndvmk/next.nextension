@@ -117,12 +117,12 @@ namespace Nextension
             _tracker.Clear();
             DrivenTransformPropertiesHolder.clear(this);
             var trackValue = DrivenTransformProperties.None;
-            if (NUtils.checkMask(_mode, ConstraintMode.Width)) trackValue |= DrivenTransformProperties.SizeDeltaX;
-            if (NUtils.checkMask(_mode, ConstraintMode.Height)) trackValue |= DrivenTransformProperties.SizeDeltaY;
-            if (NUtils.checkMask(_mode, ConstraintMode.Rotate)) trackValue |= DrivenTransformProperties.Rotation;
-            if (NUtils.checkMask(_mode, ConstraintMode.Scale)) trackValue |= DrivenTransformProperties.Scale;
-            if (NUtils.checkMask(_mode, ConstraintMode.Position)) trackValue |= DrivenTransformProperties.AnchoredPosition;
-            if (NUtils.checkMask(_mode, ConstraintMode.Pivot)) trackValue |= DrivenTransformProperties.Pivot;
+            if (NUtils.hasFlag(_mode, ConstraintMode.Width)) trackValue |= DrivenTransformProperties.SizeDeltaX;
+            if (NUtils.hasFlag(_mode, ConstraintMode.Height)) trackValue |= DrivenTransformProperties.SizeDeltaY;
+            if (NUtils.hasFlag(_mode, ConstraintMode.Rotate)) trackValue |= DrivenTransformProperties.Rotation;
+            if (NUtils.hasFlag(_mode, ConstraintMode.Scale)) trackValue |= DrivenTransformProperties.Scale;
+            if (NUtils.hasFlag(_mode, ConstraintMode.Position)) trackValue |= DrivenTransformProperties.AnchoredPosition;
+            if (NUtils.hasFlag(_mode, ConstraintMode.Pivot)) trackValue |= DrivenTransformProperties.Pivot;
             trackValue = DrivenTransformPropertiesHolder.add(this, trackValue);
             _tracker.Add(this, transform.asRectTransform(), trackValue);
 #endif
@@ -156,7 +156,7 @@ namespace Nextension
             var sizeOffset = _sizeOffset;
             var sizeScale = _sizeScale;
             var delta = 0;
-            if (NUtils.checkMask(_mode, ConstraintMode.FixDiffRotation))
+            if (NUtils.hasFlag(_mode, ConstraintMode.FixDiffRotation))
             {
                 delta = Mathf.RoundToInt((_source.eulerAngles.z - transform.eulerAngles.z) / 90f) * 90;
                 delta = (delta % 360 + 360) % 360;
@@ -188,7 +188,7 @@ namespace Nextension
 
             if (_source.IsChildOf(rectTf))
             {
-                if (NUtils.checkMask(_mode, ConstraintMode.Width))
+                if (NUtils.hasFlag(_mode, ConstraintMode.Width))
                 {
                     if (_source.anchorMin.x != _source.anchorMax.x)
                     {
@@ -198,7 +198,7 @@ namespace Nextension
                     }
                 }
 
-                if (NUtils.checkMask(_mode, ConstraintMode.Height))
+                if (NUtils.hasFlag(_mode, ConstraintMode.Height))
                 {
                     if (_source.anchorMin.y != _source.anchorMax.y)
                     {
@@ -213,7 +213,7 @@ namespace Nextension
             var sizeAtRest = _sizeAtRest;
 
             bool isChanged = false;
-            if (NUtils.checkMask(_mode, ConstraintMode.Width))
+            if (NUtils.hasFlag(_mode, ConstraintMode.Width))
             {
                 float newSize;
                 if (atRest)
@@ -234,7 +234,7 @@ namespace Nextension
                     isChanged = true;
                 }
             }
-            if (NUtils.checkMask(_mode, ConstraintMode.Height))
+            if (NUtils.hasFlag(_mode, ConstraintMode.Height))
             {
                 float newSize;
                 if (atRest)
@@ -256,7 +256,7 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.checkMask(_mode, ConstraintMode.Rotate))
+            if (NUtils.hasFlag(_mode, ConstraintMode.Rotate))
             {
                 if (transform.rotation != _source.rotation)
                 {
@@ -265,7 +265,7 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.checkMask(_mode, ConstraintMode.Scale))
+            if (NUtils.hasFlag(_mode, ConstraintMode.Scale))
             {
                 if (transform.lossyScale != _source.lossyScale)
                 {
@@ -274,7 +274,7 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.checkMask(_mode, ConstraintMode.Pivot))
+            if (NUtils.hasFlag(_mode, ConstraintMode.Pivot))
             {
                 if (rectTf.pivot != srcPivot)
                 {
@@ -283,11 +283,11 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.checkMask(_mode, ConstraintMode.Position))
+            if (NUtils.hasFlag(_mode, ConstraintMode.Position))
             {
                 var pt = rectTf.pivot;
                 var ps = pt;
-                if (NUtils.checkMask(_mode, ConstraintMode.FixDiffRotation))
+                if (NUtils.hasFlag(_mode, ConstraintMode.FixDiffRotation))
                 {
                     if (delta == 90) ps = new Vector2(pt.y, 1 - pt.x);
                     else if (delta == 180) ps = new Vector2(1 - pt.x, 1 - pt.y);
@@ -325,7 +325,7 @@ namespace Nextension
     internal static class DrivenTransformPropertiesHolder
     {
 #if UNITY_EDITOR
-        private static Dictionary<int, DrivenTransformProperties> _driverHolders = new Dictionary<int, DrivenTransformProperties>();
+        private static Dictionary<ulong, DrivenTransformProperties> _driverHolders = new Dictionary<ulong, DrivenTransformProperties>();
         private static RectTransform _currentTarget;
         private static DrivenTransformProperties _currentProperties;
 #endif
@@ -334,7 +334,7 @@ namespace Nextension
 #if UNITY_EDITOR
             RectTransform target = driver.rectTransform();
             if (target == null) { return DrivenTransformProperties.None; }
-            var driverInsId = driver.GetInstanceID();
+            var driverInsId = driver.getEntityId();
 
             if (_driverHolders.TryGetValue(driverInsId, out var p))
             {
@@ -352,7 +352,7 @@ namespace Nextension
             if (target == null) { return properties; }
             if (_currentTarget != target) { _currentProperties = DrivenTransformProperties.None; }
             _currentTarget = target;
-            var driverInsId = driver.GetInstanceID();
+            var driverInsId = driver.getEntityId();
 
             if (_driverHolders.TryGetValue(driverInsId, out var p))
             {

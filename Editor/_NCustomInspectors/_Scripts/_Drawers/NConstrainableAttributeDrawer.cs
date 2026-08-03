@@ -52,7 +52,7 @@ namespace Nextension.NEditor
             {
                 if (_id == 0)
                 {
-                    _id = (property.serializedObject.targetObject.GetInstanceID() + property.propertyPath).GetHashCode();
+                    _id = (property.serializedObject.targetObject.getEntityId() + property.propertyPath).GetHashCode();
                 }
 
                 var isConstrained = _constrainedSet.Contains(_id);

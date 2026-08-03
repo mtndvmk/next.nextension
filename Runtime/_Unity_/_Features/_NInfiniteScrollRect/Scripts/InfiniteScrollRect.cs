@@ -1,10 +1,11 @@
-using Nextension.Tween;
 using System;
 using System.Collections.Generic;
+using Nextension.Tween;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Nextension;
 
 namespace Nextension
 {
@@ -24,12 +25,18 @@ namespace Nextension
         }
         protected readonly struct FTIndex
         {
+            public static readonly FTIndex Invalid = new FTIndex(-1, 1);
             public readonly int fromIndex;
             public readonly int toIndex;
             public FTIndex(int fromIndex, int toIndex)
             {
                 this.fromIndex = fromIndex;
                 this.toIndex = toIndex;
+            }
+
+            public readonly bool isBetween(int index)
+            {
+                return (index - fromIndex) * (index - toIndex) <= 0;
             }
         }
 
@@ -64,13 +71,16 @@ namespace Nextension
             }
         }
 
-        public IReadOnlyList<InfiniteCellData> DataList => _dataList;
+        public ReadOnlyList<InfiniteCellData> DataList => _dataList;
 
-        protected readonly Dictionary<int, InfiniteCell> _showingCellTable = new Dictionary<int, InfiniteCell>();
-        protected readonly List<InfiniteCell> _cellPool = new List<InfiniteCell>();
+        private readonly Dictionary<int, InfiniteCell> _showingCellTable = new Dictionary<int, InfiniteCell>();
+        private readonly List<InfiniteCell> _cellPool = new List<InfiniteCell>();
         [NonSerialized] protected readonly List<InfiniteCellData> _dataList = new List<InfiniteCellData>();
 
-        public event Action<InfiniteCell> onCellShown;
+        internal ref InfiniteCellData getRefCellData(int index) => ref _dataList.AsSpan()[index];
+
+
+        public event Action<InfiniteCell> onBeforeCellShown;
         public event Action<InfiniteCell> onCellReleased;
 
         private NTweener _snapAnimation;
@@ -87,12 +97,16 @@ namespace Nextension
         {
             scrollRect = GetComponent<ScrollRect>();
         }
-        
+
         protected virtual async void OnValidate()
         {
             if (NStartRunner.IsPlaying)
             {
                 await new NWaitFrame(1);
+                if (this.isNull())
+                {
+                    return;
+                }
                 updateContentAnchorAndPivot();
                 setDirtyPosition(0);
             }
@@ -109,7 +123,7 @@ namespace Nextension
             scrollRect.onValueChanged.AddListener((_) => onLayoutUpdated());
 
         }
-        
+
         protected virtual void LateUpdate()
         {
             if (_dataList.Count <= 0) return;
@@ -123,7 +137,7 @@ namespace Nextension
                 forceUpdateLayout();
             }
         }
-        
+
         protected virtual void OnDisable()
         {
             stopSnapping();
@@ -133,7 +147,7 @@ namespace Nextension
         {
             scrollRect.content.anchoredPosition = pos;
         }
-        
+
         private InfiniteCell __getCellFromPool()
         {
             InfiniteCell cell;
@@ -158,10 +172,9 @@ namespace Nextension
                 return cell;
             }
         }
-        
         private void __releaseCell(InfiniteCell cell)
         {
-            cell.releaseCellData();
+            cell.internalOnBeforeCellHide();
             if (_instantiator != null)
             {
                 _instantiator.release(cell.gameObject);
@@ -173,6 +186,7 @@ namespace Nextension
             }
             onCellReleased?.Invoke(cell);
         }
+
         protected void hideCell(int cellIndex)
         {
             if (_showingCellTable.tryTakeAndRemove(cellIndex, out var cell))
@@ -201,7 +215,16 @@ namespace Nextension
         {
             if (data is not InfiniteCellData cellData)
             {
-                cellData = new InfiniteCellData(cellPrefab.rectTransform().rect.size, data);
+                Vector2 size;
+                if (cellPrefab.isNull())
+                {
+                    size = new Vector2(100, 100);
+                }
+                else
+                {
+                    size = cellPrefab.rectTransform().rect.size;
+                }
+                cellData = new InfiniteCellData(size, data);
             }
             add(cellData);
         }
@@ -266,7 +289,7 @@ namespace Nextension
         {
 
         }
-        public void remove(int index)
+        public void removeAt(int index)
         {
             if (_dataList.Count == 0 || index >= _dataList.Count) return;
             var removedData = _dataList[index];
@@ -275,19 +298,20 @@ namespace Nextension
             onRemovedItem(index, in removedData);
             setDirtyPosition(index);
         }
+
         protected virtual void onRemovedItem(int index, in InfiniteCellData data)
         {
 
         }
 
         public abstract void snap(int index, float duration = 0);
-        
+
         public void snapToFirst(float duration = 0)
         {
             if (_dataList.Count == 0) return;
             snap(0, duration);
         }
-        
+
         public void snapToLast(float duration = 0)
         {
             if (_dataList.Count == 0) return;
@@ -307,7 +331,7 @@ namespace Nextension
                 __exeSnapAnimation(contentAnchorPosition, duration);
             }
         }
-        
+
         public void stopSnapping()
         {
             if (_snapAnimation != null)
@@ -317,7 +341,7 @@ namespace Nextension
                 _snapAnimation = null;
             }
         }
-        
+
         private void __exeSnapAnimation(Vector2 contentAnchorPosition, float duration)
         {
             _setContentAnchoredPositionAction ??= __setContentAnchoredPosition;
@@ -325,26 +349,31 @@ namespace Nextension
             _snapAnimation = NTween.fromTo(scrollRect.content.anchoredPosition, contentAnchorPosition, duration, _setContentAnchoredPositionAction)
                 .onFinalized(_stopSnapAction);
         }
-        
-        protected InfiniteCell showCell(int index)
-        {
-            if (_showingCellTable.ContainsKey(index))
-            {
-                return _showingCellTable[index];
-            }
-            else
-            {
-                var cell = __getCellFromPool();
-                onCellShown?.Invoke(cell);
-                var cellData = _dataList[index];
-                cell.internalUpdateCellData(index, in cellData);
 
-                var cellRectTf = cell.rectTransform();
-                cellRectTf.localScale = cellData.cellScale;
-                cellRectTf.setSizeWithCurrentAnchors(cellData.cellSize);
+        protected void updateCellLayoutUpdated(int index)
+        {
+            if (!_showingCellTable.TryGetValue(index, out var cell))
+            {
+                cell = __getCellFromPool();
                 _showingCellTable.Add(index, cell);
+                cell.internalOnBeforeShowCell(index, _dataList[index]);
+                onBeforeCellShown?.Invoke(cell);
+            }
+            cell.internalOnLayoutUpdated();
+            var cellData = _dataList[index];
+            var cellRectTf = cell.rectTransform();
+            cellRectTf.localScale = cellData.cellScale;
+            cellRectTf.setSizeWithCurrentAnchors(cellData.cellSize);
+        }
+
+        protected InfiniteCell requestCell(int index)
+        {
+            if (_showingCellTable.TryGetValue(index, out var cell))
+            {
                 return cell;
             }
+            updateCellLayoutUpdated(index);
+            return _showingCellTable[index];
         }
 
         public virtual void clear()
@@ -365,11 +394,14 @@ namespace Nextension
             ref var cellData = ref _dataList.AsSpan()[index];
             var oldSize = cellData.cellSize;
             cellData.cellSize = newSize;
-            hideCell(index);
+            if (_showingCellTable.TryGetValue(index, out var cell))
+            {
+                cell.rectTransform().setSizeWithCurrentAnchors(newSize);
+            }
             onCellSizeUpdated(index, oldSize, newSize);
             setDirtyLayout();
         }
-        
+
         public void updateCellScale(int index, Vector3 newScale)
         {
             if (index >= _dataList.Count || index < 0) return;
@@ -380,29 +412,29 @@ namespace Nextension
                 cell.transform.localScale = newScale;
             }
         }
-        
+
         public void forceCalculateCellPositions(int startIndex)
         {
             if (_dataList.Count <= 0) return;
             exeCalculateCellPositions(startIndex);
         }
-        
+
         protected virtual void onCellSizeUpdated(int index, Vector2 oldSize, Vector2 newSize) { }
-        
+
         protected abstract void exeCalculateCellPositions(int startIndex);
-        
+
         protected abstract void updateContentAnchorAndPivot();
 
         public void overrideCellInstantiator(ComponentInstantiator<InfiniteCell> instantiator)
         {
             _instantiator = instantiator;
         }
-        
+
         public void resetCellInstantiationFunc()
         {
             _instantiator = null;
         }
-        
+
         public InfiniteCell getShowingCell(int index)
         {
             if (_showingCellTable.TryGetValue(index, out var cell)) return cell;
@@ -415,7 +447,7 @@ namespace Nextension
         }
 
         public abstract int GetCellIndexAtViewportPosition(float normalizedPosition);
-        
+
         public abstract void snapCellIndexToNormalizePosition(int index, float normalizedPosition, float duration = 0);
 
         public void OnEndDrag(PointerEventData eventData)

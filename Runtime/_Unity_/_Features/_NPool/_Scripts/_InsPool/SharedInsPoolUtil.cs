@@ -16,7 +16,7 @@ namespace Nextension
             _sharedPools.Clear();
         }
 #endif
-        private readonly static Dictionary<int, InsPool<GameObject>> _sharedPools = new Dictionary<int, InsPool<GameObject>>();
+        private readonly static Dictionary<ulong, InsPool<GameObject>> _sharedPools = new Dictionary<ulong, InsPool<GameObject>>();
         public static InsPool<GameObject> getOrCreatePool<T>(T component, int startupInstanceCount) where T : Object
         {
             return getOrCreatePool(InsPoolUtil.getGameObject(component), startupInstanceCount);
@@ -25,7 +25,7 @@ namespace Nextension
         {
             return getOrCreatePool(InsPoolUtil.computePoolId(prefab), prefab, startupInstanceCount);
         }
-        internal static InsPool<GameObject> getOrCreatePool(int poolId, GameObject prefab, int startupInstanceCount)
+        internal static InsPool<GameObject> getOrCreatePool(ulong poolId, GameObject prefab, int startupInstanceCount)
         {
             if (!_sharedPools.TryGetValue(poolId, out var pool))
             {
@@ -43,16 +43,16 @@ namespace Nextension
         {
             return getPool(InsPoolUtil.computePoolId(prefab));
         }
-        public static InsPool<GameObject> getPool(int id)
+        public static InsPool<GameObject> getPool(ulong id)
         {
             if (_sharedPools.TryGetValue(id, out var pool)) return pool;
             return null;
         }
-        public static bool exists(int id)
+        public static bool exists(ulong id)
         {
             return _sharedPools.ContainsKey(id);
         }
-        public static void clearSharedPool(int id)
+        public static void clearSharedPool(ulong id)
         {
             if (_sharedPools.TryGetValue(id, out var pool))
             {

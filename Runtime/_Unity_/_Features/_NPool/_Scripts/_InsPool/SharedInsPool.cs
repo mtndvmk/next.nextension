@@ -5,14 +5,14 @@ namespace Nextension
 {
     public ref struct SharedInsPool<T> where T : Object
     {
-        private readonly int _poolId;
-        public readonly int Id => _poolId;
+        private readonly ulong _poolId;
+        public readonly ulong Id => _poolId;
         public readonly uint MaxPoolInstanceCount
         {
             get => SharedInsPoolUtil.getPool(_poolId).MaxPoolInstanceCount;
             set => SharedInsPoolUtil.getPool(_poolId).MaxPoolInstanceCount = value;
         }
-        public SharedInsPool(int poolId)
+        public SharedInsPool(ulong poolId)
         {
             this._poolId = poolId;
         }
@@ -56,7 +56,7 @@ namespace Nextension
 
         public readonly IGameObjectInstantiator getGameObjectInstantiator()
         {
-            return Pool.getGameObjectInstantiate();
+            return Pool.getGameObjectInstantiator();
         }
 
         public readonly ComponentInstantiator<T> getComponentInstantiator()
