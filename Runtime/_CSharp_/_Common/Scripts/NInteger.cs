@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Nextension
 {
@@ -75,12 +76,12 @@ namespace Nextension
         {
             if (value == 0 || value == long.MinValue) return 0;
             ulong num = (ulong)(value < 0 ? -value : value);
-            
+
             byte length = 1;
             if (num > 0xFFFFFFFF) { length += 4; num >>= 32; }
             if (num > 0xFFFF) { length += 2; num >>= 16; }
             if (num > 0xFF) { length += 1; }
-            
+
             return length;
         }
         public readonly byte estNumPartBytesLength()
@@ -98,10 +99,8 @@ namespace Nextension
         }
         public readonly unsafe void writeTo(byte[] dst, ref int startIndex)
         {
-            fixed (byte* dstPtr = dst)
-            {
-                writeTo(dstPtr, ref startIndex);
-            }
+            byte* dstPtr = (byte*)Unsafe.AsPointer(ref dst[0]);
+            writeTo(dstPtr, ref startIndex);
         }
         public readonly unsafe void writeTo(byte* dst, ref int startIndex)
         {
@@ -122,28 +121,30 @@ namespace Nextension
                 byte* dstPtr = dst + startIndex;
                 switch (numPartBytesLength)
                 {
-                    case 8: 
-                        *(ulong*)dstPtr = absValue; 
+                    case 8:
+                        *(ulong*)dstPtr = absValue;
                         break;
-                    case 7: case 6: case 5: 
-                        *(uint*)dstPtr = (uint)absValue; 
-                        *(uint*)(dstPtr + numPartBytesLength - 4) = (uint)(absValue >> ((numPartBytesLength - 4) * 8)); 
+                    case 7:
+                    case 6:
+                    case 5:
+                        *(uint*)dstPtr = (uint)absValue;
+                        *(uint*)(dstPtr + numPartBytesLength - 4) = (uint)(absValue >> ((numPartBytesLength - 4) * 8));
                         break;
-                    case 4: 
-                        *(uint*)dstPtr = (uint)absValue; 
+                    case 4:
+                        *(uint*)dstPtr = (uint)absValue;
                         break;
-                    case 3: 
-                        *(ushort*)dstPtr = (ushort)absValue; 
-                        dstPtr[2] = (byte)(absValue >> 16); 
+                    case 3:
+                        *(ushort*)dstPtr = (ushort)absValue;
+                        dstPtr[2] = (byte)(absValue >> 16);
                         break;
-                    case 2: 
-                        *(ushort*)dstPtr = (ushort)absValue; 
+                    case 2:
+                        *(ushort*)dstPtr = (ushort)absValue;
                         break;
-                    case 1: 
-                        *dstPtr = (byte)absValue; 
+                    case 1:
+                        *dstPtr = (byte)absValue;
                         break;
                 }
-                
+
                 startIndex += numPartBytesLength;
             }
         }
@@ -154,7 +155,7 @@ namespace Nextension
             var resultBytes = stackalloc byte[numPartBytesLength + 1];
             int startIndex = 0;
             writeTo(resultBytes, ref startIndex);
-            writer.write(new Span<byte>(resultBytes, numPartBytesLength + 1));
+            writer.writeBytesWithoutLength(new Span<byte>(resultBytes, numPartBytesLength + 1));
         }
 
         public static NInteger fromBytes(ReadOnlySpan<byte> src, int startIndex = 0)
@@ -176,31 +177,31 @@ namespace Nextension
             int numPartBytesLength = firstNum > 128 ? firstNum & 127 : firstNum;
             ulong absValue = 0;
 
-            fixed (byte* srcPtr = &src[startIndex])
+            byte* srcPtr = (byte*)Unsafe.AsPointer(ref Unsafe.AsRef(in src[startIndex]));
+            switch (numPartBytesLength)
             {
-                switch (numPartBytesLength)
-                {
-                    case 8: 
-                        absValue = *(ulong*)srcPtr; 
-                        break;
-                    case 7: case 6: case 5: 
-                        absValue = *(uint*)srcPtr | ((ulong)*(uint*)(srcPtr + numPartBytesLength - 4) << ((numPartBytesLength - 4) * 8)); 
-                        break;
-                    case 4: 
-                        absValue = *(uint*)srcPtr; 
-                        break;
-                    case 3: 
-                        absValue = *(ushort*)srcPtr | ((ulong)srcPtr[2] << 16); 
-                        break;
-                    case 2: 
-                        absValue = *(ushort*)srcPtr; 
-                        break;
-                    case 1: 
-                        absValue = *srcPtr; 
-                        break;
-                }
+                case 8:
+                    absValue = *(ulong*)srcPtr;
+                    break;
+                case 7:
+                case 6:
+                case 5:
+                    absValue = *(uint*)srcPtr | ((ulong)*(uint*)(srcPtr + numPartBytesLength - 4) << ((numPartBytesLength - 4) * 8));
+                    break;
+                case 4:
+                    absValue = *(uint*)srcPtr;
+                    break;
+                case 3:
+                    absValue = *(ushort*)srcPtr | ((ulong)srcPtr[2] << 16);
+                    break;
+                case 2:
+                    absValue = *(ushort*)srcPtr;
+                    break;
+                case 1:
+                    absValue = *srcPtr;
+                    break;
             }
-            
+
             startIndex += numPartBytesLength;
             return firstNum > 128 ? -(long)absValue : (long)absValue;
         }

@@ -1,16 +1,17 @@
 using Unity.Burst;
+using Unity.Mathematics;
 
 namespace Nextension.Tween
 {
     [BurstCompile]
     internal readonly struct CommonJobData
     {
-        public readonly NTweener.UpdateMode updateMode;
+        public readonly NUpdateMode updateMode;
         public readonly EaseType easeType;
         public readonly float startTime;
         public readonly float duration;
 
-        public CommonJobData(NTweener.UpdateMode updateMode, EaseType easeType, float startTime, float duration)
+        public CommonJobData(NUpdateMode updateMode, EaseType easeType, float startTime, float duration)
         {
             this.updateMode = updateMode;
             this.easeType = easeType;
@@ -51,14 +52,30 @@ namespace Nextension.Tween
     internal readonly struct ShakeData<T> where T : unmanaged
     {
         public readonly CommonJobData common;
-        public readonly float range;
+        public readonly float4 range;
         public readonly T origin;
 
-        public ShakeData(CommonJobData common, float range, T origin)
+        public ShakeData(CommonJobData common, float4 range, T origin)
         {
             this.common = common;
             this.range = range;
             this.origin = origin;
+        }
+    }
+    [BurstCompile]
+    internal readonly struct JumpData<T> where T : unmanaged
+    {
+        public readonly CommonJobData common;
+        public readonly T origin;
+        public readonly T destination;
+        public readonly T jumpHeight;
+
+        public JumpData(CommonJobData common, T origin, T destination, T jumpHeight)
+        {
+            this.common = common;
+            this.origin = origin;
+            this.destination = destination;
+            this.jumpHeight = jumpHeight;
         }
     }
 
@@ -87,7 +104,7 @@ namespace Nextension.Tween
         }
     }
     [BurstCompile]
-    internal struct TransformShakeData<T> where T : unmanaged
+    internal readonly struct TransformShakeData<T> where T : unmanaged
     {
         public readonly TransformTweenType transformTweenType;
         public readonly ShakeData<T> shakeData;
@@ -96,6 +113,18 @@ namespace Nextension.Tween
         {
             this.transformTweenType = transformTweenType;
             this.shakeData = shakeData;
+        }
+    }
+    [BurstCompile]
+    internal readonly struct TransformJumpData<T> where T : unmanaged
+    {
+        public readonly TransformTweenType transformTweenType;
+        public readonly JumpData<T> jumpData;
+
+        public TransformJumpData(TransformTweenType transformTweenType, JumpData<T> jumpData)
+        {
+            this.transformTweenType = transformTweenType;
+            this.jumpData = jumpData;
         }
     }
 }

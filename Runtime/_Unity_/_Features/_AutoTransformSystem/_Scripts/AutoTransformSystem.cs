@@ -52,6 +52,7 @@ namespace Nextension
         private static TransformAccessArray _transformAccessArray;
         private static Job _job;
         private static List<AutoTransformHandle> _handlers;
+        private static NBListCompareHashCode<AutoTransformHandle> _autoStopOnDisableList;
 
 #if UNITY_EDITOR
         [EditorQuittingMethod]
@@ -62,6 +63,7 @@ namespace Nextension
                 _transformAccessArray.Dispose();
                 _job.autoTransformDatas.Dispose();
                 _handlers.Clear();
+                _autoStopOnDisableList.Clear();
                 NUpdater.onUpdateEvent.remove(update);
             }
         }
@@ -74,17 +76,50 @@ namespace Nextension
                 _transformAccessArray = new TransformAccessArray(4);
                 _job.autoTransformDatas = new NativeList<AutoTransformData>(4, AllocatorManager.Persistent);
                 _handlers = new List<AutoTransformHandle>(4);
+                _autoStopOnDisableList = new(4);
                 NUpdater.onUpdateEvent.add(update);
             }
         }
+
         private static void update()
         {
+            int stopOnDisableCount = _autoStopOnDisableList.Count;
+            if (stopOnDisableCount > 0)
+            {
+                for (int i = stopOnDisableCount - 1; i >= 0; i--)
+                {
+                    var handler = _autoStopOnDisableList[i];
+                    if (handler.Index != handler.autoStopIndex)
+                    {
+                        _autoStopOnDisableList.RemoveAt(i);
+                    }
+                    else
+                    {
+                        var transform = _transformAccessArray[handler.Index];
+                        if (transform.isNull() || !transform.gameObject.activeInHierarchy)
+                        {
+                            _autoStopOnDisableList.RemoveAt(i);
+                            if (handler.isValid())
+                            {
+                                stop(handler);
+                            }
+                        }
+                    }
+                }
+            }
+
             int handlerCount = _handlers.Count;
             if (handlerCount > 0)
             {
                 _job.deltaTime = Time.deltaTime;
                 _job.Schedule(_transformAccessArray).Complete();
             }
+        }
+
+        public static void stopOnDisable(AutoTransformHandle handler)
+        {
+            ensureSetup();
+            _autoStopOnDisableList.AddAndSortIfNotPresent(handler);
         }
 
         public static AutoTransformHandle start(AbsAutoTransform autoTransform)
@@ -116,6 +151,7 @@ namespace Nextension
                 _job.autoTransformDatas.RemoveAtSwapBack(index);
                 _transformAccessArray.RemoveAtSwapBack(index);
                 _handlers.removeAtSwapBack(index);
+                _autoStopOnDisableList.Remove(handler);
                 AutoTransformHandle.release(handler);
             }
         }

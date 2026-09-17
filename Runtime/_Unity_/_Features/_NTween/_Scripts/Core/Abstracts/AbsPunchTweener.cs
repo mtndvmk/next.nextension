@@ -1,23 +1,15 @@
-﻿using System;
-
-namespace Nextension.Tween
+﻿namespace Nextension.Tween
 {
-    internal abstract class AbsPunchTweener<T, TData> : AbsValueTweener<T, TData>
+    internal abstract class AbsPunchTweener<T> : NTweener
         where T : unmanaged
-        where TData : struct
     {
         public T origin;
         public T punchDestination;
 
-        public AbsPunchTweener(T origin, T punchDestination, Action<T> onValueChanged) : base(onValueChanged)
+        public AbsPunchTweener(T origin, T punchDestination)
         {
             this.origin = origin;
             this.punchDestination = punchDestination;
-        }
-
-        public void updateDestination(T value)
-        {
-            punchDestination = value;
         }
     }
 }

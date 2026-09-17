@@ -1,5 +1,5 @@
-using UnityEngine;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Nextension
 {
@@ -15,7 +15,7 @@ namespace Nextension
         [SerializeField] private Vector2 _spacing = new Vector2(10, 10);
         [SerializeField] private Vector2 _cellSize = new Vector2(100, 100);
         [SerializeField] private float _extendVisibleRange;
-        
+
         public Direction direction
         {
             get => _direction;
@@ -72,7 +72,7 @@ namespace Nextension
 
         private void __initialize()
         {
-            if (!_rowSegmentTree.IsCreated) 
+            if (!_rowSegmentTree.IsCreated)
                 _rowSegmentTree = new NativeSegmentTree(16, Allocator.Persistent);
         }
 
@@ -114,7 +114,7 @@ namespace Nextension
 
             int rowCount = Mathf.CeilToInt((float)_dataList.Count / Columns);
             _rowSegmentTree.SetSize(rowCount);
-            
+
             data.cellSize = _cellSize;
             int rowIndex = data.index / Columns;
             _rowSegmentTree.Set(rowIndex, _cellSize.y + _spacing.y);
@@ -192,7 +192,7 @@ namespace Nextension
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
                 var cell = requestCell(i);
-                
+
                 int row = i / Columns;
                 var rowAnchor = getRowFTAnchor(row);
                 Vector2 position = calculateCellPosition(i, rowAnchor);
@@ -229,7 +229,7 @@ namespace Nextension
         private FTAnchor getRowFTAnchor(int row)
         {
             if (row < 0 || row >= _rowSegmentTree.Size) return new FTAnchor(0, 0);
-            
+
             float sumBefore = _rowSegmentTree.GetSum(row);
             float from = -_headOffset - sumBefore;
             float size = _rowSegmentTree.Get(row) - _spacing.y;
@@ -285,12 +285,12 @@ namespace Nextension
 
             int firstRow;
             int lastRow;
-            
+
             if (_direction == Direction.TOP_BOTTOM)
             {
                 float topTargetSum = -viewportFTAnchor.from - _headOffset;
                 float bottomTargetSum = -viewportFTAnchor.to - _headOffset;
-                
+
                 firstRow = _rowSegmentTree.FindIndex(topTargetSum);
                 lastRow = _rowSegmentTree.FindIndex(bottomTargetSum);
             }
@@ -298,14 +298,14 @@ namespace Nextension
             {
                 float topTargetSum = viewportFTAnchor.to - _headOffset;
                 float bottomTargetSum = viewportFTAnchor.from - _headOffset;
-                
+
                 firstRow = _rowSegmentTree.FindIndex(topTargetSum);
                 lastRow = _rowSegmentTree.FindIndex(bottomTargetSum);
             }
 
             firstRow = Mathf.Max(0, firstRow);
             lastRow = Mathf.Min(lastRow, Mathf.CeilToInt((float)_dataList.Count / Columns) - 1);
-            
+
             int fromIndex = firstRow * Columns;
             int toIndex = Mathf.Min(lastRow * Columns + Columns - 1, latestIndex);
 
@@ -449,7 +449,7 @@ namespace Nextension
             }
             setDirtyLayout();
         }
-        
+
         public override void clear()
         {
             base.clear();

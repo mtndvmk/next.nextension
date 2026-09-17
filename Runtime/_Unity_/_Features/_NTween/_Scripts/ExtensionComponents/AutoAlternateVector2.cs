@@ -1,4 +1,3 @@
-using System;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -7,27 +6,27 @@ namespace Nextension.Tween
     public class AutoAlternateVector2 : AbsAutoAlternate<Vector2>
     {
         private Vector2 _value;
-        private Action<float2> _setValueF2Action;
 
-        protected override void onStart()
+        private static void __setValueF2_Static(object target, float2 value)
         {
-            base.onStart();
-            _setValueF2Action ??= setValueF2;
+            ((AutoAlternateVector2)target).setValueF2(value);
         }
 
-        protected override NRunnableTweener onFromTo()
+        protected unsafe override NTweener onFromTo()
         {
-            return NTween.fromTo((float2)_fromValue, (float2)_toValue, FromToDuration, _setValueF2Action);
+            return NTween.fromToUnsafe((float2)_fromValue, (float2)_toValue, FromToDuration, this, &__setValueF2_Static);
         }
 
-        protected override NRunnableTweener onToFrom()
+        protected unsafe override NTweener onToFrom()
         {
-            return NTween.fromTo((float2)_toValue, (float2)_fromValue, FromToDuration, _setValueF2Action);
+            return NTween.fromToUnsafe((float2)_toValue, (float2)_fromValue, FromToDuration, this, &__setValueF2_Static);
         }
+
         protected void setValueF2(float2 value)
         {
             setValue((Vector2)value);
         }
+
         protected override void setValue(Vector2 value)
         {
             _value = value;

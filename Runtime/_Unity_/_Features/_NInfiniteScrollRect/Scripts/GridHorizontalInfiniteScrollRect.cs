@@ -1,5 +1,5 @@
-using UnityEngine;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Nextension
 {
@@ -15,7 +15,7 @@ namespace Nextension
         [SerializeField] private Vector2 _spacing = new Vector2(10, 10);
         [SerializeField] private Vector2 _cellSize = new Vector2(100, 100);
         [SerializeField] private float _extendVisibleRange;
-        
+
         public Direction direction
         {
             get => _direction;
@@ -29,7 +29,7 @@ namespace Nextension
                 }
             }
         }
-        
+
         public Vector2 spacing
         {
             get => _spacing;
@@ -42,7 +42,7 @@ namespace Nextension
                 }
             }
         }
-        
+
         public float extendVisibleRange
         {
             get => _extendVisibleRange;
@@ -55,7 +55,7 @@ namespace Nextension
                 }
             }
         }
-        
+
         public Vector2 CellSize
         {
             get => _cellSize;
@@ -75,7 +75,7 @@ namespace Nextension
 
         private void __initialize()
         {
-            if (!_colSegmentTree.IsCreated) 
+            if (!_colSegmentTree.IsCreated)
                 _colSegmentTree = new NativeSegmentTree(16, Allocator.Persistent);
         }
 
@@ -131,7 +131,7 @@ namespace Nextension
 
             int colCount = Mathf.CeilToInt((float)_dataList.Count / Rows);
             _colSegmentTree.SetSize(colCount);
-            
+
             data.cellSize = _cellSize;
             int colIndex = data.index / Rows;
             _colSegmentTree.Set(colIndex, _cellSize.x + _spacing.x);
@@ -195,7 +195,7 @@ namespace Nextension
             for (int i = fromVisibleIndex; i <= toVisibleIndex; i++)
             {
                 var cell = requestCell(i);
-                
+
                 int col = i / Rows;
                 var colAnchor = getColFTAnchor(col);
                 Vector2 position = calculateCellPosition(i, colAnchor);
@@ -232,7 +232,7 @@ namespace Nextension
         private FTAnchor getColFTAnchor(int col)
         {
             if (col < 0 || col >= _colSegmentTree.Size) return new FTAnchor(0, 0);
-            
+
             float sumBefore = _colSegmentTree.GetSum(col);
             float from = -_headOffset - sumBefore;
             float size = _colSegmentTree.Get(col) - _spacing.x;
@@ -288,12 +288,12 @@ namespace Nextension
 
             int firstCol;
             int lastCol;
-            
+
             if (_direction == Direction.RIGHT_LEFT)
             {
                 float topTargetSum = -viewportFTAnchor.from - _headOffset;
                 float bottomTargetSum = -viewportFTAnchor.to - _headOffset;
-                
+
                 firstCol = _colSegmentTree.FindIndex(topTargetSum);
                 lastCol = _colSegmentTree.FindIndex(bottomTargetSum);
             }
@@ -301,14 +301,14 @@ namespace Nextension
             {
                 float topTargetSum = viewportFTAnchor.to - _headOffset;
                 float bottomTargetSum = viewportFTAnchor.from - _headOffset;
-                
+
                 firstCol = _colSegmentTree.FindIndex(topTargetSum);
                 lastCol = _colSegmentTree.FindIndex(bottomTargetSum);
             }
 
             firstCol = Mathf.Max(0, firstCol);
             lastCol = Mathf.Min(lastCol, Mathf.CeilToInt((float)_dataList.Count / Rows) - 1);
-            
+
             int fromIndex = firstCol * Rows;
             int toIndex = Mathf.Min(lastCol * Rows + Rows - 1, latestIndex);
 
@@ -452,7 +452,7 @@ namespace Nextension
             }
             setDirtyLayout();
         }
-        
+
         public override void clear()
         {
             base.clear();

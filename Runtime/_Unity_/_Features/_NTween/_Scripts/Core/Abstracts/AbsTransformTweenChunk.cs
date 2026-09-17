@@ -3,8 +3,7 @@ using UnityEngine.Jobs;
 
 namespace Nextension.Tween
 {
-    internal abstract class AbsTransformTweenChunk<TTweener, TJob, TJobData> : GenericTweenChunk<TTweener, TJob, TJobData>
-        where TTweener : GenericNRunnableTweener<TJobData>, ITransformTweener
+    internal abstract class AbsTransformTweenChunk<TJob, TJobData> : GenericTweenChunk<TJob, TJobData>
         where TJob : struct, IJobParallelForTransform
         where TJobData : struct
     {
@@ -14,17 +13,18 @@ namespace Nextension.Tween
         {
             _transformAccessArray = new TransformAccessArray(CHUNK_SIZE);
         }
-        protected override void onAddNewTweener(TTweener tweener)
+        protected override void onAddNewTweener(NTweener tweener)
         {
             base.onAddNewTweener(tweener);
             var maskIndex = tweener.chunkIndex.maskIndex;
+            var tfTweener = (ITransformTweener)tweener;
             if (maskIndex >= _transformAccessArray.length)
             {
-                _transformAccessArray.Add(tweener.Target);
+                _transformAccessArray.Add(tfTweener.Target);
             }
             else
             {
-                _transformAccessArray[maskIndex] = tweener.Target;
+                _transformAccessArray[maskIndex] = tfTweener.Target;
             }
         }
 

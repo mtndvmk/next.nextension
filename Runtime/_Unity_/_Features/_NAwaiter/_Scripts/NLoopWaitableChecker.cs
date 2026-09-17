@@ -3,19 +3,12 @@ namespace Nextension
 {
     internal class NLoopWaitableChecker
     {
-        private static NLoopWaitableChecker __getNext()
+        public static NLoopWaitableChecker create<T>(T waitable, NLoopWaitableAwaiter awaiter) where T : IWaitable
         {
-            var checker = NLockedPool<NLoopWaitableChecker>.get();
-            return checker;
-        }
-        private static void __release(NLoopWaitableChecker checker)
-        {
-            NLockedPool<NLoopWaitableChecker>.release(checker);
-        }
-        public static NLoopWaitableChecker create<T>(T awaitable, NLoopWaitableAwaiter awaiter) where T : IWaitable
-        {
-            var checker = __getNext();
-            checker.setup(awaiter, awaitable);
+            var checker = NPool<NLoopWaitableChecker>.Shared.Rent().value;
+            checker._awaiter = awaiter;
+            checker._resultGetter = NWaitableResultGetter.create<T>();
+            checker._waitableCancelable = waitable.onStartWaitable(checker._resultGetter);
             return checker;
         }
 
@@ -23,16 +16,11 @@ namespace Nextension
         {
 
         }
-        private void setup<T>(NLoopWaitableAwaiter awaiter, T waitable) where T : IWaitable
-        {
-            this._awaiter = awaiter;
-            _waitableCancelable = waitable.onStartWaitable(_resultGetter);
-        }
 
         private bool _isFinished;
-        private NWaitableResultGetter _resultGetter = new NWaitableResultGetter();
-        private ICancelable _waitableCancelable;
         private NLoopWaitableAwaiter _awaiter;
+        private NWaitableResultGetter _resultGetter;
+        private ICancelable _waitableCancelable;
 
         public bool IsCreated => _awaiter != null;
 
@@ -42,21 +30,16 @@ namespace Nextension
             {
                 case CompleteState.Canceled:
                     {
-                        _isFinished = true;
                         _waitableCancelable?.cancel();
-                        _awaiter.setCompletion(_awaiter.Id, state);
+                        _isFinished = true;
+                        _awaiter.setCompletionWithoutChecks(state);
                         return true;
                     }
                 case CompleteState.Completed:
-                    {
-                        _isFinished = true;
-                        _awaiter.setCompletion(_awaiter.Id, state);
-                        return true;
-                    }
                 case CompleteState.Exception:
                     {
                         _isFinished = true;
-                        _awaiter.setCompletion(_awaiter.Id, state);
+                        _awaiter.setCompletionWithoutChecks(state);
                         return true;
                     }
                 case CompleteState.None:
@@ -90,17 +73,18 @@ namespace Nextension
             }
             __setState(NWaitableState.Canceled);
         }
+
         public void release()
         {
             if (IsCreated)
             {
                 _isFinished = false;
-                _resultGetter.reset();
+                _resultGetter.release();
+                _resultGetter = null;
                 _awaiter = null;
                 _waitableCancelable = null;
-                __release(this);
+                NPool<NLoopWaitableChecker>.Shared.Return(this);
             }
         }
     }
 }
-

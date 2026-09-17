@@ -45,6 +45,11 @@ namespace Nextension
             {
                 return;
             }
+            setCompletionWithoutChecks(state);
+        }
+
+        internal void setCompletionWithoutChecks(NWaitableState state)
+        {
             if (!IsCompleted)
             {
                 _currentState = state;
@@ -55,7 +60,7 @@ namespace Nextension
         protected void setAsCompletedAwaiter(NWaitableState state)
         {
             _isCompletedAwaiter = true;
-            setCompletion(Id, state);
+            setCompletionWithoutChecks(state);
         }
 
         private void __continue()

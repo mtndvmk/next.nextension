@@ -112,13 +112,13 @@ namespace Nextension
 
                 if (_requestFrameIndex >= lastestFrameIndex && !_isLoop && !_isBackAndForth)
                 {
-                    onEndOfAnimation?.Invoke();
                     stop();
+                    onEndOfAnimation?.Invoke();
                 }
                 else if (_requestFrameIndex <= 0 && _loopbackIsBacking && !_isLoop && _isBackAndForth)
                 {
-                    onEndOfAnimation?.Invoke();
                     stop();
+                    onEndOfAnimation?.Invoke();
                 }
             }
         }
@@ -219,7 +219,7 @@ namespace Nextension
                 return;
             }
             _requestFrameIndex = startFrameIndex;
-            _nextFrameTime = Time.time + 1 / _fps;
+            _nextFrameTime = Time.time + 1f / _fps;
             _isPlaying = true;
             setSprite(startFrameIndex);
         }

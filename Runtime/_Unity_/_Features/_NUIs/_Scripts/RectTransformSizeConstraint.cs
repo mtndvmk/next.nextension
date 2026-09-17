@@ -27,6 +27,8 @@ namespace Nextension
         [SerializeField] private Vector2 _sizeScale = Vector2.one;
         [SerializeField] private Vector3 _positionOffset;
         [NDisplayName("Min size of source")][SerializeField] private Vector2 _minSize;
+        [SerializeField] private bool _enableMaxSize;
+        [NShowIf(nameof(_enableMaxSize))][NDisplayName("Max size of source")][SerializeField] private Vector2 _maxSize;
         [SerializeField] private bool _isIgnoreLayout;
 
         private Vector2 _srcRectSize;
@@ -117,12 +119,12 @@ namespace Nextension
             _tracker.Clear();
             DrivenTransformPropertiesHolder.clear(this);
             var trackValue = DrivenTransformProperties.None;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Width)) trackValue |= DrivenTransformProperties.SizeDeltaX;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Height)) trackValue |= DrivenTransformProperties.SizeDeltaY;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Rotate)) trackValue |= DrivenTransformProperties.Rotation;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Scale)) trackValue |= DrivenTransformProperties.Scale;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Position)) trackValue |= DrivenTransformProperties.AnchoredPosition;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Pivot)) trackValue |= DrivenTransformProperties.Pivot;
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Width)) trackValue |= DrivenTransformProperties.SizeDeltaX;
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Height)) trackValue |= DrivenTransformProperties.SizeDeltaY;
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Rotate)) trackValue |= DrivenTransformProperties.Rotation;
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Scale)) trackValue |= DrivenTransformProperties.Scale;
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Position)) trackValue |= DrivenTransformProperties.AnchoredPosition;
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Pivot)) trackValue |= DrivenTransformProperties.Pivot;
             trackValue = DrivenTransformPropertiesHolder.add(this, trackValue);
             _tracker.Add(this, transform.asRectTransform(), trackValue);
 #endif
@@ -156,7 +158,7 @@ namespace Nextension
             var sizeOffset = _sizeOffset;
             var sizeScale = _sizeScale;
             var delta = 0;
-            if (NUtils.hasFlag(_mode, ConstraintMode.FixDiffRotation))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.FixDiffRotation))
             {
                 delta = Mathf.RoundToInt((_source.eulerAngles.z - transform.eulerAngles.z) / 90f) * 90;
                 delta = (delta % 360 + 360) % 360;
@@ -188,7 +190,7 @@ namespace Nextension
 
             if (_source.IsChildOf(rectTf))
             {
-                if (NUtils.hasFlag(_mode, ConstraintMode.Width))
+                if (NUtils.hasAnyFlag(_mode, ConstraintMode.Width))
                 {
                     if (_source.anchorMin.x != _source.anchorMax.x)
                     {
@@ -198,7 +200,7 @@ namespace Nextension
                     }
                 }
 
-                if (NUtils.hasFlag(_mode, ConstraintMode.Height))
+                if (NUtils.hasAnyFlag(_mode, ConstraintMode.Height))
                 {
                     if (_source.anchorMin.y != _source.anchorMax.y)
                     {
@@ -210,10 +212,11 @@ namespace Nextension
             }
 
             var minSize = _minSize;
+            var maxSize = _maxSize;
             var sizeAtRest = _sizeAtRest;
 
             bool isChanged = false;
-            if (NUtils.hasFlag(_mode, ConstraintMode.Width))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Width))
             {
                 float newSize;
                 if (atRest)
@@ -223,6 +226,10 @@ namespace Nextension
                 else
                 {
                     newSize = srcRectSize.x * sizeScale.x + sizeOffset.x;
+                }
+                if (_enableMaxSize && newSize > maxSize.x)
+                {
+                    newSize = maxSize.x;
                 }
                 if (newSize < minSize.x)
                 {
@@ -234,7 +241,7 @@ namespace Nextension
                     isChanged = true;
                 }
             }
-            if (NUtils.hasFlag(_mode, ConstraintMode.Height))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Height))
             {
                 float newSize;
                 if (atRest)
@@ -244,6 +251,10 @@ namespace Nextension
                 else
                 {
                     newSize = srcRectSize.y * sizeScale.y + sizeOffset.y;
+                }
+                if (_enableMaxSize && newSize > maxSize.y)
+                {
+                    newSize = maxSize.y;
                 }
                 if (newSize < minSize.y)
                 {
@@ -256,7 +267,7 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.hasFlag(_mode, ConstraintMode.Rotate))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Rotate))
             {
                 if (transform.rotation != _source.rotation)
                 {
@@ -265,7 +276,7 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.hasFlag(_mode, ConstraintMode.Scale))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Scale))
             {
                 if (transform.lossyScale != _source.lossyScale)
                 {
@@ -274,7 +285,7 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.hasFlag(_mode, ConstraintMode.Pivot))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Pivot))
             {
                 if (rectTf.pivot != srcPivot)
                 {
@@ -283,11 +294,11 @@ namespace Nextension
                 }
             }
 
-            if (NUtils.hasFlag(_mode, ConstraintMode.Position))
+            if (NUtils.hasAnyFlag(_mode, ConstraintMode.Position))
             {
                 var pt = rectTf.pivot;
                 var ps = pt;
-                if (NUtils.hasFlag(_mode, ConstraintMode.FixDiffRotation))
+                if (NUtils.hasAnyFlag(_mode, ConstraintMode.FixDiffRotation))
                 {
                     if (delta == 90) ps = new Vector2(pt.y, 1 - pt.x);
                     else if (delta == 180) ps = new Vector2(1 - pt.x, 1 - pt.y);

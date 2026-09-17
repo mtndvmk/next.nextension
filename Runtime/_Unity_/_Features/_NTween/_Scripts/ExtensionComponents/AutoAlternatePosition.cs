@@ -36,12 +36,12 @@ namespace Nextension.Tween
             return baseValue;
         }
 
-        protected override NRunnableTweener onFromTo()
+        protected override NTweener onFromTo()
         {
             var targetPosition = _computeWithOffset(_toValue);
             return NTween.moveTo(transform, targetPosition, FromToDuration, _isLocalSpace);
         }
-        protected override NRunnableTweener onToFrom()
+        protected override NTweener onToFrom()
         {
             var targetPosition = _computeWithOffset(_fromValue);
             return NTween.moveTo(transform, targetPosition, FromToDuration, _isLocalSpace);

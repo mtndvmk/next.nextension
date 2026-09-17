@@ -4,11 +4,8 @@ namespace Nextension
 {
     internal static class NExceptionHelper
     {
-        public readonly static Exception CanceledException = new OperationCanceledException();
-        public static void throwKeepStackTraceException(Exception exception)
-        {
-            throw new KeepStackTraceException(exception);
-        }
+        public readonly static OperationCanceledException CanceledException = new OperationCanceledException();
+
         public static void throwArgNullException(string name)
         {
             throw new ArgumentNullException(name);

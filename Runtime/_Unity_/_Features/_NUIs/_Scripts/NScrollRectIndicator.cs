@@ -53,7 +53,9 @@ namespace Nextension.UI
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
             if (!NStartRunner.IsPlaying) return;
+#endif
             if (_scrollRect != null)
             {
                 forceUpdate();

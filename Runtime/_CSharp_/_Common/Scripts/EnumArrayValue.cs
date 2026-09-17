@@ -7,7 +7,6 @@ using UnityEngine;
 
 namespace Nextension
 {
-
     public interface IEnumArrayValue : ISerializedFieldCheckable
     {
         int Length { get; }
@@ -50,17 +49,8 @@ namespace Nextension
                 Dictionary<TEnum, TValue> dict = null;
                 if (!string.IsNullOrEmpty(indexString))
                 {
-                    byte[] bytes;
-                    if (indexString.StartsWith(':'))
-                    {
-                        bytes = NUtils.decompressFromDeflateString(indexString);
-                    }
-                    else
-                    {
-                        bytes = Convert.FromBase64String(indexString);
-                    }
-
-                    var cacheIntArray = NConverter.convertArray<byte, int>(bytes);
+                    using var bytes = NCompress.decompress(indexString);
+                    var cacheIntArray = NConverter.convertArray<byte, int>(bytes.AsSpan());
                     var cacheCount = cacheIntArray.Length;
                     dict = new Dictionary<TEnum, TValue>(cacheCount);
                     for (int i = 0; i < cacheCount; i++)
@@ -215,7 +205,7 @@ namespace Nextension
             enumValues.CopyTo(other.enumValues, 0);
         }
 
-        public ReadOnlySpan<TEnum> Keys => EnumIndex<TEnum>.asReadOnlySpan();
+        public ReadOnlySpan<TEnum> Keys => EnumIndex<TEnum>.asSpan();
         public ReadOnlySpan<TValue> Values => enumValues;
         public void OnBeforeSerialize()
         {

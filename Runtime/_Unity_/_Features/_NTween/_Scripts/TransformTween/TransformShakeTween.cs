@@ -1,83 +1,44 @@
-using System;
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 
 namespace Nextension.Tween
 {
-    internal sealed class TransformShakeTween<TValue> where TValue : unmanaged
+    internal static class TransformShakeTween<TValue> where TValue : unmanaged
     {
-        internal sealed class Tweener : AbsShakeTweener<TValue, TransformShakeData<TValue>>, ITransformTweener
+        internal sealed class Tweener : AbsShakeTweener<TValue>, ITransformTweener
         {
-            private readonly Transform _target;
-            public Transform Target => _target;
+            internal Transform targetTf;
+            public Transform Target => targetTf;
             private readonly TransformTweenType _transformTweenType;
-            public Tweener(Transform target, float range, TransformTweenType transformTweenType) : base(default, range, null)
+            public Tweener(Transform target, float4 range, TransformTweenType transformTweenType) : base(default, range)
             {
-                this._target = target;
+                targetTf = target;
                 _transformTweenType = transformTweenType;
             }
-            private void applyValue(TValue value)
+            internal override unsafe void invokeValueChanged(void* src)
             {
-                switch (_transformTweenType)
-                {
-                    case TransformTweenType.Local_Position:
-                        _target.localPosition = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
-                        break;
-                    case TransformTweenType.World_Position:
-                        _target.position = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
-                        break;
-                    case TransformTweenType.Local_Scale:
-                        _target.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
-                        break;
-                    case TransformTweenType.Uniform_Local_Scale:
-                        var x = NConverter.bitConvertWithoutChecks<TValue, float>(value);
-                        _target.localScale = new Vector3(x, x, x);
-                        break;
-                    case TransformTweenType.Local_Rotation:
-                        _target.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
-                        break;
-                    case TransformTweenType.World_Rotation:
-                        _target.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
-                        break;
-                    default:
-                        throw new NotImplementedException(_transformTweenType.ToString());
-                }
             }
             protected override void onResetState()
             {
                 base.onResetState();
-                applyValue(origin);
+                NTweenUtils.applyValue(targetTf, _transformTweenType, origin);
             }
-            public override TransformShakeData<TValue> getJobData()
+            internal unsafe override void writeJobDataToAddr(void* dst)
             {
-                origin = _transformTweenType switch
-                {
-                    TransformTweenType.Local_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localPosition),
-                    TransformTweenType.World_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.position),
-                    TransformTweenType.Local_Scale => NConverter.bitConvertWithoutChecks<Vector3, TValue>(_target.localScale),
-                    TransformTweenType.Uniform_Local_Scale => NConverter.bitConvertWithoutChecks<float, TValue>(_target.localScale.x),
-                    TransformTweenType.Local_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.localRotation),
-                    TransformTweenType.World_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(_target.rotation),
-                    _ => throw new NotImplementedException(_transformTweenType.ToString()),
-                };
-                var jobData = new TransformShakeData<TValue>(_transformTweenType, new ShakeData<TValue>(getCommonJobData(), range, origin));
-                return jobData;
+                origin = NTweenUtils.readValue<TValue>(targetTf, _transformTweenType);
+                var data = new TransformShakeData<TValue>(_transformTweenType, new ShakeData<TValue>(getCommonJobData(), range, origin));
+                Unsafe.Write(dst, data);
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal override AbsTweenRunner createRunner()
-            {
-                return new TweenRunner<Chunk>();
-            }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override ushort getRunnerId()
             {
-                return TweenRunnerIdCache<TweenRunner<Chunk>>.id;
+                return TweenRunnerId<Chunk>.id;
             }
         }
-        internal class Chunk : AbsTransformTweenChunk<Tweener, Job, TransformShakeData<TValue>>
+        internal class Chunk : AbsTransformTweenChunk<Job, TransformShakeData<TValue>>
         {
             protected override Job createNewJob()
             {
@@ -103,7 +64,7 @@ namespace Nextension.Tween
                     var transformData = _jobDataNativeArr[index];
                     var data = transformData.shakeData;
                     var common = data.common;
-                    var currentTime = common.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
+                    var currentTime = common.updateMode == NUpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
                     if (currentTime >= data.common.startTime)
                     {
                         TValue result;
@@ -117,7 +78,7 @@ namespace Nextension.Tween
                         {
                             result = data.origin;
                         }
-                        NTweenUtils.applyTransformAccessJobData(transformData.transformTweenType, transform, result);
+                        NTweenUtils.applyTransformAccessJobData(transform, transformData.transformTweenType, result);
                     }
                 }
             }

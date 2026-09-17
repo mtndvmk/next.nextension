@@ -25,6 +25,11 @@ namespace Nextension
         }
         public void SetException(Exception exception)
         {
+            if (exception is OperationCanceledException)
+            {
+                // Cancellation is not an error, NTaskVoid has no way to observe it
+                return;
+            }
             NDebug.LogException(exception);
         }
         public void AwaitOnCompleted<TAwaiter, TStateMachine>(ref TAwaiter awaiter, ref TStateMachine stateMachine) where TAwaiter : INotifyCompletion where TStateMachine : IAsyncStateMachine

@@ -1,11 +1,10 @@
-﻿using Unity.Collections;
+using Unity.Collections;
 using Unity.Jobs;
 
 namespace Nextension.Tween
 {
-    internal abstract class AbsValueTweenChunk<TValue, TTweener, TJob, TJobData> : GenericTweenChunk<TTweener, TJob, TJobData>
+    internal abstract class AbsValueTweenChunk<TValue, TJob, TJobData> : GenericTweenChunk<TJob, TJobData>
         where TValue : unmanaged
-        where TTweener : AbsValueTweener<TValue, TJobData>
         where TJob : struct, IJobFor
         where TJobData : struct
     {
@@ -16,10 +15,10 @@ namespace Nextension.Tween
             _results = new NativeArray<TValue>(CHUNK_SIZE, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
 
-        protected override void onTweenerUpdated(int maskIndex)
+        protected unsafe override void onTweenerUpdated(int index)
         {
-            base.onTweenerUpdated(maskIndex);
-            _tweeners[maskIndex].invokeValueChanged(_results[maskIndex]);
+            base.onTweenerUpdated(index);
+            _tweeners[index].invokeValueChanged(_results.getUnsafePtr(index));
         }
 
         public sealed override void dispose()

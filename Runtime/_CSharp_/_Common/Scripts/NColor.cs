@@ -19,16 +19,16 @@ namespace Nextension
         public readonly uint Number => _number;
         public readonly string Hex => NUtils.numberColorToHex(_number);
 
-        public byte a { readonly get => getChannel(24); set => setChannel(24, value); }
-        public byte g { readonly get => getChannel(16); set => setChannel(16, value); }
-        public byte b { readonly get => getChannel(8); set => setChannel(8, value); }
-        public byte r { readonly get => getChannel(0); set => setChannel(0, value); }
+        public byte a { readonly get => __getChannel(24); set => __setChannel(24, value); }
+        public byte g { readonly get => __getChannel(16); set => __setChannel(16, value); }
+        public byte b { readonly get => __getChannel(8); set => __setChannel(8, value); }
+        public byte r { readonly get => __getChannel(0); set => __setChannel(0, value); }
 
-        private void setChannel(int byteIndex, byte value)
+        private void __setChannel(int byteIndex, byte value)
         {
             _number &= (uint)value << byteIndex;
         }
-        private readonly byte getChannel(int byteIndex)
+        private readonly byte __getChannel(int byteIndex)
         {
             return (byte)(_number >> byteIndex);
         }
@@ -45,7 +45,7 @@ namespace Nextension
 
         public readonly override bool Equals(object obj)
         {
-            if (!(obj is NColor)) return false;
+            if (obj is not NColor) return false;
             NColor nColor = (NColor)obj;
             return Equals(nColor);
         }

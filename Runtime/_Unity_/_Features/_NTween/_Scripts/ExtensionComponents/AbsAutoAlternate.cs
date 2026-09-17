@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -60,6 +60,7 @@ namespace Nextension.Tween
         protected bool _isFromTo;
         protected NTask _task;
         protected NTweener _ntweener;
+        [SerializeField] protected NUpdateMode _updateMode;
 
         public bool IsRunning => _startTime > 0;
         public bool IsPaused => _pauseNormalizedTime >= 0;
@@ -119,7 +120,14 @@ namespace Nextension.Tween
             if (delayTime > 0)
             {
                 DeplayOnStart = delayTime;
-                await new NWaitSecond(DeplayOnStart);
+                if (_updateMode == NUpdateMode.UnscaledTime)
+                {
+                    await new NWaitRealtimeSecond(DeplayOnStart);
+                }
+                else
+                {
+                    await new NWaitSecond(DeplayOnStart);
+                }
             }
             startImmediate();
         }
@@ -191,6 +199,8 @@ namespace Nextension.Tween
         }
         protected NTweener applyDuration(NTweener tweener)
         {
+            tweener.setUpdateMode(_updateMode);
+            tweener.setCancelControlKey(this);
             if (LifeTime > 0)
             {
                 tweener.onUpdated(checkLifeTimeAndStop);
@@ -370,7 +380,14 @@ namespace Nextension.Tween
         }
         private async NTask runFromToWithDelay(float delayTime, float normalizedTimeOffset)
         {
-            await new NWaitSecond(delayTime);
+            if (_updateMode == NUpdateMode.UnscaledTime)
+            {
+                await new NWaitRealtimeSecond(delayTime);
+            }
+            else
+            {
+                await new NWaitSecond(delayTime);
+            }
             runFromToWithoutDelay(normalizedTimeOffset);
         }
         protected override void runFromToWithoutDelay(float normalizedTimeOffset)
@@ -420,7 +437,14 @@ namespace Nextension.Tween
         }
         private async NTask delayRunToFrom(float deplayTime, float normalizedTimeOffset)
         {
-            await new NWaitSecond(deplayTime);
+            if (_updateMode == NUpdateMode.UnscaledTime)
+            {
+                await new NWaitRealtimeSecond(deplayTime);
+            }
+            else
+            {
+                await new NWaitSecond(deplayTime);
+            }
             runToFromWithoutDelay(normalizedTimeOffset);
         }
         protected override void runToFromWithoutDelay(float normalizedTimeOffset)
@@ -437,8 +461,8 @@ namespace Nextension.Tween
         }
 
         protected abstract void setValue(T value);
-        protected abstract NRunnableTweener onFromTo();
-        protected abstract NRunnableTweener onToFrom();
+        protected abstract NTweener onFromTo();
+        protected abstract NTweener onToFrom();
         protected abstract T getValueFromNormalizedTime(float normalizedTime);
     }
 }

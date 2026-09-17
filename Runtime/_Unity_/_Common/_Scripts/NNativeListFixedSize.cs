@@ -24,12 +24,12 @@ namespace Nextension
         {
             readonly get
             {
-                if (index >= _count) { throw new IndexOutOfRangeException(); }
+                if ((uint)index >= (uint)_count) { throw new IndexOutOfRangeException(); }
                 return _array[index];
             }
             set
             {
-                if (index >= _count) { throw new IndexOutOfRangeException(); }
+                if ((uint)index >= (uint)_count) { throw new IndexOutOfRangeException(); }
                 _array[index] = value;
             }
         }
@@ -44,27 +44,28 @@ namespace Nextension
 
         public unsafe void AddRangeNoReSize(T[] array)
         {
-            fixed (void* srcPtr = array)
-            {
-                int stride = NUtils.sizeOf<T>();
-                var dstPtr = (byte*)_array.GetUnsafePtr() + stride * _count;
-                UnsafeUtility.MemCpy(dstPtr, srcPtr, stride * array.Length);
-            }
+            if (array == null || array.Length == 0) return;
+            int stride = UnsafeUtility.SizeOf<T>();
+            byte* dstPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_array) + (long)stride * _count;
+            array.AsSpan().CopyTo(new Span<T>(dstPtr, array.Length));
             _count += array.Length;
         }
+
         public void AddNoResize(T item)
         {
             _array[_count++] = item;
         }
+
         public void RemoveAtSwapback(int index)
         {
             _array[index] = _array[--_count];
         }
+
         public T TakeAndRemoveLast()
         {
-            T item = _array[--_count];
-            return item;
+            return _array[--_count];
         }
+
         public void Clear()
         {
             _count = 0;

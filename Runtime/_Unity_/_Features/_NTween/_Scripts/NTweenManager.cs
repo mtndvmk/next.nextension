@@ -6,19 +6,17 @@ namespace Nextension.Tween
 {
     internal static class NTweenManager
     {
-        private static NList<NRunnableTweener> _queuedRunnableTweeners;
-        private static NList<CombinedNTweener> _queuedCombinedTweeners;
+        private static NList<NTweener> _queuedRunnableTweeners;
         private static NList<NTweener> _completedTweeners;
 
-        private static SimpleDictionary<ushort, AbsTweenRunner> _runners;
+        private static SimpleDictionary<ushort, TweenRunner> _runners;
         private static CancelControlManager _cancelControlManager;
 
         static NTweenManager()
         {
-            _queuedRunnableTweeners = new NList<NRunnableTweener>();
-            _queuedCombinedTweeners = new NList<CombinedNTweener>();
+            _queuedRunnableTweeners = new NList<NTweener>();
             _completedTweeners = new NList<NTweener>();
-            _runners = new SimpleDictionary<ushort, AbsTweenRunner>();
+            _runners = new SimpleDictionary<ushort, TweenRunner>();
             _cancelControlManager = new CancelControlManager();
 
             NUpdater.onUpdateEvent.add(update);
@@ -34,7 +32,6 @@ namespace Nextension.Tween
             _runners.Clear();
             _cancelControlManager.clear();
             _queuedRunnableTweeners.Clear();
-            _queuedCombinedTweeners.Clear();
         }
 #endif
         static void update()
@@ -46,20 +43,6 @@ namespace Nextension.Tween
             TweenStaticManager.currentUnscaledTime = TweenStaticManager.currentUnscaledTimeInJob.Data = currentUnscaledTime;
 
             _cancelControlManager.cancelInvalid();
-
-            int combinedCount = _queuedCombinedTweeners.Count;
-            if (combinedCount > 0)
-            {
-                for (int i = combinedCount - 1; i >= 0; i--)
-                {
-                    var tweener = _queuedCombinedTweeners.GetAtWithoutChecks(i);
-                    if (tweener.startTime <= (tweener.updateMode == NTweener.UpdateMode.ScaleTime ? currentTime : currentUnscaledTime))
-                    {
-                        tweener.invokeOnStart();
-                        _queuedCombinedTweeners.RemoveAtSwapBackWithoutChecks(i);
-                    }
-                }
-            }
 
             int runnableCount = _queuedRunnableTweeners.Count;
             if (runnableCount > 0)
@@ -106,18 +89,17 @@ namespace Nextension.Tween
                 runningChunks.Dispose();
             }
         }
-        private static AbsTweenRunner getOrCreateRunner(NRunnableTweener tweener)
+        private static TweenRunner getOrCreateRunner(NTweener tweener)
         {
             var runnerId = tweener.getRunnerId();
             if (!_runners.TryGetValue(runnerId, out var runner))
             {
-                runner = tweener.createRunner();
-                runner.runnerId = runnerId;
+                runner = new TweenRunner(runnerId);
                 _runners.Add(runnerId, runner);
             }
             return runner;
         }
-        private static void startRunnableTweener(NRunnableTweener tweener)
+        private static void startRunnableTweener(NTweener tweener)
         {
             if (tweener.chunkIndex.chunkId != 0 || tweener.Status != RunState.None)
             {
@@ -143,28 +125,19 @@ namespace Nextension.Tween
             }
             else
             {
-                AbsTweenRunner runner = getOrCreateRunner(tweener);
+                TweenRunner runner = getOrCreateRunner(tweener);
                 runner.addTweener(tweener);
             }
         }
-        internal static void run(NRunnableTweener runnableTweener)
+        internal static void run(NTweener tweener)
         {
-            startRunnableTweener(runnableTweener);
+            startRunnableTweener(tweener);
         }
-        internal static void run(CombinedNTweener combinedTweener)
+        internal static void schedule(NTweener tweener)
         {
-            _queuedCombinedTweeners.Add(combinedTweener);
+            _queuedRunnableTweeners.Add(tweener);
         }
-        internal static void schedule(NRunnableTweener runnableTweener)
-        {
-            _queuedRunnableTweeners.Add(runnableTweener);
-        }
-        internal static void schedule(CombinedNTweener combinedTweener)
-        {
-            _queuedCombinedTweeners.Add(combinedTweener);
-        }
-
-        internal static void cancelFromTweener(NRunnableTweener tweener)
+        internal static void cancelFromTweener(NTweener tweener)
         {
             if (_runners.TryGetValue(tweener.getRunnerId(), out var runner))
             {

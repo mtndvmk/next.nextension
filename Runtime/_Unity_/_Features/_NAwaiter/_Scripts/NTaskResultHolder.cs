@@ -39,7 +39,7 @@ namespace Nextension
             _state = state;
             if (_awaiter != null)
             {
-                _awaiter.setCompletion(_awaiter.Id, state);
+                _awaiter.setCompletionWithoutChecks(state);
                 _awaiter = null;
             }
         }
@@ -48,7 +48,7 @@ namespace Nextension
         {
             if (IsFinished)
             {
-                awaiter.setCompletion(awaiter.Id, _state);
+                awaiter.setCompletionWithoutChecks(_state);
                 return;
             }
             if (_awaiter != null)
@@ -110,7 +110,7 @@ namespace Nextension
             _state = state;
             if (_awaiter != null)
             {
-                _awaiter.setCompletion(_awaiter.Id, state);
+                _awaiter.setCompletionWithoutChecks(state);
                 _awaiter = null;
             }
         }
@@ -119,7 +119,7 @@ namespace Nextension
         {
             if (IsFinished)
             {
-                awaiter.setCompletion(awaiter.Id, _state);
+                awaiter.setCompletionWithoutChecks(_state);
                 return;
             }
             if (_awaiter != null)

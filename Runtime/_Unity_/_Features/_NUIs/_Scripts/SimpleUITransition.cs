@@ -6,17 +6,17 @@ namespace Nextension.UI
     {
         public void show(bool isImmediate = false)
         {
-            innerShow(isImmediate);
+            __innerShow(isImmediate);
         }
 
         public Action onBeforeShowEvent;
         public Action onBeforeHideEvent;
 
-        protected override void onDerivedBeforeShow()
+        protected override void __onDerivedBeforeShow()
         {
             onBeforeShowEvent?.Invoke();
         }
-        protected override void onDerivedBeforeHide()
+        protected override void __onDerivedBeforeHide()
         {
             onBeforeHideEvent?.Invoke();
         }

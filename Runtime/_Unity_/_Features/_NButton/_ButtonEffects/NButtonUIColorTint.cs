@@ -1,6 +1,4 @@
-using System;
 using Nextension.Tween;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace Nextension
@@ -15,10 +13,9 @@ namespace Nextension
         [SerializeField] private Color _downColor = new Color32(0xC8, 0xC8, 0xC8, 0xFF);
         [SerializeField] private Color _disableColor = new Color32(0xC8, 0xC8, 0xC8, 0x80);
         [SerializeField] private float _duration = 0.1f;
-        [SerializeField] private NTweener.UpdateMode _updateMode = NTweener.UpdateMode.UnscaledTime;
+        [SerializeField] private NUpdateMode _updateMode = NUpdateMode.UnscaledTime;
 
         private NTweener _colorTweener;
-        private Action<float4> _setColorAction;
 
         private void Reset()
         {
@@ -33,7 +30,6 @@ namespace Nextension
         protected override void Awake()
         {
             base.Awake();
-            _setColorAction = __setTargetColor;
         }
 
         private void OnEnable()
@@ -56,6 +52,8 @@ namespace Nextension
             {
                 _target.SetColor(Color.white);
             }
+            _colorTweener?.cancel();
+            _colorTweener = null;
         }
 
         public override void onButtonUp()
@@ -116,14 +114,8 @@ namespace Nextension
             }
             else
             {
-                _colorTweener = NTween.fromTo(_target.GetColor().toFloat4(), color.toFloat4(), _duration, _setColorAction).setUpdateMode(_updateMode);
-                _colorTweener.setCancelControlKey(_target);
+                _colorTweener = _target.colorTo(color, _duration, false).setUpdateMode(_updateMode);
             }
-        }
-
-        private void __setTargetColor(float4 color)
-        {
-            _target.SetColor(color.toColor());
         }
     }
 }

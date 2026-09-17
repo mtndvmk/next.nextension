@@ -88,6 +88,9 @@ namespace Nextension
         private static Action[] _staticEndOfFrameEvent;
 
         private static Stopwatch _stopwatch;
+        private static long _suspendedOffsetMs;
+        private static long _pausedWallClockMs;
+        private static long _pausedElapsedMs;
         /// <summary>
         /// time in milliseconds from initialization to latest frame
         /// </summary>
@@ -99,11 +102,11 @@ namespace Nextension
         /// <summary>
         /// time in milliseconds from initialization to now 
         /// </summary>
-        public static long CurrentTimeMs => _stopwatch.ElapsedMilliseconds;
+        public static long CurrentTimeMs => _stopwatch.ElapsedMilliseconds + _suspendedOffsetMs;
         /// <summary>
         /// time in seconds from initialization to now 
         /// </summary>
-        public static float CurrentTime => _stopwatch.ElapsedMilliseconds * 0.001f;
+        public static float CurrentTime => CurrentTimeMs * 0.001f;
 
         /// <summary>
         /// scaled time in milliseconds between the last two frames
@@ -167,7 +170,7 @@ namespace Nextension
                 _isUpdatedInNewFrame = true;
                 UnityTime = Time.time;
 
-                var currentTimeMs = _stopwatch.ElapsedMilliseconds;
+                var currentTimeMs = CurrentTimeMs;
                 UnscaledDeltaTimeMs = (int)(currentTimeMs - LatestUpdatedTimeMs);
                 DeltaTimeMs = (int)(UnscaledDeltaTimeMs * Time.timeScale);
 
@@ -176,6 +179,10 @@ namespace Nextension
                 invokeEvent(onUpdateEvent);
                 invokeAndClear(onUpdateOnceTimeEvent);
                 invokeStaticEvent(_staticUpdateEvent);
+            }
+            private void OnApplicationPause(bool isPaused)
+            {
+                __applyApplicationPause(isPaused);
             }
             private void LateUpdate()
             {
@@ -222,8 +229,31 @@ namespace Nextension
         private static void initialize()
         {
             EditorCheck.checkEditorMode();
+            _suspendedOffsetMs = 0;
+            _pausedWallClockMs = 0;
+            _pausedElapsedMs = 0;
             _stopwatch = Stopwatch.StartNew();
             findStaticEvents();
+        }
+
+        private static void __applyApplicationPause(bool isPaused)
+        {
+            if (isPaused)
+            {
+                _pausedWallClockMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                _pausedElapsedMs = _stopwatch.ElapsedMilliseconds;
+                return;
+            }
+
+            if (_pausedWallClockMs == 0) return;
+
+            var wallDeltaMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - _pausedWallClockMs;
+            var elapsedDeltaMs = _stopwatch.ElapsedMilliseconds - _pausedElapsedMs;
+            var untrackedMs = wallDeltaMs - elapsedDeltaMs;
+            if (untrackedMs > 0) _suspendedOffsetMs += untrackedMs;
+
+            _pausedWallClockMs = 0;
+            LatestUpdatedTimeMs = CurrentTimeMs;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -295,6 +325,9 @@ namespace Nextension
             DeltaTimeMs = 0;
             _isUpdatedInNewFrame = false;
             _updateCount = 0;
+            _suspendedOffsetMs = 0;
+            _pausedWallClockMs = 0;
+            _pausedElapsedMs = 0;
             _stopwatch?.Stop();
             _stopwatch = null;
 

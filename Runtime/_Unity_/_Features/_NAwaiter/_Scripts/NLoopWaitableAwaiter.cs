@@ -21,7 +21,7 @@ namespace Nextension
                     case CompleteState.None:
                         {
                             _checker = NLoopWaitableChecker.create(waitable, this);
-                            NLoopWaitableCheckerManager.addChecker(_checker, waitable.LoopType, waitable.IsIgnoreFirstFrameCheck);
+                            NLoopWaitableCheckerManager.addChecker(_checker, waitable.LoopType);
                             return;
                         }
                     case CompleteState.Canceled:

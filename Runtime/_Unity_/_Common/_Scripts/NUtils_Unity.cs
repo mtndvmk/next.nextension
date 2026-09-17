@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -20,45 +19,12 @@ namespace Nextension
     {
         #region Number & Bit mask
         [BurstCompile]
-        public static bool isPOT(float n)
-        {
-            int int_n = (int)n;
-            if (!Mathf.Approximately(n, int_n))
-            {
-                return false;
-            }
-            return isPOT(int_n);
-        }
-
-        [BurstCompile]
         public static bool checkBitMask(NativeArray<byte> byteMask, int bitIndex)
         {
             int byteIndex = bitIndex >> 3;
             int maskIndex = bitIndex & 0x7;
             byte mask = byteMask[byteIndex];
             return (mask & 1 << maskIndex) != 0;
-        }
-
-        [BurstCompile]
-        public unsafe static int getBit1Index(NativeArray<byte> byteMask)
-        {
-            if (byteMask == null || byteMask.Length == 0)
-            {
-                throw new Exception("bytes is null or empty");
-            }
-            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
-            return getBit1Index(ptr, byteMask.Length);
-        }
-
-        [BurstCompile]
-        public unsafe static int getBit0Index(NativeArray<byte> byteMask)
-        {
-            if (byteMask == null || byteMask.Length == 0)
-            {
-                throw new Exception("bytes is null or empty");
-            }
-            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(byteMask);
-            return getBit0Index(ptr, byteMask.Length);
         }
 
         [BurstCompile]
@@ -75,28 +41,6 @@ namespace Nextension
             var byteIndex = bitIndex >> 3;
             bitIndex &= 0x7;
             bytes[byteIndex] |= (byte)(1 << bitIndex);
-        }
-
-        public unsafe static bool isOnly1(this NativeArray<byte> bytes)
-        {
-            if (bytes == null || bytes.Length == 0)
-            {
-                throw new Exception("bytes is null or empty");
-            }
-            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
-            return isOnly1(ptr, bytes.Length);
-        }
-
-        [BurstCompile]
-        public unsafe static bool isOnly0(this NativeArray<byte> bytes)
-        {
-            if (bytes == null || bytes.Length == 0)
-            {
-                throw new Exception("bytes is null or empty");
-            }
-
-            var ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
-            return isOnly0(ptr, bytes.Length);
         }
         #endregion
 
@@ -503,10 +447,20 @@ namespace Nextension
             self.anchorMin = self.anchorMin.setX(x);
             self.anchorMax = self.anchorMax.setX(x);
         }
+        public static void setAnchorX(this RectTransform self, float xMin, float xMax)
+        {
+            self.anchorMin = self.anchorMin.setX(xMin);
+            self.anchorMax = self.anchorMax.setX(xMax);
+        }
         public static void setAnchorY(this RectTransform self, float y)
         {
             self.anchorMin = self.anchorMin.setY(y);
             self.anchorMax = self.anchorMax.setY(y);
+        }
+        public static void setAnchorY(this RectTransform self, float yMin, float yMax)
+        {
+            self.anchorMin = self.anchorMin.setY(yMin);
+            self.anchorMax = self.anchorMax.setY(yMax);
         }
         public static void setAnchorPositionX(this RectTransform self, float x)
         {
@@ -694,6 +648,14 @@ namespace Nextension
             var x = parentLossyScale.x == 0 ? 0 : lossyScale.x / parentLossyScale.x;
             var y = parentLossyScale.y == 0 ? 0 : lossyScale.y / parentLossyScale.y;
             var z = parentLossyScale.z == 0 ? 0 : lossyScale.z / parentLossyScale.z;
+            self.localScale = new Vector3(x, y, z);
+        }
+        public static void setLossyScale(this Transform self, float uniformScale)
+        {
+            var parentLossyScale = self.parent != null ? self.parent.lossyScale : Vector3.one;
+            var x = parentLossyScale.x == 0 ? 0 : uniformScale / parentLossyScale.x;
+            var y = parentLossyScale.y == 0 ? 0 : uniformScale / parentLossyScale.y;
+            var z = parentLossyScale.z == 0 ? 0 : uniformScale / parentLossyScale.z;
             self.localScale = new Vector3(x, y, z);
         }
         public static void resetPosAndRot(this Transform self, bool isLocal = true)
@@ -1261,13 +1223,16 @@ namespace Nextension
         {
             return asColor(NConverter.fromBytesWithoutChecks<uint>(inData, startIndex));
         }
+        /// <summary>
+        /// aaggbbrr
+        /// </summary>
         public static uint asNumber(this Color color)
         {
-            byte r = (byte)Math.Round(color.r * 255);
-            byte g = (byte)Math.Round(color.g * 255);
-            byte b = (byte)Math.Round(color.b * 255);
-            byte a = (byte)Math.Round(color.a * 255);
-            return NConverter.bitConvertWithoutChecks<int, uint>(r | g << 8 | b << 16 | a << 24);
+            var r = (uint)Math.Round(color.r * 255);
+            var g = (uint)Math.Round(color.g * 255);
+            var b = (uint)Math.Round(color.b * 255);
+            var a = (uint)Math.Round(color.a * 255);
+            return a << 24 | b << 16 | g << 8 | r;
         }
         public static float4 toHsvFloat4(this Color color)
         {
@@ -1282,19 +1247,19 @@ namespace Nextension
             float r = (from & 0xFF) / 255f;
             return new Color(r, g, b, a);
         }
-        public static unsafe string numberColorToHex(this uint numColor, bool include0xPrefix = false)
+        public unsafe static string numberColorToHex(this uint numColor, bool include0xPrefix = false)
         {
-            var ptr = (byte*)&numColor;
+            var ptr = (byte*)Unsafe.AsPointer(ref numColor);
             return bytesToHex(ptr, 4, include0xPrefix);
         }
         public static uint hexColorToNumber(this string hex)
         {
             return hexColorToNumber(hex.AsSpan());
         }
-        public static unsafe uint hexColorToNumber(this ReadOnlySpan<char> hexSpan)
+        public unsafe static uint hexColorToNumber(this ReadOnlySpan<char> hexSpan)
         {
             uint result = 0xffffffff;
-            var ptr = (byte*)&result;
+            var ptr = (byte*)Unsafe.AsPointer(ref result);
             internal_hexToBytes(hexSpan, ptr);
             return result;
         }
@@ -1313,7 +1278,7 @@ namespace Nextension
         #endregion
 
         #region String
-        public static unsafe NStringBuilder appendHex(this NStringBuilder sb, Color color, bool includeAlpha = false, bool include0xPrefix = false)
+        public unsafe static NStringBuilder appendHex(this NStringBuilder sb, Color color, bool includeAlpha = false, bool include0xPrefix = false)
         {
             uint numColor = asNumber(color);
             var ptr = (byte*)&numColor;
@@ -1326,33 +1291,25 @@ namespace Nextension
         #region Collection
         public unsafe static byte[] toBytes<T>(this NativeArray<T> self) where T : unmanaged
         {
-            var dst = new byte[self.Length * NUtils.sizeOf<T>()];
-            fixed (byte* dstPtr = dst)
+            var dst = new byte[self.Length * UnsafeUtility.SizeOf<T>()];
+            if (dst.Length > 0)
             {
                 var srcPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(self);
-                Buffer.MemoryCopy(srcPtr, dstPtr, dst.Length, dst.Length);
+                new ReadOnlySpan<byte>(srcPtr, dst.Length).CopyTo(dst);
             }
             return dst;
         }
-        public static NPArray<T> toNPArray<T>(this IEnumerable<T> colletion)
+        public static PNList<T> toNPArray<T>(this IEnumerable<T> colletion)
         {
-            return NPArray<T>.get(colletion);
+            var plist = PNList<T>.get();
+            plist.AddRange(colletion);
+            return plist;
         }
-        public static NPArray<T> toNPArrayWithoutTracking<T>(this IEnumerable<T> colletion)
+        public static PNList<T> toNPArrayWithoutTracking<T>(this IEnumerable<T> colletion)
         {
-            return NPArray<T>.getWithoutTracking(colletion);
-        }
-        public static NPUArray<T> toNPUArray<T>(this IEnumerable<T> colletion) where T : unmanaged
-        {
-            return NPUArray<T>.get(colletion);
-        }
-        public static NPUArray<T> toNPUArrayWithoutTracking<T>(this IEnumerable<T> colletion) where T : unmanaged
-        {
-            return NPUArray<T>.getWithoutTracking(colletion);
-        }
-        public static NPHSet<T> toNPHSet<T>(this IEnumerable<T> colletion)
-        {
-            return NPHSet<T>.get(colletion);
+            var plist = PNList<T>.getWithoutTracking();
+            plist.AddRange(colletion);
+            return plist;
         }
 
         public static void removeLast(this IBList self)
@@ -1363,18 +1320,8 @@ namespace Nextension
         {
             self.RemoveAt(self.Length - 1);
         }
-        public static void removeLast<T>(this NPUArray<T> self) where T : unmanaged
-        {
-            self.RemoveAt(self.Count - 1);
-        }
 
         public static T takeAndRemoveLast<T>(this NativeList<T> self) where T : unmanaged
-        {
-            var item = self[^1];
-            self.removeLast();
-            return item;
-        }
-        public static T takeAndRemoveLast<T>(this NPUArray<T> self) where T : unmanaged
         {
             var item = self[^1];
             self.removeLast();
@@ -1384,12 +1331,6 @@ namespace Nextension
         /// <summary>
         /// swap item to back and remove it
         /// </summary>
-        public static void removeAtSwapBack<T>(this NPUArray<T> self, int index) where T : unmanaged
-        {
-            var lastIndex = self.Count - 1;
-            self[index] = self[lastIndex];
-            self.RemoveAt(lastIndex);
-        }
         public static void removeAtSwapBack<T>(this NList<T> self, int index)
         {
             var lastIndex = self.Count - 1;
@@ -1397,13 +1338,6 @@ namespace Nextension
             self.RemoveAt(lastIndex);
         }
 
-        public static bool removeSwapBack<T>(this NPUArray<T> self, T item) where T : unmanaged
-        {
-            var index = self.IndexOf(item);
-            if (index < 0) return false;
-            self.removeAtSwapBack(index);
-            return true;
-        }
         public static bool removeSwapBack<T>(this NList<T> self, T item)
         {
             var index = self.IndexOf(item);
@@ -1418,33 +1352,24 @@ namespace Nextension
             self.RemoveAtSwapBack(index);
             return item;
         }
-        public static T takeAndRemoveAtSwapBack<T>(this NPUArray<T> self, int index) where T : unmanaged
+
+        public static void fill<T>(this T[] self, T value) where T : unmanaged
         {
-            var item = self[index];
-            self.removeAtSwapBack(index);
-            return item;
+            if (self == null) return;
+            self.AsSpan().Fill(value);
         }
-        public unsafe static void fill<T>(this T[] self, T value) where T : unmanaged
+        public static void fill<T>(this T[] self, T value, int count) where T : unmanaged
         {
-            fixed (T* ptr = self)
-            {
-                fill(ptr, value, self.Length);
-            }
+            if (self == null) return;
+            self.AsSpan(0, count).Fill(value);
         }
-        public unsafe static void fill<T>(this T[] self, T value, int count) where T : unmanaged
+        public static void fill<T>(this NativeArray<T> self, T value) where T : unmanaged
         {
-            fixed (T* ptr = self)
-            {
-                fill(ptr, value, count);
-            }
+            self.AsSpan().Fill(value);
         }
-        public unsafe static void fill<T>(this NativeArray<T> self, T value) where T : unmanaged
+        public static void fill<T>(this NativeArray<T> self, T value, int count) where T : unmanaged
         {
-            fill(self.GetUnsafePtr(), value, self.Length);
-        }
-        public unsafe static void fill<T>(this NativeArray<T> self, T value, int count) where T : unmanaged
-        {
-            fill(self.GetUnsafePtr(), value, count);
+            self.AsSpan()[..count].Fill(value);
         }
         public unsafe static void fill<T>(void* self, T value, int count) where T : unmanaged
         {
@@ -1453,13 +1378,17 @@ namespace Nextension
         }
         public unsafe static NativeArray<T> convertToNativeArray<T>(IntPtr src, int bytesLength, Allocator allocator) where T : unmanaged
         {
-            var tSize = NUtils.sizeOf<T>();
+            var tSize = UnsafeUtility.SizeOf<T>();
             var dstLength = bytesLength / tSize;
             NativeArray<T> arr = new NativeArray<T>(dstLength, allocator, NativeArrayOptions.UninitializedMemory);
             void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(arr);
 
-            Buffer.MemoryCopy((void*)src, dst, bytesLength, bytesLength);
+            UnsafeUtility.MemCpy(dst, (void*)src, bytesLength);
             return arr;
+        }
+        public unsafe static void* getUnsafePtr<T>(this NativeArray<T> self, int index) where T : struct
+        {
+            return self.Slice(index).GetUnsafePtr();
         }
         #endregion
 
@@ -1529,16 +1458,12 @@ namespace Nextension
             return array;
         }
 
-        public static NPUArray<int> getRandomIndices(int maxIndex, int count, int minIndex = 0, uint seed = 0)
+        public static PUList<int> getRandomIndices(int maxIndex, int count, int minIndex = 0, uint seed = 0)
         {
             var rand = getRandom(seed);
             return getRandomIndices(maxIndex, count, minIndex, ref rand);
         }
-        public static NPUArray<int> getRandomIndices(int maxIndex, int count, int minIndex, Random rand)
-        {
-            return getRandomIndices(maxIndex, count, minIndex, ref rand);
-        }
-        public static NPUArray<int> getRandomIndices(int maxIndex, int count, int minIndex, ref Random rand)
+        public static PUList<int> getRandomIndices(int maxIndex, int count, int minIndex, ref Random rand)
         {
             Span<int> nums = stackalloc int[maxIndex - minIndex];
             int itemCount = 0;
@@ -1547,14 +1472,13 @@ namespace Nextension
                 nums[itemCount++] = i;
             }
             shuffle(nums, rand);
-            var result = NPUArray<int>.get();
+            var result = PUList<int>.get();
             foreach (var num in nums[..(itemCount < count ? itemCount : count)])
             {
                 result.Add(num);
             }
             return result;
         }
-
         public static T randItem<T>(this IList<T> list, out int randIndex, uint seed = 0)
         {
             return randItem(list, out randIndex, getRandom(seed));
@@ -1587,33 +1511,33 @@ namespace Nextension
         }
 
 
-        public static T randItem<T>(this NPUArray<T> list, out int randIndex, uint seed = 0) where T : unmanaged
+        public static T randItem<T>(this PUList<T> list, out int randIndex, uint seed = 0) where T : unmanaged
         {
             return list.randItem(out randIndex, getRandom(seed));
         }
-        public static T randItem<T>(this NPUArray<T> list, out int randIndex, Random rand) where T : unmanaged
+        public static T randItem<T>(this PUList<T> list, out int randIndex, Random rand) where T : unmanaged
         {
             randIndex = rand.NextInt(list.Count);
             return list[randIndex];
         }
-        public static T randItem<T>(this NPUArray<T> list, out int randIndex, ref Random rand) where T : unmanaged
+        public static T randItem<T>(this PUList<T> list, out int randIndex, ref Random rand) where T : unmanaged
         {
             randIndex = rand.NextInt(list.Count);
             return list[randIndex];
         }
 
 
-        public static T randItem<T>(this NPUArray<T> list, uint seed = 0) where T : unmanaged
+        public static T randItem<T>(this PUList<T> list, uint seed = 0) where T : unmanaged
         {
             return list.randItem(out _, getRandom(seed));
         }
 
-        public static T randItem<T>(this NPUArray<T> list, Random rand) where T : unmanaged
+        public static T randItem<T>(this PUList<T> list, Random rand) where T : unmanaged
         {
             return list.randItem(out _, rand);
         }
 
-        public static T randItem<T>(this NPUArray<T> list, ref Random rand) where T : unmanaged
+        public static T randItem<T>(this PUList<T> list, ref Random rand) where T : unmanaged
         {
             return list[rand.NextInt(list.Count)];
         }
@@ -1674,7 +1598,7 @@ namespace Nextension
 
         public static T randItem<T>(this Span<T> self, out int index, Func<T, bool> exclusivePredicate, ref Random rand)
         {
-            using var validIndices = NPUArray<int>.getWithoutTracking();
+            using var validIndices = PUList<int>.get();
             for (int i = self.Length - 1; i >= 0; i--)
             {
                 if (!exclusivePredicate(self[i])) validIndices.Add(i);
@@ -1845,15 +1769,15 @@ namespace Nextension
                 throw new Exception($"target is not a GameObject or Component, type: {target.GetType()}");
             }
         }
-        internal static NPList<T> getComponents_CachedList<T>(this GameObject target)
+        internal static PList<T> getComponents_CachedList<T>(this GameObject target)
         {
-            var list = NPList<T>.get();
+            var list = PList<T>.get();
             target.GetComponents(list.Collection);
             return list;
         }
-        internal static NPList<T> getComponentsInChildren_CachedList<T>(this GameObject target, bool isIncludeInactive = false)
+        internal static PList<T> getComponentsInChildren_CachedList<T>(this GameObject target, bool isIncludeInactive = false)
         {
-            var list = NPList<T>.get();
+            var list = PList<T>.get();
             target.GetComponentsInChildren(isIncludeInactive, list.Collection);
             return list;
         }
@@ -2114,11 +2038,11 @@ namespace Nextension
 
         public static ulong getEntityId<T>(this T self) where T : UnityEngine.Object
         {
-            #if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
             return EntityId.ToULong(self.GetEntityId());
-            #else
+#else
             return NConverter.bitConvertWithoutChecks<int, uint>(self.GetInstanceID()); 
-            #endif
+#endif
         }
         #endregion
 
@@ -2389,7 +2313,14 @@ namespace Nextension
                         continue;
                     }
 
-                    typeList.AddRange(assembly.GetTypes());
+                    try
+                    {
+                        typeList.AddRange(assembly.GetTypes());
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
 
                 typeList.Sort();
@@ -2492,10 +2423,8 @@ namespace Nextension
 
         public static NStringBuilder appendHHMMSS(this NStringBuilder sb, long totalSeconds)
         {
-            var h = totalSeconds / 3600;
-            var remainingM = totalSeconds % 3600;
-            var m = remainingM / 60;
-            var s = remainingM % 60;
+            var h = Math.DivRem(totalSeconds, 3600, out long remainingM);
+            var m = Math.DivRem(remainingM, 60, out long s);
             if (h < 10) sb.Append('0');
             sb.Append(h);
             sb.Append(':');
@@ -2509,20 +2438,19 @@ namespace Nextension
 
         public static NStringBuilder appendDDHHMMSS(this NStringBuilder sb, long totalSeconds)
         {
-            var d = totalSeconds / 86400;
+            var d = Math.DivRem(totalSeconds, 86400, out long remaining);
             if (d > 0)
             {
                 sb.Append(d);
                 sb.Append("d, ");
-                totalSeconds %= 86400;
+                totalSeconds = remaining;
             }
             return sb.appendHHMMSS(totalSeconds);
         }
 
         public static NStringBuilder appendToMMSS(this NStringBuilder sb, long totalSeconds)
         {
-            var m = totalSeconds / 60;
-            var s = totalSeconds % 60;
+            var m = Math.DivRem(totalSeconds, 60, out long s);
             if (m < 10) sb.Append('0');
             sb.Append(m);
             sb.Append(':');
@@ -2541,7 +2469,7 @@ namespace Nextension
             return NStringBuilder.get().appendHHMMSS(totalSeconds).consume();
         }
 
-        public static unsafe string bytesToHex(byte* inData, int inDataLength, bool include0xPrefix = false)
+        public unsafe static string bytesToHex(byte* inData, int inDataLength, bool include0xPrefix = false)
         {
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
             using var sb = NStringBuilder.get(hexLength);
@@ -2549,7 +2477,7 @@ namespace Nextension
             return sb.ToString();
         }
 
-        public static unsafe void bytesToHex(NStringBuilder sb, byte* inData, int inDataLength, bool include0xPrefix = false)
+        public unsafe static void bytesToHex(NStringBuilder sb, byte* inData, int inDataLength, bool include0xPrefix = false)
         {
             int hexLength = include0xPrefix ? (inDataLength * 2 + 2) : inDataLength * 2;
             if (include0xPrefix)
@@ -2568,56 +2496,14 @@ namespace Nextension
             }
         }
 
-        public static byte[] decompressFromDeflateString(this string str)
+        public static void bytesToHex(NStringBuilder sb, ReadOnlySpan<byte> inData, bool include0xPrefix = false)
         {
-            return decompressFromDeflateString(str, out _);
-        }
-        public static byte[] decompressFromDeflateString(this string str, out int version)
-        {
-            if (str == null) throw new ArgumentNullException(nameof(str));
-            ReadOnlySpan<char> span = str.AsSpan();
-            if (span[0] != ':') throw new FormatException("Invalid deflate string format");
-            ReadOnlySpan<char> remaining = span[1..];
-            int secondColon = remaining.IndexOf(':');
-            if (secondColon == -1) throw new FormatException("Invalid deflate string format");
-
-            ReadOnlySpan<char> versionSpan = remaining[..secondColon];
-            if (!int.TryParse(versionSpan, out version))
+            if (inData.IsEmpty) return;
+            unsafe
             {
-                throw new FormatException("Invalid version format");
+                var ptr = (byte*)Unsafe.AsPointer(ref Unsafe.AsRef(in inData[0]));
+                bytesToHex(sb, ptr, inData.Length, include0xPrefix);
             }
-
-            ReadOnlySpan<char> base64Span = remaining[(secondColon + 1)..];
-
-            int maxBase64Length = base64Span.Length * 3 / 4; 
-            byte[] base64PoolArray = new byte[maxBase64Length];
-            
-            if (!Convert.TryFromBase64Chars(base64Span, base64PoolArray, out int bytesWritten))
-            {
-                throw new FormatException("Invalid base64 string");
-            }
-
-            using var input = new MemoryStream(base64PoolArray, 0, bytesWritten, writable: false);
-            using var deflate = new DeflateStream(input, CompressionMode.Decompress);
-            using var output = new MemoryStream();
-            
-            deflate.CopyTo(output);
-            return output.ToArray(); 
-        }
-
-        public static string compressToDeflateString(this byte[] data, int version = 0)
-        {
-            return compressToDeflateString(data.AsSpan(), version);
-        }
-
-        public static string compressToDeflateString(ReadOnlySpan<byte> data, int version = 0)
-        {
-            using var output = new MemoryStream();
-            var deflate = new DeflateStream(output, CompressionMode.Compress);
-            deflate.Write(data);
-            deflate.Dispose();
-            var outputBytes = output.ToArray();
-            return NStringBuilder.get()[':'][version][':'].Append(Convert.ToBase64String(outputBytes)).consume();
         }
     }
 }

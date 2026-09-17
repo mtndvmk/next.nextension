@@ -8,7 +8,8 @@ namespace Nextension
     {
         static EnumIndex()
         {
-            createTable();
+            if (Unsafe.SizeOf<T>() > 4) throw new NotSupportedException();
+            __createTable();
         }
 
         internal static T[] indexToEnumTable;
@@ -19,7 +20,7 @@ namespace Nextension
         internal static string IndexString => _indexString;
 #endif
 
-        private static void createTable()
+        private static void __createTable()
         {
             indexToEnumTable = Enum.GetValues(typeof(T)) as T[];
 
@@ -32,21 +33,21 @@ namespace Nextension
                 enumToIndexTable[indexToEnumTable[i]] = i;
             }
 #if UNITY_EDITOR
-            computeIndexString();
+            __computeIndexString();
 #endif
         }
 
 #if UNITY_EDITOR
-        private static void computeIndexString()
+        private static void __computeIndexString()
         {
             var enumArr = indexToEnumTable;
             var cacheIntArray = new int[enumArr.Length];
             for (int i = 0; i < enumArr.Length; i++)
             {
-                cacheIntArray[i] = NConverter.bitConvertDiffSize<T, int>(enumArr[i]);
+                cacheIntArray[i] = NConverter.bitConvertSizeChecks<T, int>(enumArr[i]);
             }
             var bytes = NConverter.convertArray<int, byte>(cacheIntArray);
-            _indexString = NUtils.compressToDeflateString(bytes);
+            _indexString = NCompress.Zstd.compressToStr(bytes, NCompress.Zstd.HighLevel).consume();
         }
 #endif
 
@@ -87,18 +88,13 @@ namespace Nextension
             return indexToEnumTable.randItem(ref rand);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReadOnlySpan<T> asReadOnlySpan()
+        public static ReadOnlySpan<T> asSpan()
         {
             return indexToEnumTable;
         }
         public static ArrayEnumerator<T> getEnumerator()
         {
             return new ArrayEnumerator<T>(indexToEnumTable);
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Span<T> asSpan()
-        {
-            return indexToEnumTable;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isValid(T enumType)

@@ -15,6 +15,11 @@ namespace Nextension
         }
         public T value;
 
+        public ref T getRefVaue()
+        {
+            return ref value;
+        }
+
         public static implicit operator T(Ref<T> r)
         {
             return r.value;

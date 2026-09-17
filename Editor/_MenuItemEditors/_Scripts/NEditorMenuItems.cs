@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Nextension.NEditor
@@ -13,8 +15,11 @@ namespace Nextension.NEditor
         {
             var objs = Selection.objects;
             int count = 0;
+            var savedPrefabPaths = new HashSet<string>();
+            var savedScenes = new HashSet<string>();
             foreach (var o in objs)
             {
+                if (!o) continue;
                 var path = AssetDatabase.GetAssetPath(o);
                 if (!string.IsNullOrEmpty(path) && AssetDatabase.IsValidFolder(path))
                 {
@@ -22,21 +27,105 @@ namespace Nextension.NEditor
                     foreach (var guid in guids)
                     {
                         var assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                        if (!AssetDatabase.IsValidFolder(assetPath))
+                        if (AssetDatabase.IsValidFolder(assetPath)) continue;
+                        // For .asset files with sub-assets (AddObjectToAsset), saving main alone doesn't persist sub-asset dirties.
+                        // Load all to ensure every sub-asset is dirtied. For other files (prefab, etc.) just save main.
+                        if (assetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase))
                         {
-                            var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-                            if (asset != null)
+                            var subAssets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+                            if (subAssets != null && subAssets.Length > 0)
                             {
-                                NAssetUtils.saveAsset(asset);
-                                count++;
+                                foreach (var asset in subAssets)
+                                {
+                                    if (asset == null) continue;
+                                    if (asset.hideFlags == HideFlags.HideInHierarchy) continue;
+                                    // LoadAll includes the main asset + sub-assets; skip null but save all visible ones
+                                    // For .asset sub-assets they share same path, so dirtying each ensures file is written
+                                    NAssetUtils.setDirty(asset);
+                                    count++;
+                                }
+                                AssetDatabase.SaveAssetIfDirty(new GUID(guid));
+                                continue;
                             }
+                        }
+                        var mainAsset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                        if (mainAsset != null)
+                        {
+                            NAssetUtils.saveAsset(mainAsset, true);
+                            count++;
                         }
                     }
                 }
                 else
                 {
-                    NAssetUtils.saveAsset(o);
-                    count++;
+                    // Persistent asset (including sub-asset, prefab's child, ScriptableObject inside .asset)
+                    if (EditorUtility.IsPersistent(o))
+                    {
+                        NAssetUtils.saveAsset(o, true);
+                        count++;
+                    }
+                    else
+                    {
+                        GameObject go = null;
+                        if (o is GameObject g) go = g;
+                        else if (o is Component c) go = c.gameObject;
+
+                        if (go != null)
+                        {
+                            var prefabStage = PrefabStageUtility.GetPrefabStage(go);
+                            if (prefabStage != null)
+                            {
+                                // Object lives inside prefab asset opened in Prefab Stage (not in scene)
+                                EditorUtility.SetDirty(o);
+                                if (prefabStage.prefabContentsRoot != null)
+                                    EditorUtility.SetDirty(prefabStage.prefabContentsRoot);
+                                EditorSceneManager.MarkSceneDirty(prefabStage.scene);
+                                if (!savedPrefabPaths.Contains(prefabStage.assetPath))
+                                {
+                                    PrefabUtility.SaveAsPrefabAsset(prefabStage.prefabContentsRoot, prefabStage.assetPath);
+                                    savedPrefabPaths.Add(prefabStage.assetPath);
+                                }
+                                count++;
+                                continue;
+                            }
+
+                            // Regular object in scene or prefab asset preview (scene.name == "" means asset preview, not a scene)
+                            if (go.scene.IsValid() && !string.IsNullOrEmpty(go.scene.name))
+                            {
+                                EditorUtility.SetDirty(o);
+                                var scene = go.scene;
+                                EditorSceneManager.MarkSceneDirty(scene);
+                                var scenePath = scene.path;
+                                if (!string.IsNullOrEmpty(scenePath) && !savedScenes.Contains(scenePath))
+                                {
+                                    EditorSceneManager.SaveScene(scene);
+                                    savedScenes.Add(scenePath);
+                                }
+                                count++;
+                                continue;
+                            }
+
+                            // Fallback for preview / no valid scene (e.g., prefab asset child retrieved via LoadAsset but IsPersistent was false due to preview)
+                            // Try to resolve prefab asset path via PrefabUtility
+                            var prefabAssetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(go);
+                            if (!string.IsNullOrEmpty(prefabAssetPath))
+                            {
+                                EditorUtility.SetDirty(o);
+                                if (!savedPrefabPaths.Contains(prefabAssetPath))
+                                {
+                                    var prefabRoot = PrefabUtility.GetCorrespondingObjectFromSource(go);
+                                    if (prefabRoot != null) NAssetUtils.saveAsset(prefabRoot, true);
+                                    savedPrefabPaths.Add(prefabAssetPath);
+                                }
+                                count++;
+                                continue;
+                            }
+                        }
+
+                        // Fallback: non-persistent ScriptableObject or other
+                        NAssetUtils.saveAsset(o, true);
+                        count++;
+                    }
                 }
             }
             Debug.Log($"Saved {count} objects");
@@ -305,7 +394,7 @@ namespace Nextension.NEditor
         [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Enable", priority = 0)]
         public static void enableNPoolLogFullStackTrace()
         {
-            foreach (var group in EnumIndex<BuildTargetGroup>.asReadOnlySpan())
+            foreach (var group in EnumIndex<BuildTargetGroup>.asSpan())
             {
                 try
                 {
@@ -330,7 +419,7 @@ namespace Nextension.NEditor
         [MenuItem("Nextension/Project/Full Stack Trace for NPool Log/Disable")]
         public static void disableNPoolLogFullStackTrace()
         {
-            foreach (var group in EnumIndex<BuildTargetGroup>.asReadOnlySpan())
+            foreach (var group in EnumIndex<BuildTargetGroup>.asSpan())
             {
                 try
                 {

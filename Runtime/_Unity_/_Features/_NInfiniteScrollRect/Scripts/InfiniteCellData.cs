@@ -5,9 +5,9 @@ namespace Nextension
     public struct InfiniteCellData
     {
         public static Vector2 PositiveInfinitySize => Vector2.positiveInfinity;
-        
+
         private bool _isCreated;
-        
+
         public int index;
         public Vector2 cellSize;
         public Vector3 cellScale;

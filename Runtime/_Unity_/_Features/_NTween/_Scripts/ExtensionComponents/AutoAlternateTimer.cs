@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -24,7 +24,6 @@ namespace Nextension.Tween
 
         private Action _runFromToAction;
         private Action _runToFromAction;
-        private Action<float> _onTimeUpdatedAction;
 
         public override float FromToDuration
         {
@@ -53,7 +52,6 @@ namespace Nextension.Tween
             {
                 _runFromToAction = runFromTo;
                 _runToFromAction = runToFrom;
-                _onTimeUpdatedAction = onTimeUpdated;
             }
             if (_isStartOnEnable)
             {
@@ -88,7 +86,14 @@ namespace Nextension.Tween
         }
         private async NTask runFromToWithDelay(float delayTime, float normalizedTimeOffset)
         {
-            await new NWaitSecond(delayTime);
+            if (_updateMode == NUpdateMode.UnscaledTime)
+            {
+                await new NWaitRealtimeSecond(delayTime);
+            }
+            else
+            {
+                await new NWaitSecond(delayTime);
+            }
             runFromToWithoutDelay(normalizedTimeOffset);
         }
         protected override void runFromToWithoutDelay(float normalizedTimeOffset)
@@ -137,7 +142,14 @@ namespace Nextension.Tween
         }
         private async NTask delayRunToFrom(float deplayTime, float normalizedTimeOffset)
         {
-            await new NWaitSecond(deplayTime);
+            if (_updateMode == NUpdateMode.UnscaledTime)
+            {
+                await new NWaitRealtimeSecond(deplayTime);
+            }
+            else
+            {
+                await new NWaitSecond(deplayTime);
+            }
             runToFromWithoutDelay(normalizedTimeOffset);
         }
         protected override void runToFromWithoutDelay(float normalizedTimeOffset)
@@ -152,13 +164,18 @@ namespace Nextension.Tween
             _ntweener.startNormalizedTime(normalizedTimeOffset);
             onRunToFrom?.Invoke();
         }
-        private NRunnableTweener onFromTo()
+        private static void __onTimeUpdated_Static(object target, float normalizedTime)
         {
-            return NTween.fromTo(0f, 1, _timePerHalfCycle, _onTimeUpdatedAction);
+            ((AutoAlternateTimer)target).onTimeUpdated(normalizedTime);
         }
-        private NRunnableTweener onToFrom()
+
+        private unsafe NTweener onFromTo()
         {
-            return NTween.fromTo(1, 0f, _timePerHalfCycle, _onTimeUpdatedAction);
+            return NTween.fromToUnsafe(0f, 1, _timePerHalfCycle, this, &__onTimeUpdated_Static);
+        }
+        private unsafe NTweener onToFrom()
+        {
+            return NTween.fromToUnsafe(1, 0f, _timePerHalfCycle, this, &__onTimeUpdated_Static);
         }
         private void onTimeUpdated(float normalizedTime)
         {

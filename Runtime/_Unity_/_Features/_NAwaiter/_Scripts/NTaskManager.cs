@@ -301,6 +301,10 @@ namespace Nextension
                     {
                         _forgotTaskIds.Remove(taskId);
                         removeTaskResult(taskId);
+                        if (result.exception != null)
+                        {
+                            NDebug.LogException(result.exception);
+                        }
                         return;
                     }
                 }
@@ -318,7 +322,7 @@ namespace Nextension
 
             if (tryGetAndRemoveAwaiter(taskId, out var awaiter))
             {
-                ((NTaskAwaiter)awaiter).setCompletion(awaiter.Id, state);
+                ((NTaskAwaiter)awaiter).setCompletionWithoutChecks(state);
             }
 
             // Update Holders
@@ -338,6 +342,10 @@ namespace Nextension
                 lock (_forgotTaskIds)
                 {
                     _forgotTaskIds.Remove(taskId);
+                    if (state.exception != null)
+                    {
+                        NDebug.LogException(state.exception);
+                    }
                 }
             }
         }

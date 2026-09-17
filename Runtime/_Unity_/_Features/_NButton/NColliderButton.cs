@@ -97,7 +97,7 @@ namespace Nextension
         {
             if (_delayInvokeTime > 0)
             {
-                await new NWaitSecond(_delayInvokeTime);
+                await new NWaitRealtimeSecond(_delayInvokeTime);
             }
             try
             {

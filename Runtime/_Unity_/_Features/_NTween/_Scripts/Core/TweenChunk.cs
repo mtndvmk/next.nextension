@@ -1,5 +1,6 @@
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
 namespace Nextension.Tween
@@ -29,7 +30,7 @@ namespace Nextension.Tween
         public static short ChunkCount { get; private set; }
 
         #endregion
-
+        protected readonly NTweener[] _tweeners;
         protected NativeArray<byte> _mask;
         protected NNativeListFixedSize<short> _emptyIndices;
         protected float _lastEmptyTime;
@@ -37,10 +38,11 @@ namespace Nextension.Tween
         public readonly ushort chunkId;
         public Action<TweenChunk> onChunkBecomeNotFull;
 
-        public unsafe TweenChunk()
+        public TweenChunk()
         {
             chunkId = ++_chunkIdOrder;
             ChunkCount++;
+            _tweeners = new NTweener[CHUNK_SIZE];
             _mask = new NativeArray<byte>(CHUNK_SIZE, Allocator.Persistent);
             _emptyIndices = new NNativeListFixedSize<short>(_defaultEmptyIndices, Allocator.Persistent);
         }
@@ -67,25 +69,22 @@ namespace Nextension.Tween
             return _emptyIndices.TakeAndRemoveLast();
         }
 
-        public abstract void addTweener(NRunnableTweener tweener);
+        public abstract void addTweener(NTweener tweener);
         public abstract JobHandle runJob();
         public abstract void invokeJobComplete();
         public abstract void cancelTween(int maskIndex);
     }
 
-    internal abstract class GenericTweenChunk<TNTweener, TJob, TJobData> : TweenChunk
-        where TNTweener : GenericNRunnableTweener<TJobData>
+    internal abstract class GenericTweenChunk<TJob, TJobData> : TweenChunk
         where TJob : struct
         where TJobData : struct
     {
         protected bool _hasJob;
         protected TJob _job;
-        protected readonly TNTweener[] _tweeners;
         protected NativeArray<TJobData> _jobDataNativeArr;
 
         public GenericTweenChunk() : base()
         {
-            _tweeners = new TNTweener[CHUNK_SIZE];
             _jobDataNativeArr = new NativeArray<TJobData>(CHUNK_SIZE, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         }
 
@@ -113,24 +112,15 @@ namespace Nextension.Tween
             }
         }
 
-        public sealed override void addTweener(NRunnableTweener inTweener)
+        public unsafe sealed override void addTweener(NTweener tweener)
         {
-            var tweener = inTweener as TNTweener;
-
-#if UNITY_EDITOR
-            if (tweener == null)
-            {
-                throw new Exception($"Not match type: {inTweener.GetType()} vs {typeof(TNTweener)}");
-            }
-#endif
-
             var maskIndex = getNextMaskIndex();
             _tweeners[maskIndex] = tweener;
             TweenStaticManager.runningTweenerCount++;
             _mask.setBit1(maskIndex);
             _lastEmptyTime = -1;
             tweener.chunkIndex = new ChunkIndex(chunkId, (ushort)maskIndex);
-            _jobDataNativeArr[tweener.chunkIndex.maskIndex] = tweener.getJobData();
+            tweener.writeJobDataToAddr(_jobDataNativeArr.Slice(maskIndex).GetUnsafePtr());
             onAddNewTweener(tweener);
         }
         public sealed override void invokeJobComplete()
@@ -143,7 +133,7 @@ namespace Nextension.Tween
                     continue;
                 }
                 var startTime = tweener.startTime;
-                var currentTime = tweener.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTime : TweenStaticManager.currentUnscaledTime;
+                var currentTime = tweener.updateMode == NUpdateMode.ScaleTime ? TweenStaticManager.currentTime : TweenStaticManager.currentUnscaledTime;
                 if (currentTime > startTime)
                 {
                     tweener.Time = currentTime - startTime;
@@ -186,8 +176,8 @@ namespace Nextension.Tween
             _jobDataNativeArr.Dispose();
         }
 
-        protected virtual void onTweenerUpdated(int maskIndex) { }
-        protected virtual void onAddNewTweener(TNTweener tweener) { }
+        protected virtual void onTweenerUpdated(int index) { }
+        protected virtual void onAddNewTweener(NTweener tweener) { }
 
         protected abstract TJob createNewJob();
         protected abstract JobHandle onScheduleJob();

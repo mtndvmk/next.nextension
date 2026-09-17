@@ -82,13 +82,13 @@ namespace Nextension
                         break;
                     }
             }
-        
+
             transform.rectTransform().markLayoutForRebuild(true);
             var size = CellData.cellSize;
             size.y = transform.rectTransform().rect.size.y;
             setSize(size);
         }
-        
+
         protected override void onBeforeShowCell(int index, in InfiniteCellData cellData)
         {
             setData(Data);

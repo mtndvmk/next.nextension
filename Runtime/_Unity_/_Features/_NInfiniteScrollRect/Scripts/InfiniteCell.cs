@@ -5,7 +5,7 @@ namespace Nextension
     public class InfiniteCell : MonoBehaviour
     {
         public int CellIndex { get; private set; } = -1;
-        public InfiniteScrollRect InfiniteScrollRect {get; private set; }
+        public InfiniteScrollRect InfiniteScrollRect { get; private set; }
         public bool HasData => CellIndex != -1 && InfiniteScrollRect != null;
         public InfiniteCellData CellData => !HasData ? default : InfiniteScrollRect.DataList[CellIndex];
 
@@ -40,7 +40,7 @@ namespace Nextension
 
         protected virtual void onLayoutUpdated()
         {
-            
+
         }
 
         protected virtual void onBeforeHideCell()

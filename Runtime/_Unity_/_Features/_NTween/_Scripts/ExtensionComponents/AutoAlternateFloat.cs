@@ -1,26 +1,22 @@
-using System;
-
 namespace Nextension.Tween
 {
     public class AutoAlternateFloat : AbsAutoAlternate<float>
     {
         private float _value;
-        private Action<float> _setValueAction;
 
-        protected override void onStart()
+        private static void __setValue_Static(object target, float value)
         {
-            base.onStart();
-            _setValueAction ??= setValue;
+            ((AutoAlternateFloat)target).setValue(value);
         }
 
-        protected override NRunnableTweener onFromTo()
+        protected unsafe override NTweener onFromTo()
         {
-            return NTween.fromTo(_fromValue, _toValue, FromToDuration, _setValueAction);
+            return NTween.fromToUnsafe(_fromValue, _toValue, FromToDuration, this, &__setValue_Static);
         }
 
-        protected override NRunnableTweener onToFrom()
+        protected unsafe override NTweener onToFrom()
         {
-            return NTween.fromTo(_toValue, _fromValue, FromToDuration, _setValueAction);
+            return NTween.fromToUnsafe(_toValue, _fromValue, FromToDuration, this, &__setValue_Static);
         }
 
         protected override void setValue(float value)

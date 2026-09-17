@@ -7,15 +7,6 @@ namespace Nextension
     [ExecuteAlways, RequireComponent(typeof(RectTransform))]
     public class FitSizeToEdge : MonoBehaviour, ILayoutIgnorer
     {
-        [Serializable]
-        private struct RectValue<T>
-        {
-            public T left;
-            public T right;
-            public T top;
-            public T bottom;
-        }
-
         public enum Edge
         {
             Left,

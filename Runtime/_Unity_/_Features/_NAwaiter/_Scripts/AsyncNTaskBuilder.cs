@@ -63,6 +63,7 @@ namespace Nextension
             }
         }
     }
+
     public struct AsyncNTaskBuilder<T>
     {
         private readonly NTask<T> _task;
@@ -155,13 +156,13 @@ namespace Nextension
 
         public static StateMachineBox<TStateMachine> create()
         {
-            return NLockedPool<StateMachineBox<TStateMachine>>.get();
+            return NPool<StateMachineBox<TStateMachine>>.Shared.Rent().value;
         }
         public void release()
         {
             _stateMachine = default;
             _hasStateMachine = false;
-            NLockedPool<StateMachineBox<TStateMachine>>.release(this);
+            NPool<StateMachineBox<TStateMachine>>.Shared.Return(this);
         }
     }
 }

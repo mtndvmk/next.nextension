@@ -10,7 +10,7 @@ namespace Nextension
         private int _size;
         private Allocator _allocator;
 
-        public int Size => _size;
+        public readonly int Size => _size;
         public float TotalSum => _tree.IsCreated && _tree.Length > 1 ? _tree[1] : 0;
         public bool IsCreated => _tree.IsCreated;
 
@@ -18,7 +18,7 @@ namespace Nextension
         {
             _allocator = allocator;
             _size = 0;
-            _capacity = NUtils.nextPOT(capacity);
+            _capacity = NMath.nextPOT(capacity);
             // Array must be 2 * _capacity to store both leaves and internal nodes
             _tree = new NativeArray<float>(_capacity << 1, allocator);
         }
@@ -27,7 +27,7 @@ namespace Nextension
         {
             if (newCapacity <= _capacity) return;
             int oldCapacity = _capacity;
-            _capacity = NUtils.nextPOT(newCapacity);
+            _capacity = NMath.nextPOT(newCapacity);
 
             // Segment tree requires exactly 2 * capacity to fit parents + leaves
             var newTree = new NativeArray<float>(_capacity << 1, _allocator);
@@ -64,7 +64,7 @@ namespace Nextension
                 Clear();
                 return;
             }
-            
+
             if (size < _size)
             {
                 for (int i = size; i < _size; i++)
@@ -87,19 +87,19 @@ namespace Nextension
 
         public void Set(int index, float value)
         {
-            if (index < 0 || index >= _size) return;
-            index += _capacity;
-            _tree[index] = value;
-            while (index > 1)
+            if ((uint)index >= (uint)_size) return;
+            int idx = index + _capacity;
+            _tree[idx] = value;
+            while (idx > 1)
             {
-                index >>= 1;
-                _tree[index] = _tree[index << 1] + _tree[(index << 1) | 1];
+                idx >>= 1;
+                _tree[idx] = _tree[idx << 1] + _tree[(idx << 1) | 1];
             }
         }
-        
+
         public float Get(int index)
         {
-            if (index < 0 || index >= _size) return 0f;
+            if ((uint)index >= (uint)_size) return 0f;
             return _tree[index + _capacity];
         }
 
@@ -150,7 +150,7 @@ namespace Nextension
             int index = i - _capacity;
             return index < _size ? index : _size - 1;
         }
-        
+
         public void Dispose()
         {
             if (_tree.IsCreated)

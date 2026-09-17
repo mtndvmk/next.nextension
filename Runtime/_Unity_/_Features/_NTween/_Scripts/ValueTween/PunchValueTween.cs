@@ -9,28 +9,30 @@ namespace Nextension.Tween
 
     internal class PunchValueTween<TValue> where TValue : unmanaged
     {
-        internal sealed class Tweener : AbsPunchTweener<TValue, PunchData<TValue>>
+        internal sealed class Tweener : AbsPunchTweener<TValue>
         {
-            public Tweener(TValue origin, TValue punchDestination, Action<TValue> onValueChanged) : base(origin, punchDestination, onValueChanged)
+            private Action<TValue> _onValueChanged;
+            public Tweener(TValue origin, TValue punchDestination, Action<TValue> onValueChanged) : base(origin, punchDestination)
             {
+                _onValueChanged = onValueChanged;
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public override PunchData<TValue> getJobData()
+            internal unsafe override void writeJobDataToAddr(void* dst)
             {
-                return new PunchData<TValue>(getCommonJobData(), origin, punchDestination);
+                var data = new PunchData<TValue>(getCommonJobData(), origin, punchDestination);
+                Unsafe.Write(dst, data);
             }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal override AbsTweenRunner createRunner()
-            {
-                return new TweenRunner<Chunk>();
-            }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override ushort getRunnerId()
             {
-                return TweenRunnerIdCache<TweenRunner<Chunk>>.id;
+                return TweenRunnerId<Chunk>.id;
+            }
+
+            internal override unsafe void invokeValueChanged(void* src)
+            {
+                _onValueChanged?.Invoke(Unsafe.Read<TValue>(src));
             }
         }
-        internal sealed class Chunk : AbsValueTweenChunk<TValue, Tweener, Job, PunchData<TValue>>
+        internal sealed class Chunk : AbsValueTweenChunk<TValue, Job, PunchData<TValue>>
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             protected override Job createNewJob()
@@ -58,7 +60,7 @@ namespace Nextension.Tween
                 {
                     var data = _jobDataNativeArr[index];
                     var common = data.common;
-                    var currentTime = common.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
+                    var currentTime = common.updateMode == NUpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
                     if (currentTime >= common.startTime)
                     {
                         var t = (currentTime - common.startTime) / common.duration;

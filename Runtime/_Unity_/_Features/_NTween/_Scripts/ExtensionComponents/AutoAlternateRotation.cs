@@ -20,11 +20,11 @@ namespace Nextension.Tween
             }
             onValueChanged?.Invoke(value);
         }
-        protected override NRunnableTweener onFromTo()
+        protected override NTweener onFromTo()
         {
             return NTween.rotateTo(transform, quaternion.EulerXYZ(Mathf.Deg2Rad * _toValue).value, FromToDuration, _isLocalSpace);
         }
-        protected override NRunnableTweener onToFrom()
+        protected override NTweener onToFrom()
         {
             return NTween.rotateTo(transform, quaternion.EulerXYZ(Mathf.Deg2Rad * _fromValue).value, FromToDuration, _isLocalSpace);
         }

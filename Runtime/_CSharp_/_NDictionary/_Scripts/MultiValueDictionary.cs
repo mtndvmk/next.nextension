@@ -9,7 +9,7 @@ namespace Nextension
         public struct ValueCollection : IEnumerable<TValue>
         {
             private int _count;
-            private NList<TValue> _group;
+            private PNList<TValue> _group;
             private TValue _single;
 
             public readonly int Count => _count;
@@ -40,11 +40,41 @@ namespace Nextension
                 }
                 if (_group == null)
                 {
-                    _group = NStaticPool<NList<TValue>>.get();
+                    _group = PNList<TValue>.getWithoutTracking();
                     _group.Add(_single);
                 }
                 _group.Add(value);
                 _count++;
+            }
+
+            internal bool AddIfNotPresent(TValue value)
+            {
+                if (_count == 0)
+                {
+                    _single = value;
+                    _group = null;
+                    _count = 1;
+                    return true;
+                }
+
+                if (EqualityComparer<TValue>.Default.Equals(_single, value)) return false;
+
+                if (_group == null)
+                {
+                    _group = PNList<TValue>.getWithoutTracking();
+                    _group.Add(_single);
+                }
+                else
+                {
+                    foreach (var item in _group)
+                    {
+                        if (EqualityComparer<TValue>.Default.Equals(item, value)) return false;
+                    }   
+                }
+
+                _group.Add(value);
+                _count++;
+                return true;
             }
 
             internal bool Remove(TValue value)
@@ -71,7 +101,7 @@ namespace Nextension
                         if (_count == 1)
                         {
                             _single = _group[0];
-                            NStaticPool<NList<TValue>>.release(_group);
+                            _group.Dispose();
                             _group = null;
                         }
                     }
@@ -83,7 +113,7 @@ namespace Nextension
             {
                 if (_group != null)
                 {
-                    NStaticPool<NList<TValue>>.release(_group);
+                    _group.Dispose();
                     _group = null;
                 }
                 _count = 0;
@@ -107,57 +137,71 @@ namespace Nextension
             }
         }
 
-        private readonly Dictionary<TKey, ValueCollection> _store = new();
+        private readonly SimpleDictionary<TKey, ValueCollection> _stored = new();
 
         public void Add(TKey key, TValue value)
         {
-            if (!_store.ContainsKey(key))
+            ref var refVal = ref _stored.GetAsRef(key);
+            if (!refVal.isNullRef())
             {
-                _store[key] = new ValueCollection(value);
+                refVal.Add(value);
             }
             else
             {
-                _store[key].Add(value);
+                _stored[key] = new ValueCollection(value);
+            }
+        }
+
+        public bool AddIfNotPresent(TKey key, TValue value)
+        {
+            ref var refVal = ref _stored.GetAsRef(key);
+            if (!refVal.isNullRef())
+            {
+                return refVal.AddIfNotPresent(value);
+            }
+            else
+            {
+                _stored[key] = new ValueCollection(value);
+                return true;
             }
         }
 
         public bool Remove(TKey key, TValue value)
         {
-            if (!_store.TryGetValue(key, out var container)) return false;
+            if (!_stored.ContainsKey(key)) return false;
+            ref var container = ref _stored.GetAsRef(key);
             bool removed = container.Remove(value);
             if (removed && container.Count == 0)
             {
-                _store.Remove(key);
+                _stored.Remove(key);
             }
             return removed;
         }
 
         public ValueCollection GetValues(TKey key)
         {
-            return _store.GetValueOrDefault(key);
+            return _stored.TryGetValue(key, out var container) ? container : default;
         }
 
-        public Dictionary<TKey, ValueCollection>.KeyCollection Keys => _store.Keys;
-
-        public Dictionary<TKey, ValueCollection>.Enumerator GetEnumerator() => _store.GetEnumerator();
+        public SimpleDictionary<TKey, ValueCollection>.Enumerator GetEnumerator() => _stored.GetEnumerator();
 
         public void Clear()
         {
-            foreach (var container in _store.Values)
+            foreach (var container in _stored)
             {
-                container.Clear();
+                container.Value.Clear();
             }
-            _store.Clear();
+            _stored.Clear();
         }
 
         IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
         {
-            foreach ((var key, var values) in _store)
+            foreach (var kvp in _stored)
             {
-                foreach (var v in values)
+                foreach (var v in kvp.Value)
                 {
-                    yield return new KeyValuePair<TKey, TValue>(key, v);
-                }            
+                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, v);
+                }
             }
         }
 

@@ -17,7 +17,7 @@ namespace Nextension.Tween
             if (key == null) throw new System.Exception("key cannot be null");
             var longKey = CancelControlKey.getLongKey(key);
             var objectKey = new CancelControlKey(longKey);
-            _objectKeys.tryAdd(longKey, key);
+            _objectKeys.TryAdd(longKey, key);
             return objectKey;
         }
         public bool isInvalid(CancelControlKey key)
@@ -52,7 +52,7 @@ namespace Nextension.Tween
         }
         public void cancel(long longKey)
         {
-            if (_controlledTweeners.tryTakeAndRemove(longKey, out var hashset))
+            if (_controlledTweeners.TryTakeAndRemove(longKey, out var hashset))
             {
                 using var array = hashset.toNPArray();
                 foreach (var item in array.AsSpan())
@@ -69,7 +69,7 @@ namespace Nextension.Tween
         {
             if (_controlledTweeners.Count > 0 && _objectKeys.Count > 0)
             {
-                using var keys = NPUArray<long>.get();
+                using var keys = PUList<long>.get();
                 foreach (var (k, obj) in _objectKeys)
                 {
                     if (!obj) keys.Add(k);

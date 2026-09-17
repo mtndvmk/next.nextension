@@ -1,91 +1,95 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Nextension
 {
     public static class NConverter
     {
-        public static unsafe byte[] getBytes<T>(T t1) where T : unmanaged
+        public static byte[] getBytes<T>(T t1)
         {
-            byte[] array = new byte[NUtils.sizeOf<T>()];
+            byte[] array = new byte[Unsafe.SizeOf<T>()];
             writeBytesWithoutChecks(array, t1);
             return array;
         }
-        public static unsafe void writeBytes<T>(byte[] inData, T t1, int startIndex) where T : unmanaged
+
+        public static void writeBytes<T>(byte[] inData, T t1, int startIndex)
         {
-            InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());
+            InternalCheck.checkValidArray(inData, startIndex, Unsafe.SizeOf<T>());
             writeBytesWithoutChecks(inData, t1, startIndex);
         }
-        public static unsafe void writeBytes<T>(byte[] inData, Span<T> span, int startIndex) where T : unmanaged
+
+        public static void writeBytes<T>(byte[] inData, Span<T> span, int startIndex) where T : unmanaged
         {
-            writeBytes(inData, span.asReadOnlySpan(), startIndex);
+            writeBytes(inData, span.asRoSpan(), startIndex);
         }
-        public static unsafe void writeBytes<T>(byte[] inData, ReadOnlySpan<T> span, int startIndex) where T : unmanaged
+
+        public unsafe static void writeBytes<T>(byte[] inData, ReadOnlySpan<T> span, int startIndex) where T : unmanaged
         {
-            var srcSize = span.Length * NUtils.sizeOf<T>();
-            InternalCheck.checkValidArray(inData, startIndex, srcSize);
-            fixed (byte* dstPtr = &inData[startIndex])
+            int bytesLength = span.Length * Unsafe.SizeOf<T>();
+            InternalCheck.checkValidArray(inData, startIndex, bytesLength);
+            if (bytesLength > 0)
             {
-                fixed (T* srcPtr = span)
-                {
-                    Buffer.MemoryCopy(srcPtr, dstPtr, inData.Length, srcSize);
-                }
+                var srcPtr = Unsafe.AsPointer(ref Unsafe.AsRef(in span[0]));
+                var dstPtr = Unsafe.AsPointer(ref inData[startIndex]);
+                Buffer.MemoryCopy(srcPtr, dstPtr, bytesLength, bytesLength);
             }
         }
 
-        public static unsafe void writeBytesWithoutChecks<T>(byte[] inData, T t1, int startIndex = 0) where T : unmanaged
+        public static void writeBytesWithoutChecks<T>(byte[] inData, T t1, int startIndex = 0)
         {
-            fixed (byte* ptr = &inData[startIndex])
-            {
-                *(T*)ptr = t1;
-            }
+            Unsafe.WriteUnaligned(ref inData[startIndex], t1);
         }
 
-        public static unsafe T fromBytes<T>(byte[] inData, ref int startIndex) where T : unmanaged
+        public static void writeBytesWithoutChecks<T>(Span<byte> inData, T t1, int startIndex = 0)
         {
-            InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());
-            return fromBytesWithoutChecks<T>(inData, ref startIndex);
+            Unsafe.WriteUnaligned(ref inData[startIndex], t1);
         }
-        public static unsafe T fromBytes<T>(byte[] inData, int startIndex = 0) where T : unmanaged
+
+        public static T fromBytes<T>(byte[] inData, ref int startIndex)
         {
-            InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());
-            return fromBytesWithoutChecks<T>(inData, startIndex);
-        }
-        public static unsafe T fromBytes<T>(ReadOnlySpan<byte> inData, int startIndex = 0) where T : unmanaged
-        {
-            InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());
-            return fromBytesWithoutChecks<T>(inData, startIndex);
-        }
-        public static unsafe T fromBytes<T>(ReadOnlySpan<byte> inData, ref int startIndex) where T : unmanaged
-        {
-            InternalCheck.checkValidArray(inData, startIndex, NUtils.sizeOf<T>());
+            InternalCheck.checkValidArray(inData, startIndex, Unsafe.SizeOf<T>());
             return fromBytesWithoutChecks<T>(inData, ref startIndex);
         }
 
-        public static T fromBytesWithoutChecks<T>(byte[] inData, ref int startIndex) where T : unmanaged
+        public static T fromBytes<T>(byte[] inData, int startIndex = 0)
+        {
+            InternalCheck.checkValidArray(inData, startIndex, Unsafe.SizeOf<T>());
+            return fromBytesWithoutChecks<T>(inData, startIndex);
+        }
+
+        public static T fromBytes<T>(ReadOnlySpan<byte> inData, int startIndex = 0)
+        {
+            InternalCheck.checkValidArray(inData, startIndex, Unsafe.SizeOf<T>());
+            return fromBytesWithoutChecks<T>(inData, startIndex);
+        }
+
+        public static T fromBytes<T>(ReadOnlySpan<byte> inData, ref int startIndex)
+        {
+            InternalCheck.checkValidArray(inData, startIndex, Unsafe.SizeOf<T>());
+            return fromBytesWithoutChecks<T>(inData, ref startIndex);
+        }
+
+        public static T fromBytesWithoutChecks<T>(byte[] inData, ref int startIndex)
         {
             return fromBytesWithoutChecks<T>(inData.AsSpan(), ref startIndex);
         }
-        public static unsafe T fromBytesWithoutChecks<T>(byte[] inData, int startIndex = 0) where T : unmanaged
+
+        public static T fromBytesWithoutChecks<T>(byte[] inData, int startIndex = 0)
         {
-            return fromBytesWithoutChecks<T>(inData.AsSpan(), startIndex);
+            return Unsafe.ReadUnaligned<T>(ref inData[startIndex]);
         }
-        public static unsafe T fromBytesWithoutChecks<T>(ReadOnlySpan<byte> inData, ref int startIndex) where T : unmanaged
+
+        public static T fromBytesWithoutChecks<T>(ReadOnlySpan<byte> inData, ref int startIndex)
         {
             var result = fromBytesWithoutChecks<T>(inData, startIndex);
-            startIndex += NUtils.sizeOf<T>();
+            startIndex += Unsafe.SizeOf<T>();
             return result;
         }
-        public static unsafe T fromBytesWithoutChecks<T>(ReadOnlySpan<byte> inData, int startIndex = 0) where T : unmanaged
+
+        public static T fromBytesWithoutChecks<T>(ReadOnlySpan<byte> inData, int startIndex = 0)
         {
-            fixed (byte* ptr = &inData[startIndex])
-            {
-                return *(T*)ptr;
-            }
-        }
-        public static unsafe T fromBytesWithoutChecks<T>(byte* ptr, int startIndex = 0) where T : unmanaged
-        {
-            return *(T*)(ptr + startIndex);
+            return Unsafe.ReadUnaligned<T>(ref Unsafe.AsRef(in inData[startIndex]));
         }
 
         /// <summary>
@@ -98,117 +102,102 @@ namespace Nextension
             return Encoding.UTF8.GetBytes(inData);
         }
 
-        public unsafe static string getUTF8String(byte[] inData, int startIndex, int bytesCount)
+        public static string getUTF8String(byte[] inData, int startIndex, int bytesCount)
         {
-            fixed (byte* ptr = &inData[startIndex])
-            {
-                return Encoding.UTF8.GetString(ptr, bytesCount);
-            }
+            return Encoding.UTF8.GetString(inData.AsSpan(startIndex, bytesCount));
         }
+
         public static string getUTF8String(byte[] inData, ref int startIndex, int bytesCount)
         {
             var result = getUTF8String(inData, startIndex, bytesCount);
             startIndex += bytesCount;
             return result;
         }
+
         public static string getUTF8StringToEnd(byte[] inData, int startIndex)
         {
-            int count = inData.Length - startIndex;
-            return getUTF8String(inData, startIndex, count);
+            return Encoding.UTF8.GetString(inData.AsSpan(startIndex));
         }
+
         public static string getUTF8String(byte[] inData)
         {
-            return getUTF8StringToEnd(inData, 0);
+            return Encoding.UTF8.GetString(inData);
         }
-        public unsafe static string getUTF8String(ReadOnlySpan<byte> inData)
+
+        public static string getUTF8String(ReadOnlySpan<byte> inData)
         {
-            fixed (byte* ptr = &inData[0])
+            return Encoding.UTF8.GetString(inData);
+        }
+
+        public static TOut bitConvert<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
+        {
+            if (Unsafe.SizeOf<TIn>() != Unsafe.SizeOf<TOut>())
             {
-                return Encoding.UTF8.GetString(ptr, inData.Length);
+                throw new ArgumentException("TIn and TOut binary must be the same size");
             }
+            return Unsafe.As<TIn, TOut>(ref inValue);
         }
 
-        public static unsafe TOut bitConvert<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
+        public static TOut bitConvertWithoutChecks<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
         {
-            var sizeOfTin = NUtils.sizeOf<TIn>();
-            var sizeOfTOut = NUtils.sizeOf<TOut>();
-
-            if (sizeOfTin != sizeOfTOut)
-            {
-                throw new Exception("TIn and TOut binary must be the same size");
-            }
-            return *(TOut*)&inValue;
+            return Unsafe.As<TIn, TOut>(ref inValue);
         }
-        public static unsafe TOut bitConvertWithoutChecks<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
-        {
-            return *(TOut*)&inValue;
-        }
-        public static unsafe TOut bitConvertDiffSize<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
-        {
-            var sizeOfTin = NUtils.sizeOf<TIn>();
-            var sizeOfTOut = NUtils.sizeOf<TOut>();
 
-            if (sizeOfTOut > sizeOfTin)
+        public static TOut bitConvertSizeChecks<TIn, TOut>(TIn inValue) where TIn : unmanaged where TOut : unmanaged
+        {
+            if (Unsafe.SizeOf<TOut>() > Unsafe.SizeOf<TIn>())
             {
                 TOut result = default;
-                *(TIn*)&result = inValue;
+                Unsafe.As<TOut, TIn>(ref result) = inValue;
                 return result;
             }
             else
             {
-                return *(TOut*)&inValue;
+                return Unsafe.As<TIn, TOut>(ref inValue);
             }
         }
-        public unsafe static T[] convert<T>(byte[] src) where T : unmanaged
+
+        public static T[] convert<T>(byte[] src) where T : unmanaged
         {
             return convert<T>(src.AsSpan());
         }
+
         public unsafe static T[] convert<T>(ReadOnlySpan<byte> src) where T : unmanaged
         {
-            var tSize = NUtils.sizeOf<T>();
+            var tSize = Unsafe.SizeOf<T>();
             var resultLength = src.Length / tSize;
             var dst = new T[resultLength];
-            fixed (byte* srcPtr = src)
+            int copyBytes = resultLength * tSize;
+            if (copyBytes > 0)
             {
-                fixed (T* dstPtr = dst)
-                {
-                    Buffer.MemoryCopy(srcPtr, dstPtr, src.Length, src.Length);
-                }
+                var srcPtr = Unsafe.AsPointer(ref Unsafe.AsRef(in src[0]));
+                var dstPtr = Unsafe.AsPointer(ref dst[0]);
+                Buffer.MemoryCopy(srcPtr, dstPtr, copyBytes, copyBytes);
             }
             return dst;
         }
-        public unsafe static T[] convert<T>(byte* src, int byteCount) where T : unmanaged
-        {
-            var tSize = NUtils.sizeOf<T>();
-            var resultLength = byteCount / tSize;
-            var dst = new T[resultLength];
-            fixed (T* dstPtr = dst)
-            {
-                Buffer.MemoryCopy(src, dstPtr, byteCount, byteCount);
-            }
-            return dst;
-        }
-        public unsafe static TOut[] convertArray<TIn, TOut>(TIn[] from) where TIn : unmanaged where TOut : unmanaged
+
+        public static TOut[] convertArray<TIn, TOut>(TIn[] from) where TIn : unmanaged where TOut : unmanaged
         {
             return convertArray<TIn, TOut>(from.AsSpan());
         }
+
         public unsafe static TOut[] convertArray<TIn, TOut>(ReadOnlySpan<TIn> from) where TIn : unmanaged where TOut : unmanaged
         {
-            int sizeOfTIn = NUtils.sizeOf<TIn>();
-            int sizeOfTOut = NUtils.sizeOf<TOut>();
-            int sizeInBytes = sizeOfTIn * from.Length;
-
-            TOut[] result = new TOut[sizeInBytes / sizeOfTOut];
-            fixed (TIn* src = from)
+            int totalBytes = from.Length * Unsafe.SizeOf<TIn>();
+            int sizeOfTOut = Unsafe.SizeOf<TOut>();
+            int resultLength = totalBytes / sizeOfTOut;
+            TOut[] result = new TOut[resultLength];
+            int copyBytes = resultLength * sizeOfTOut;
+            if (copyBytes > 0)
             {
-                fixed (TOut* dst = result)
-                {
-                    Buffer.MemoryCopy(src, dst, sizeInBytes, sizeInBytes);
-
-                }
+                var srcPtr = Unsafe.AsPointer(ref Unsafe.AsRef(in from[0]));
+                var dstPtr = Unsafe.AsPointer(ref result[0]);
+                Buffer.MemoryCopy(srcPtr, dstPtr, copyBytes, copyBytes);
             }
             return result;
         }
+
         /// <summary>
         /// Convert binary array to dst array
         /// </summary>
@@ -226,6 +215,7 @@ namespace Nextension
                 return false;
             }
         }
+
         public static bool tryConvert<T>(ReadOnlySpan<byte> src, out T[] result) where T : unmanaged
         {
             try
@@ -240,6 +230,7 @@ namespace Nextension
                 return false;
             }
         }
+
         /// <summary>
         /// Convert src array to result array using binary of src array
         /// </summary>
@@ -257,6 +248,7 @@ namespace Nextension
                 return false;
             }
         }
+
         public static bool tryConvertArray<TIn, TOut>(ReadOnlySpan<TIn> from, out TOut[] result) where TIn : unmanaged where TOut : unmanaged
         {
             try
@@ -273,3 +265,4 @@ namespace Nextension
         }
     }
 }
+

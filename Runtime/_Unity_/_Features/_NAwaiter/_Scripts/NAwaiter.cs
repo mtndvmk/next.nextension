@@ -11,7 +11,6 @@ namespace Nextension
         internal readonly Func<bool> predicate;
 
         NLoopType IWaitable.LoopType => loopType;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         public NWaitUntil(Func<bool> predicate, NLoopType loopType = NLoopType.Update)
         {
@@ -43,7 +42,6 @@ namespace Nextension
         internal readonly uint waitFrame;
 
         NLoopType IWaitable.LoopType => loopType;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         public NWaitFrame(uint waitFrame, NLoopType loopType = NLoopType.Update)
         {
@@ -68,7 +66,6 @@ namespace Nextension
         internal readonly float waitSecond;
 
         NLoopType IWaitable.LoopType => loopType;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         public NWaitSecond(float waitSecond, NLoopType loopType = NLoopType.Update)
         {
@@ -100,7 +97,6 @@ namespace Nextension
         internal readonly float waitSecond;
 
         NLoopType IWaitable.LoopType => loopType;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         public NWaitRealtimeSecond(float waitSecond, NLoopType loopType = NLoopType.Update)
         {
@@ -130,7 +126,6 @@ namespace Nextension
     {
         public readonly NLoopType loopType;
         internal readonly JobHandle jobHandle;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         NLoopType IWaitable.LoopType => loopType;
 
@@ -162,7 +157,6 @@ namespace Nextension
     {
         public readonly NLoopType loopType;
         internal readonly IEnumerator routine;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         NLoopType IWaitable.LoopType => loopType;
 
@@ -185,7 +179,6 @@ namespace Nextension
     public readonly struct NWaitMainThread : IWaitable
     {
         readonly NLoopType IWaitable.LoopType => NLoopType.Update;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
         ICancelable IWaitable.onStartWaitable(NWaitableResultGetter getter)
         {
             getter.setWaitable(this);
@@ -204,10 +197,9 @@ namespace Nextension
     public readonly struct NCustomWaitable : IWaitable
     {
         public readonly NLoopType loopType;
-        internal readonly ICustomWaitable waitable;
+        internal readonly CustomWaitable waitable;
         NLoopType IWaitable.LoopType => loopType;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
-        public NCustomWaitable(ICustomWaitable waitable)
+        public NCustomWaitable(CustomWaitable waitable)
         {
             this.waitable = waitable;
             this.loopType = waitable.LoopType;
@@ -230,7 +222,6 @@ namespace Nextension
     {
         public readonly NLoopType loopType;
         internal readonly UnityEngine.AsyncOperation asyncOperation;
-        bool IWaitable.IsIgnoreFirstFrameCheck => false;
 
         NLoopType IWaitable.LoopType => loopType;
 

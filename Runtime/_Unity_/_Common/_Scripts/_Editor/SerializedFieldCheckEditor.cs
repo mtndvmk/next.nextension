@@ -22,12 +22,21 @@ namespace Nextension
             return _editorPrefKey;
         }
 
+#if UNITY_6000_0_OR_NEWER
         [MenuItem("Nextension/SerializedFieldCheck/Enable Auto Check", secondaryPriority = 1)]
+#else
+        [MenuItem("Nextension/SerializedFieldCheck/Enable Auto Check", false, 1)]
+#endif
         static void enableAutoCheck()
         {
             EditorPrefs.SetBool(__getEditorPrefKey(), true);
         }
+
+#if UNITY_6000_0_OR_NEWER
         [MenuItem("Nextension/SerializedFieldCheck/Enable Auto Check", secondaryPriority = 1, validate = true)]
+#else
+        [MenuItem("Nextension/SerializedFieldCheck/Enable Auto Check", true, 1)]
+#endif
         static bool isDisableAutoCheck()
         {
             var isEnable = EditorPrefs.GetBool(__getEditorPrefKey(), false);
@@ -35,12 +44,21 @@ namespace Nextension
             return !isEnable;
         }
 
+#if UNITY_6000_0_OR_NEWER
         [MenuItem("Nextension/SerializedFieldCheck/Disable Auto Check", secondaryPriority = 2)]
+#else
+        [MenuItem("Nextension/SerializedFieldCheck/Disable Auto Check", false, 2)]
+#endif
         static void disableAutoCheck()
         {
             EditorPrefs.SetBool(__getEditorPrefKey(), false);
         }
+
+#if UNITY_6000_0_OR_NEWER
         [MenuItem("Nextension/SerializedFieldCheck/Disable Auto Check", secondaryPriority = 2, validate = true)]
+#else
+        [MenuItem("Nextension/SerializedFieldCheck/Disable Auto Check", true, 2)]
+#endif
         static bool isEnableAutoCheck()
         {
             var isEnable = EditorPrefs.GetBool(__getEditorPrefKey(), false);
@@ -48,7 +66,11 @@ namespace Nextension
             return isEnable;
         }
 
+#if UNITY_6000_0_OR_NEWER
         [MenuItem("Nextension/SerializedFieldCheck/Check All", priority = 5, secondaryPriority = 0)]
+#else
+        [MenuItem("Nextension/SerializedFieldCheck/Check All", false, 5)]
+#endif
         static void manualCheck()
         {
             DateTimeOffset dateTimeOffset = DateTimeOffset.Now;
@@ -59,7 +81,11 @@ namespace Nextension
             NDebug.Log($"[SerializedFieldCheck] Finished, process time: {(DateTimeOffset.Now - dateTimeOffset).Milliseconds}ms");
         }
 
+#if UNITY_6000_0_OR_NEWER
         [MenuItem("Nextension/SerializedFieldCheck/Check selected items", priority = 5, secondaryPriority = 1)]
+#else
+        [MenuItem("Nextension/SerializedFieldCheck/Check selected items", false, 4)]
+#endif
         static void manualCheck_SelectedItems()
         {
             DateTimeOffset dateTimeOffset = DateTimeOffset.Now;

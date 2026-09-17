@@ -195,7 +195,7 @@ namespace Nextension
 
             if (NTaskManager.tryGetAndRemoveAwaiter(taskId, out var awaiter))
             {
-                ((NTaskAwaiter<T>)awaiter).setCompletion(awaiter.Id, state);
+                ((NTaskAwaiter<T>)awaiter).setCompletionWithoutChecks(state);
             }
 
             NTaskResultHolder<T> holder = null;

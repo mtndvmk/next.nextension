@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,7 +26,6 @@ namespace Nextension.Tween
         [SerializeField, NShowIf(nameof(_autoAlternateColorType), AutoAlternateColorType.MeshRenderer)] private Renderer _meshRenderer;
         [SerializeField, NShowIf(nameof(_autoAlternateColorType), AutoAlternateColorType.MeshRenderer)] private bool _useShareMaterial = false;
 
-        private Action<float4> _setValueAction;
 
         private void Reset()
         {
@@ -137,11 +136,7 @@ namespace Nextension.Tween
             }
         }
 
-        protected override void onStart()
-        {
-            base.onStart();
-            _setValueAction ??= setValue;
-        }
+
 
         protected override void setValue(Color value)
         {
@@ -244,14 +239,19 @@ namespace Nextension.Tween
             }
         }
 
-        protected override NRunnableTweener onFromTo()
+        private static void __setValue_Static(object target, float4 value)
         {
-            return NTween.fromTo(convertColorToF4(getCurrentValue()), convertColorToF4(_toValue), FromToDuration, _setValueAction);
+            ((AutoAlternateColor)target).setValue(value);
         }
 
-        protected override NRunnableTweener onToFrom()
+        protected unsafe override NTweener onFromTo()
         {
-            return NTween.fromTo(convertColorToF4(getCurrentValue()), convertColorToF4(_fromValue), FromToDuration, _setValueAction);
+            return NTween.fromToUnsafe(convertColorToF4(getCurrentValue()), convertColorToF4(_toValue), FromToDuration, this, &__setValue_Static);
+        }
+
+        protected unsafe override NTweener onToFrom()
+        {
+            return NTween.fromToUnsafe(convertColorToF4(getCurrentValue()), convertColorToF4(_fromValue), FromToDuration, this, &__setValue_Static);
         }
 
         protected override Color getValueFromNormalizedTime(float normalizedTime)

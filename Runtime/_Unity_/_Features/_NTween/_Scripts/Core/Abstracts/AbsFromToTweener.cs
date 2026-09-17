@@ -1,22 +1,20 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using Unity.Collections.LowLevel.Unsafe;
 
 namespace Nextension.Tween
 {
-    internal abstract class AbsFromToTweener<T, TData> : AbsValueTweener<T, TData> where T : unmanaged where TData : struct
+    internal abstract class AbsFromToTweener<T> : NTweener where T : unmanaged
     {
         public T from;
         public T destination;
 
-        public AbsFromToTweener(T from, T to, Action<T> onValueChanged) : base(onValueChanged)
+        public AbsFromToTweener(T from, T to)
         {
             this.from = from;
             this.destination = to;
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal override void forceComplete()
+        internal unsafe override void forceComplete()
         {
-            invokeValueChanged(destination);
+            invokeValueChanged(UnsafeUtility.AddressOf(ref destination));
             invokeOnUpdate();
             invokeOnComplete();
         }

@@ -77,15 +77,15 @@ namespace Nextension.Tween
             }
         }
         [BurstCompile]
-        public static T randShakeValue<T>(uint seed, float range) where T : unmanaged
+        public static T randShakeValue<T>(uint seed, float4 range) where T : unmanaged
         {
-            Unity.Mathematics.Random rand = new Unity.Mathematics.Random(seed);
+            var rand = new Unity.Mathematics.Random(seed);
             return TweenSupportedDataType<T>.type switch
             {
-                SupportedDataType.Int32 => NConverter.bitConvertWithoutChecks<int, T>((int)((rand.NextFloat() - 0.5f) * range)),
-                SupportedDataType.Float => NConverter.bitConvertWithoutChecks<float, T>((rand.NextFloat() - 0.5f) * range),
-                SupportedDataType.Float2 => NConverter.bitConvertWithoutChecks<float2, T>((rand.NextFloat2() - 0.5f) * range),
-                SupportedDataType.Float3 => NConverter.bitConvertWithoutChecks<float3, T>((rand.NextFloat3() - 0.5f) * range),
+                SupportedDataType.Int32 => NConverter.bitConvertWithoutChecks<int, T>((int)((rand.NextFloat() - 0.5f) * range.x)),
+                SupportedDataType.Float => NConverter.bitConvertWithoutChecks<float, T>((rand.NextFloat() - 0.5f) * range.x),
+                SupportedDataType.Float2 => NConverter.bitConvertWithoutChecks<float2, T>((rand.NextFloat2() - 0.5f) * range.xy),
+                SupportedDataType.Float3 => NConverter.bitConvertWithoutChecks<float3, T>((rand.NextFloat3() - 0.5f) * range.xyz),
                 SupportedDataType.Float4 => NConverter.bitConvertWithoutChecks<float4, T>((rand.NextFloat4() - 0.5f) * range),
                 _ => throw new NotImplementedException(),
             };
@@ -104,7 +104,7 @@ namespace Nextension.Tween
             };
         }
         [BurstCompile]
-        public static TValue readTransformAccessValue<TValue>(TransformTweenType transformTweenType, TransformAccess transform) where TValue : unmanaged
+        public static TValue readTransformAccessValue<TValue>(TransformAccess transform, TransformTweenType transformTweenType) where TValue : unmanaged
         {
             return transformTweenType switch
             {
@@ -117,8 +117,21 @@ namespace Nextension.Tween
                 _ => default,
             };
         }
+        public static TValue readValue<TValue>(Transform transform, TransformTweenType transformTweenType) where TValue : unmanaged
+        {
+            return transformTweenType switch
+            {
+                TransformTweenType.Local_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(transform.localPosition),
+                TransformTweenType.World_Position => NConverter.bitConvertWithoutChecks<Vector3, TValue>(transform.position),
+                TransformTweenType.Local_Scale => NConverter.bitConvertWithoutChecks<Vector3, TValue>(transform.localScale),
+                TransformTweenType.Uniform_Local_Scale => NConverter.bitConvertWithoutChecks<float, TValue>(transform.localScale.x),
+                TransformTweenType.Local_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(transform.localRotation),
+                TransformTweenType.World_Rotation => NConverter.bitConvertWithoutChecks<Quaternion, TValue>(transform.rotation),
+                _ => throw new NotImplementedException(transformTweenType.ToString()),
+            };
+        }
         [BurstCompile]
-        public static void applyTransformAccessJobData<TValue>(TransformTweenType transformTweenType, TransformAccess transform, TValue result) where TValue : unmanaged
+        public static void applyTransformAccessJobData<TValue>(TransformAccess transform, TransformTweenType transformTweenType, TValue result) where TValue : unmanaged
         {
             switch (transformTweenType)
             {
@@ -140,6 +153,31 @@ namespace Nextension.Tween
                     break;
                 case TransformTweenType.World_Rotation:
                     transform.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(result);
+                    break;
+            }
+        }
+        public static void applyValue<TValue>(Transform transform, TransformTweenType transformTweenType, TValue value) where TValue : unmanaged
+        {
+            switch (transformTweenType)
+            {
+                case TransformTweenType.Local_Position:
+                    transform.localPosition = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
+                    break;
+                case TransformTweenType.World_Position:
+                    transform.position = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
+                    break;
+                case TransformTweenType.Local_Scale:
+                    transform.localScale = NConverter.bitConvertWithoutChecks<TValue, Vector3>(value);
+                    break;
+                case TransformTweenType.Uniform_Local_Scale:
+                    var x = NConverter.bitConvertWithoutChecks<TValue, float>(value);
+                    transform.localScale = new Vector3(x, x, x);
+                    break;
+                case TransformTweenType.Local_Rotation:
+                    transform.localRotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
+                    break;
+                case TransformTweenType.World_Rotation:
+                    transform.rotation = NConverter.bitConvertWithoutChecks<TValue, Quaternion>(value);
                     break;
             }
         }

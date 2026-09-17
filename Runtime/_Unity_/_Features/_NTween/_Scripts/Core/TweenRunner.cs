@@ -1,41 +1,32 @@
-using System.Runtime.CompilerServices;
+using System;
+using System.Collections.Generic;
 using Unity.Jobs;
 
 namespace Nextension.Tween
 {
-    internal abstract class AbsTweenRunner
+    internal class TweenRunner
     {
-        public static ushort maxId = 0;
         protected const int MIN_COUNT_OF_CHUNK = 1;
+        protected readonly SimpleDictionary<ushort, TweenChunk> _chunks = new SimpleDictionary<ushort, TweenChunk>(1);
+        protected readonly NList<TweenChunk> _notFullChunks = new NList<TweenChunk>();
+        protected Action<TweenChunk> _addToNotFullChunk;
 
-        public ushort runnerId;
+        public readonly ushort runnerId;
 
-        public abstract void addTweener(NRunnableTweener inTweener);
-        public abstract void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks);
-        public abstract void dispose();
-        public abstract TweenChunk getChunk(ushort chunkId);
-    }
+        internal TweenRunner(ushort runnerId)
+        {
+            this.runnerId = runnerId;
+        }
 
-    internal static class TweenRunnerIdCache<TRunner> where TRunner : AbsTweenRunner
-    {
-        public readonly static ushort id = ++AbsTweenRunner.maxId;
-    }
-
-    internal sealed class TweenRunner<TChunk> : AbsTweenRunner where TChunk : TweenChunk
-    {
-        private readonly SimpleDictionary<ushort, TweenChunk> _chunks = new SimpleDictionary<ushort, TweenChunk>(1);
-        private readonly NList<TweenChunk> _notFullChunks = new NList<TweenChunk>();
-
-        public int ChunkCount => _chunks.Count;
-
-        public sealed override void addTweener(NRunnableTweener tweener)
+        public void addTweener(NTweener tweener)
         {
             TweenChunk nextChunk;
             int lastIndex = _notFullChunks.Count - 1;
             if (lastIndex < 0)
             {
-                nextChunk = NUtils.createInstance<TChunk>();
-                nextChunk.onChunkBecomeNotFull = _notFullChunks.Add;
+                nextChunk = TweenRunnerUtil.createChunk(runnerId);
+                _addToNotFullChunk ??= _notFullChunks.Add;
+                nextChunk.onChunkBecomeNotFull = _addToNotFullChunk;
                 _chunks.Add(nextChunk.chunkId, nextChunk);
                 _notFullChunks.Add(nextChunk);
                 lastIndex = 0;
@@ -51,10 +42,11 @@ namespace Nextension.Tween
                 _notFullChunks.RemoveAtWithoutChecks(lastIndex);
             }
         }
-        public sealed override void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks)
+
+        public void runTweenJob(ref NNativeListFixedSize<JobHandle> jobHandles, ref NNativeListFixedSize<(ushort runnerId, ushort chunkId)> runningChunks)
         {
             int chunksCount = _chunks.Count;
-            using var unusedchunkIds = NPUArray<ushort>.get();
+            using var unusedchunkIds = PUList<ushort>.get();
             foreach (var (chunkId, chunk) in _chunks)
             {
                 if (chunk.isUnused())
@@ -74,7 +66,7 @@ namespace Nextension.Tween
                 foreach (var chunkId in unusedchunkIds)
                 {
                     if (chunksCount <= MIN_COUNT_OF_CHUNK) break;
-                    _chunks.takeAndRemove(chunkId).dispose();
+                    _chunks.TakeAndRemove(chunkId).dispose();
                     chunksCount--;
                 }
 
@@ -87,12 +79,13 @@ namespace Nextension.Tween
                 }
             }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public sealed override TweenChunk getChunk(ushort chunkId)
+
+        public TweenChunk getChunk(ushort chunkId)
         {
             return _chunks[chunkId];
         }
-        public sealed override void dispose()
+
+        public void dispose()
         {
             foreach ((_, var chunk) in _chunks)
             {
@@ -101,5 +94,27 @@ namespace Nextension.Tween
             _chunks.Clear();
             _notFullChunks.Clear();
         }
+    }
+    internal static class TweenRunnerUtil
+    {
+        private static List<Type> _typeTable = new();
+        internal static ushort getNext(Type type)
+        {
+            _typeTable.Add(type);
+            return (ushort)_typeTable.Count;
+        }
+        internal static Type getType(ushort id)
+        {
+            return _typeTable[id - 1];
+        }
+        internal static TweenChunk createChunk(ushort id)
+        {
+            return (TweenChunk)NUtils.createInstance(getType(id));
+        }
+    }
+
+    internal static class TweenRunnerId<TChunk> where TChunk : TweenChunk
+    {
+        public readonly static ushort id = TweenRunnerUtil.getNext(typeof(TChunk));
     }
 }

@@ -262,8 +262,8 @@ namespace Nextension
     public interface ISingletonable : IOnCompiled
     {
         bool isSingleton() => true;
-        
-        #if UNITY_EDITOR
+
+#if UNITY_EDITOR
         static new void onPreprocessBuild()
         {
             if (checkHasErrorOnBuild(out var e))
@@ -315,7 +315,7 @@ namespace Nextension
                 return true;
             }
         }
-        #endif
+#endif
     }
 
     public static class S_<T> where T : class, ISingletonable
@@ -329,11 +329,11 @@ namespace Nextension
                 var tType = typeof(T);
                 if (NUtils.isInherited(tType, typeof(MonoBehaviour)))
                 {
-                    #if UNITY_6000_4_OR_NEWER
+#if UNITY_6000_4_OR_NEWER
                     var allObjects = UnityEngine.Object.FindObjectsByType(tType, FindObjectsInactive.Include);
-                    #else
+#else
                     var allObjects = UnityEngine.Object.FindObjectsByType(tType, FindObjectsInactive.Include, FindObjectsSortMode.None);
-                    #endif
+#endif
                     foreach (var obj in allObjects)
                     {
                         var ins = obj as T;

@@ -164,27 +164,27 @@ namespace Nextension
             var onLateUpdates = lateUpdateList.ToArray();
             var onEndOfFrames = endOfFrameList.ToArray();
 
-            if (!onStartups.isSameItem(_onStartups))
+            if (!onStartups.sequenceEqual(_onStartups))
             {
                 _onStartups = onStartups;
                 isDirty = true;
             }
-            if (!onQuittings.isSameItem(_onQuittings))
+            if (!onQuittings.sequenceEqual(_onQuittings))
             {
                 _onQuittings = onQuittings;
                 isDirty = true;
             }
-            if (!onUpdates.isSameItem(_onUpdates))
+            if (!onUpdates.sequenceEqual(_onUpdates))
             {
                 _onUpdates = onUpdates;
                 isDirty = true;
             }
-            if (!onLateUpdates.isSameItem(_onLateUpdates)) 
+            if (!onLateUpdates.sequenceEqual(_onLateUpdates))
             {
                 _onLateUpdates = onLateUpdates;
                 isDirty = true;
             }
-            if (!onEndOfFrames.isSameItem(_onEndOfFrames))
+            if (!onEndOfFrames.sequenceEqual(_onEndOfFrames))
             {
                 _onEndOfFrames = onEndOfFrames;
                 isDirty = true;

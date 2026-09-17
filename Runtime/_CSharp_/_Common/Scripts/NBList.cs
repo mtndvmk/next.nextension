@@ -108,7 +108,7 @@ namespace Nextension
         }
 
         #region Query from TKey
-        public TValue Find(TCompareKey searchKey)
+        public TValue FindKey(TCompareKey searchKey)
         {
             var index = FindIndex(searchKey);
             if (index >= 0)
@@ -117,7 +117,7 @@ namespace Nextension
             }
             throw new KeyNotFoundException();
         }
-        public bool Contains(TCompareKey searchKey)
+        public bool ContainsKey(TCompareKey searchKey)
         {
             return FindIndex(searchKey) >= 0;
         }
@@ -504,6 +504,7 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="TValue">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
+    [Serializable]
     public abstract class AbsBListComparable<TValue, TCompareKey> : AbsBList<TValue, TCompareKey> where TCompareKey : IComparable
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -520,6 +521,7 @@ namespace Nextension
     /// </summary>
     /// <typeparam name="V">Value Type of List</typeparam>
     /// <typeparam name="K">Key Type to compare Value in List</typeparam>
+    [Serializable]
     public sealed class NBList<TValue, TCompareKey> : AbsBList<TValue, TCompareKey>
     {
         private Func<TValue, TCompareKey> _getCompareKeyFromValueFunc;
@@ -560,6 +562,15 @@ namespace Nextension
         public int FindIndex(TValue item)
         {
             return base.FindIndex(getCompareKeyFromValue(item));
+        }
+    }
+
+    [Serializable]
+    public sealed class NBList<T> : AbsBListGenericComparable<T, T> where T : IComparable<T>
+    {
+        protected override T getCompareKeyFromValue(T item)
+        {
+            return item;
         }
     }
 }

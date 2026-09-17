@@ -39,26 +39,17 @@ namespace Nextension
         private class NTaskCheckerGroup
         {
             private List<NLoopWaitableChecker> _checkers = new List<NLoopWaitableChecker>();
-            private int _checkerCount;
 
-            public void addChecker(NLoopWaitableChecker checker, bool isIgnoreFirstFrameCheck)
+            public void addChecker(NLoopWaitableChecker checker)
             {
                 _checkers.Add(checker);
-                if (!isIgnoreFirstFrameCheck)
-                {
-                    _checkerCount++;
-                }
             }
 
             public void update()
             {
                 if (_checkers.Count > 0)
                 {
-                    if (_checkerCount > 0)
-                    {
-                        __update(_checkers, _checkerCount - 1);
-                    }
-                    _checkerCount = _checkers.Count;
+                    __update(_checkers);
                 }
             }
         }
@@ -70,7 +61,7 @@ namespace Nextension
 
         private static readonly object _lockObj = new object();
 
-        public static void addChecker(NLoopWaitableChecker checker, NLoopType loopType, bool isIgnoreFirstFrameCheck)
+        public static void addChecker(NLoopWaitableChecker checker, NLoopType loopType)
         {
             lock (_lockObj)
             {
@@ -84,7 +75,7 @@ namespace Nextension
                                 _updateGroup = new NTaskCheckerGroup();
                                 NUpdater.onUpdateEvent.add(_updateGroup.update);
                             }
-                            _updateGroup.addChecker(checker, isIgnoreFirstFrameCheck);
+                            _updateGroup.addChecker(checker);
                             return;
                         }
                     case NLoopType.LateUpdate:
@@ -95,7 +86,7 @@ namespace Nextension
                                 _lateUpdateGroup = new NTaskCheckerGroup();
                                 NUpdater.onLateUpdateEvent.add(_lateUpdateGroup.update);
                             }
-                            _lateUpdateGroup.addChecker(checker, isIgnoreFirstFrameCheck);
+                            _lateUpdateGroup.addChecker(checker);
                             return;
                         }
                     case NLoopType.EndOfFrameUpdate:
@@ -106,7 +97,7 @@ namespace Nextension
                                 _eofGroup = new NTaskCheckerGroup();
                                 NUpdater.onEndOfFrameEvent.add(_eofGroup.update);
                             }
-                            _eofGroup.addChecker(checker, isIgnoreFirstFrameCheck);
+                            _eofGroup.addChecker(checker);
                             return;
                         }
                     case NLoopType.EditorUpdate:
@@ -117,7 +108,7 @@ namespace Nextension
                                 _editorCheckers = new NTaskCheckerGroup();
                                 UnityEditor.EditorApplication.update += _editorCheckers.update;
                             }
-                            _editorCheckers.addChecker(checker, isIgnoreFirstFrameCheck);
+                            _editorCheckers.addChecker(checker);
 #else
                             NDebug.LogError("NLoopType.EditorUpdate is only available in Editor mode.");
 #endif
@@ -127,11 +118,10 @@ namespace Nextension
             }
         }
 
-        private static void __update(List<NLoopWaitableChecker> checkerList, int endIndex)
+        private static void __update(List<NLoopWaitableChecker> checkerList)
         {
             var checkerSpan = checkerList.asSpan();
-            endIndex = Math.Min(endIndex, checkerSpan.Length - 1);
-            for (int i = endIndex; i >= 0; i--)
+            for (int i = checkerSpan.Length - 1; i >= 0; i--)
             {
                 var checker = checkerSpan[i];
                 try

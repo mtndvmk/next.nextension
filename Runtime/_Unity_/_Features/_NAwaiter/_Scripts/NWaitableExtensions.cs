@@ -17,11 +17,11 @@ namespace Nextension
 
     public static class NCustomWaitableExtensions
     {
-        public static NCustomWaitable wait(this ICustomWaitable waitable)
+        public static NCustomWaitable wait(this CustomWaitable waitable)
         {
             return new NCustomWaitable(waitable);
         }
-        public static async NTask waitAsTask(this ICustomWaitable waitable)
+        public static async NTask waitAsTask(this CustomWaitable waitable)
         {
             await new NCustomWaitable(waitable);
         }

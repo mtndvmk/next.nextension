@@ -1,0 +1,20 @@
+{
+    "name": "Next.Nextension.Runtime",
+    "rootNamespace": "Nextension",
+    "references": [
+        "Unity.Burst",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst.CodeGen",
+        "Nextension.CloudCode"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

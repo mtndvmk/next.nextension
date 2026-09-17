@@ -2,34 +2,37 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace Nextension.Tween
 {
     internal class ShakeValueTween<TValue> where TValue : unmanaged
     {
-        internal sealed class Tweener : AbsShakeTweener<TValue, ShakeData<TValue>>
+        internal sealed class Tweener : AbsShakeTweener<TValue>
         {
-            public Tweener(TValue origin, float range, Action<TValue> onValueChanged) : base(origin, range, onValueChanged)
+            private Action<TValue> _onValueChanged;
+            public Tweener(TValue origin, float4 range, Action<TValue> onValueChanged) : base(origin, range)
             {
+                _onValueChanged = onValueChanged;
             }
 
-            public override ShakeData<TValue> getJobData()
+            internal unsafe override void writeJobDataToAddr(void* dst)
             {
-                return new ShakeData<TValue>(getCommonJobData(), range, origin);
+                var data = new ShakeData<TValue>(getCommonJobData(), range, origin);
+                Unsafe.Write(dst, data);
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal override AbsTweenRunner createRunner()
-            {
-                return new TweenRunner<Chunk>();
-            }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override ushort getRunnerId()
             {
-                return TweenRunnerIdCache<TweenRunner<Chunk>>.id;
+                return TweenRunnerId<Chunk>.id;
+            }
+
+            internal override unsafe void invokeValueChanged(void* src)
+            {
+                _onValueChanged?.Invoke(Unsafe.Read<TValue>(src));
             }
         }
-        internal sealed class Chunk : AbsValueTweenChunk<TValue, Tweener, Job, ShakeData<TValue>>
+        internal sealed class Chunk : AbsValueTweenChunk<TValue, Job, ShakeData<TValue>>
         {
             protected override Job createNewJob()
             {
@@ -56,7 +59,7 @@ namespace Nextension.Tween
                     var data = _jobDataNativeArr[index];
                     var common = data.common;
                     TValue result;
-                    var currentTime = common.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
+                    var currentTime = common.updateMode == NUpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
                     if (currentTime >= common.startTime)
                     {
                         var deltaTime = currentTime - common.startTime;

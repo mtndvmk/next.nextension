@@ -9,13 +9,13 @@ namespace Nextension
         GameObject getGameObject();
         void release(GameObject target);
     }
-    
+
     public interface IComponentInstantiator<T> : IGameObjectInstantiator where T : UnityEngine.Object
     {
         T getComponent(Transform parent = null, bool worldPositionStays = true);
         T getComponent();
     }
-    
+
     public readonly struct GameObjectInstantiator : IGameObjectInstantiator
     {
         internal readonly Func<Transform, bool, GameObject> instantiateFunc;
@@ -28,7 +28,7 @@ namespace Nextension
             this.instantiateFunc = instantiateFunc;
             this.destroyFunc = destroyFunc;
         }
-        
+
         public GameObjectInstantiator(Func<GameObject> instantiateFunc, Action<GameObject> destroyFunc)
         {
             this.instantiateFunc = (Transform parent, bool worldPositionStays) => instantiateFunc();
@@ -50,7 +50,7 @@ namespace Nextension
             __throwNotCreatedException();
             return instantiateFunc(parent, worldPositionStays);
         }
-        
+
         public GameObject getGameObject()
         {
             return getGameObject(null, true);
@@ -62,7 +62,7 @@ namespace Nextension
             destroyFunc(target);
         }
     }
-    
+
     public readonly struct ComponentInstantiator<T> : IComponentInstantiator<T> where T : UnityEngine.Object
     {
         internal readonly Func<Transform, bool, T> instantiateTFunc;
@@ -77,7 +77,7 @@ namespace Nextension
             this.instantiateGOFunc = instantiateFunc;
             this.destroyFunc = destroyFunc;
         }
-        
+
         public ComponentInstantiator(Func<GameObject> instantiateFunc, Action<GameObject> destroyFunc)
         {
             this.instantiateTFunc = null;
@@ -109,7 +109,7 @@ namespace Nextension
             }
             this.destroyFunc = destroyFunc;
         }
-        
+
         public ComponentInstantiator(Func<Transform, bool, T> instantiateFunc, Action<GameObject> destroyFunc)
         {
             if (UnityGeneric<T>.IsComponent)
@@ -141,14 +141,14 @@ namespace Nextension
             this.instantiateGOFunc = gameObjectInstantiate.instantiateFunc;
             this.destroyFunc = gameObjectInstantiate.destroyFunc;
         }
-        
+
         public ComponentInstantiator(IGameObjectInstantiator gameObjectInstantiate)
         {
             this.instantiateTFunc = null;
             this.instantiateGOFunc = gameObjectInstantiate.getGameObject;
             this.destroyFunc = gameObjectInstantiate.release;
         }
-        
+
         private void __throwNotCreatedException()
         {
 #if UNITY_EDITOR
@@ -168,7 +168,7 @@ namespace Nextension
             }
             return instantiateGOFunc(parent, worldPositionStays);
         }
-        
+
         public GameObject getGameObject()
         {
             return getGameObject(null, true);
@@ -193,7 +193,7 @@ namespace Nextension
             NDebug.LogError($"Cannot get component of type {typeof(T)}", go);
             return null;
         }
-        
+
         public T getComponent()
         {
             return getComponent(null, true);

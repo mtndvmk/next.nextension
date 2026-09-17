@@ -8,30 +8,62 @@ namespace Nextension.Tween
 {
     internal class FromToValueTween<TValue> where TValue : unmanaged
     {
-        internal class Tweener : AbsFromToTweener<TValue, FromToData<TValue>>
+        internal class Tweener : AbsFromToTweener<TValue>
         {
-            public Tweener(TValue from, TValue to, Action<TValue> onValueChanged) : base(from, to, onValueChanged)
+            private Action<TValue> _onValueChanged;
+            public Tweener(TValue from, TValue to, Action<TValue> onValueChanged) : base(from, to)
             {
                 this.from = from;
                 this.destination = to;
+                _onValueChanged = onValueChanged;
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public override FromToData<TValue> getJobData()
+            internal unsafe override void writeJobDataToAddr(void* dst)
             {
-                return new FromToData<TValue>(getCommonJobData(), from, destination);
-            }
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal override AbsTweenRunner createRunner()
-            {
-                return new TweenRunner<Chunk>();
+                var data = new FromToData<TValue>(getCommonJobData(), from, destination);
+                Unsafe.Write(dst, data);
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal override ushort getRunnerId()
             {
-                return TweenRunnerIdCache<TweenRunner<Chunk>>.id;
+                return TweenRunnerId<Chunk>.id;
+            }
+
+            internal override unsafe void invokeValueChanged(void* src)
+            {
+                _onValueChanged?.Invoke(Unsafe.Read<TValue>(src));
             }
         }
-        internal sealed class Chunk : AbsValueTweenChunk<TValue, Tweener, Job, FromToData<TValue>>
+        internal unsafe class UnsafeTweener : AbsFromToTweener<TValue>
+        {
+            private object _target;
+            private delegate*<object, TValue, void> _setPtr;
+
+            public UnsafeTweener(TValue from, TValue to, object target, delegate*<object, TValue, void> setPtr) : base(from, to)
+            {
+                this.from = from;
+                this.destination = to;
+                _target = target;
+                _setPtr = setPtr;
+            }
+
+            internal override void writeJobDataToAddr(void* dst)
+            {
+                var data = new FromToData<TValue>(getCommonJobData(), from, destination);
+                Unsafe.Write(dst, data);
+            }
+
+            internal override ushort getRunnerId()
+            {
+                return TweenRunnerId<Chunk>.id;
+            }
+
+            internal override void invokeValueChanged(void* src)
+            {
+                _setPtr(_target, Unsafe.Read<TValue>(src));
+            }
+        }
+        internal sealed class Chunk : AbsValueTweenChunk<TValue, Job, FromToData<TValue>>
         {
             protected override Job createNewJob()
             {
@@ -58,7 +90,7 @@ namespace Nextension.Tween
                 {
                     var data = _jobDataNativeArr[index];
                     var common = data.common;
-                    var currentTime = common.updateMode == NTweener.UpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
+                    var currentTime = common.updateMode == NUpdateMode.ScaleTime ? TweenStaticManager.currentTimeInJob.Data : TweenStaticManager.currentUnscaledTimeInJob.Data;
                     if (currentTime >= common.startTime)
                     {
                         var t = (currentTime - common.startTime) / common.duration;

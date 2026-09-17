@@ -75,7 +75,7 @@ namespace Nextension
         }
         public bool contains(TEnum enumType)
         {
-            return _enumValueList.Contains(enumType);
+            return _enumValueList.ContainsKey(enumType);
         }
         public bool remove(TEnum enumType)
         {

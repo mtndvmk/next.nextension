@@ -1,11 +1,10 @@
+using Nextension.Tween;
 using System;
 using System.Collections.Generic;
-using Nextension.Tween;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Nextension;
 
 namespace Nextension
 {
@@ -71,7 +70,7 @@ namespace Nextension
             }
         }
 
-        public ReadOnlyList<InfiniteCellData> DataList => _dataList;
+        public ReadOnlySpan<InfiniteCellData> DataList => _dataList.asSpan();
 
         private readonly Dictionary<int, InfiniteCell> _showingCellTable = new Dictionary<int, InfiniteCell>();
         private readonly List<InfiniteCell> _cellPool = new List<InfiniteCell>();
@@ -86,7 +85,6 @@ namespace Nextension
         private NTweener _snapAnimation;
         private bool _isDirtyLayout;
         private int _dirtyPositionIndex = -1;
-        private Action<float2> _setContentAnchoredPositionAction;
         private Action _stopSnapAction;
         public bool IsSnapping => _snapAnimation != null;
         public bool IsDragging { get; private set; }
@@ -141,6 +139,11 @@ namespace Nextension
         protected virtual void OnDisable()
         {
             stopSnapping();
+        }
+
+        private static void __setContentAnchoredPosition_Static(object target, float2 pos)
+        {
+            ((InfiniteScrollRect)target).__setContentAnchoredPosition(pos);
         }
 
         private void __setContentAnchoredPosition(float2 pos)
@@ -344,10 +347,12 @@ namespace Nextension
 
         private void __exeSnapAnimation(Vector2 contentAnchorPosition, float duration)
         {
-            _setContentAnchoredPositionAction ??= __setContentAnchoredPosition;
             _stopSnapAction ??= stopSnapping;
-            _snapAnimation = NTween.fromTo(scrollRect.content.anchoredPosition, contentAnchorPosition, duration, _setContentAnchoredPositionAction)
-                .onFinalized(_stopSnapAction);
+            unsafe
+            {
+                _snapAnimation = NTween.fromToUnsafe((float2)scrollRect.content.anchoredPosition, (float2)contentAnchorPosition, duration, this, &__setContentAnchoredPosition_Static)
+                    .onFinalized(_stopSnapAction);
+            }
         }
 
         protected void updateCellLayoutUpdated(int index)

@@ -137,7 +137,7 @@ namespace Nextension
 
         public void stopById(ulong id)
         {
-            if (_playingData.tryTakeAndRemove(id, out var data))
+            if (_playingData.TryTakeAndRemove(id, out var data))
             {
                 var audioSrc = data.audioSource;
                 if (audioSrc.isPlaying)
@@ -160,7 +160,7 @@ namespace Nextension
 
         public void stopByAudioClip(AudioClip clip, bool isBgm, bool isStopAll)
         {
-            using var audioSources = NPUArray<ulong>.get();
+            using var audioSources = PUList<ulong>.get();
             foreach ((_, var data) in _playingData)
             {
                 if (data.isBgm == isBgm && data.audioSource.clip == clip)
@@ -177,7 +177,7 @@ namespace Nextension
         }
         public void stopAllByType(bool isBgm)
         {
-            using var audioSources = NPUArray<ulong>.get();
+            using var audioSources = PUList<ulong>.get();
             foreach ((_, var data) in _playingData)
             {
                 if (data.isBgm == isBgm)

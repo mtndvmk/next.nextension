@@ -360,8 +360,7 @@ namespace Nextension
 
             public void Execute(int index)
             {
-                var w = index % outWidth;
-                var h = index / outWidth;
+                var h = Math.DivRem(index, outWidth, out int w);
                 var srcW = (int)(w * ratio);
                 var srcIndex = srcW + (int)(h * ratio) * srcWidth;
                 dst[index] = src[srcIndex];
@@ -382,8 +381,7 @@ namespace Nextension
 
             public void Execute(int index)
             {
-                var w = index % outWidth;
-                var h = index / outWidth;
+                var h = Math.DivRem(index, outWidth, out int w);
                 var srcW = (int)(w * ratio);
                 var srcIndex = srcW + (int)(h * ratio) * srcWidth;
                 index *= sizePerPixel;
